@@ -670,24 +670,239 @@ function desenharAtividades(atividades) {
 /* EXPLICAÇÕES */
 
 function mostrarExplicacoes() {
+   async function mostrarExplicacoes() {
+    areaMateria.innerHTML = `
+        <h2>Preparando o material...</h2>
+
+        <p>
+            Lendo atividades, textos, Docs e Slides
+            desta matéria.
+        </p>
+    `;
+
+    try {
+        estudoGerado =
+            await gerarEstudoDaMateria();
+
+        desenharOpcoesDoEstudo();
+    } catch (erro) {
+        console.error(erro);
+
+        areaMateria.innerHTML = `
+            <h2>Não foi possível criar a explicação</h2>
+
+            <p>${protegerTexto(erro.message)}</p>
+
+            <button
+                id="tentar-novamente"
+                class="botao-principal"
+            >
+                Tentar novamente
+            </button>
+        `;
+
+        document.querySelector(
+            "#tentar-novamente"
+        ).addEventListener(
+            "click",
+            mostrarExplicacoes
+        );
+    }
+}
+
+function desenharOpcoesDoEstudo() {
     areaMateria.innerHTML = `
         <h2>
-            Explicações de
+            Estudo de
             ${protegerTexto(materiaAtual.name)}
         </h2>
 
         <div class="opcoes-explicacao">
-            <button>🖥️ Slides</button>
-            <button>✍️ Cópia guiada</button>
-            <button>🎧 Áudio</button>
-            <button>🔁 Revisão</button>
+            <button data-estudo="explicacao">
+                💡 Explicação
+            </button>
+
+            <button data-estudo="copia">
+                ✍️ Cópia guiada
+            </button>
+
+            <button data-estudo="slides">
+                🖥️ Slides
+            </button>
+
+            <button data-estudo="revisao">
+                🔁 Revisão
+            </button>
+
+            <button data-estudo="audio">
+                🎧 Ouvir
+            </button>
         </div>
 
-        <p>
-            Em uma próxima etapa, essas explicações
-            usarão os materiais desta disciplina.
-        </p>
+        <div id="conteudo-estudo"></div>
     `;
+
+    document
+        .querySelectorAll("[data-estudo]")
+        .forEach(function (botao) {
+            botao.addEventListener(
+                "click",
+                function () {
+                    abrirFormatoDeEstudo(
+                        botao.dataset.estudo
+                    );
+                }
+            );
+        });
+
+    abrirFormatoDeEstudo("explicacao");
+}
+
+function abrirFormatoDeEstudo(formato) {
+    const area = document.querySelector(
+        "#conteudo-estudo"
+    );
+
+    if (formato === "explicacao") {
+        area.innerHTML = `
+            <div class="arquivo">
+                <h3>Explicação</h3>
+
+                <p>
+                    ${formatarTexto(
+                        estudoGerado.explicacao
+                    )}
+                </p>
+            </div>
+        `;
+    }
+
+    if (formato === "copia") {
+        area.innerHTML = `
+            <div class="arquivo">
+                <h3>Cópia guiada</h3>
+
+                <p>
+                    ${formatarTexto(
+                        estudoGerado.copia
+                    )}
+                </p>
+            </div>
+        `;
+    }
+
+    if (formato === "slides") {
+        const slides = estudoGerado.slides
+            .map(function (slide, indice) {
+                const pontos = slide.pontos
+                    .map(function (ponto) {
+                        return `
+                            <li>
+                                ${protegerTexto(ponto)}
+                            </li>
+                        `;
+                    })
+                    .join("");
+
+                return `
+                    <article class="arquivo">
+                        <small>
+                            Slide ${indice + 1}
+                        </small>
+
+                        <h3>
+                            ${protegerTexto(
+                                slide.titulo
+                            )}
+                        </h3>
+
+                        <ul>${pontos}</ul>
+                    </article>
+                `;
+            })
+            .join("");
+
+        area.innerHTML = `
+            <h3>Slides</h3>
+            ${slides}
+        `;
+    }
+
+    if (formato === "revisao") {
+        const pontos = estudoGerado.revisao
+            .map(function (ponto) {
+                return `
+                    <li>
+                        ${protegerTexto(ponto)}
+                    </li>
+                `;
+            })
+            .join("");
+
+        area.innerHTML = `
+            <div class="arquivo">
+                <h3>Revisão</h3>
+                <ul>${pontos}</ul>
+            </div>
+        `;
+    }
+
+    if (formato === "audio") {
+        area.innerHTML = `
+            <div class="arquivo">
+                <h3>Áudio explicativo</h3>
+
+                <p>
+                    O aplicativo lerá a explicação
+                    em voz alta.
+                </p>
+
+                <button
+                    id="iniciar-audio"
+                    class="botao-principal"
+                >
+                    ▶ Ouvir explicação
+                </button>
+
+                <button
+                    id="parar-audio"
+                    class="botao-secundario"
+                    style="margin-top: 8px"
+                >
+                    ■ Parar
+                </button>
+            </div>
+        `;
+
+        document.querySelector(
+            "#iniciar-audio"
+        ).addEventListener(
+            "click",
+            iniciarAudio
+        );
+
+        document.querySelector(
+            "#parar-audio"
+        ).addEventListener(
+            "click",
+            function () {
+                speechSynthesis.cancel();
+            }
+        );
+    }
+}
+
+function iniciarAudio() {
+    speechSynthesis.cancel();
+
+    const fala = new SpeechSynthesisUtterance(
+        estudoGerado.explicacao
+    );
+
+    fala.lang = "pt-BR";
+    fala.rate = 0.95;
+
+    speechSynthesis.speak(fala);
 }
 
 /* UPLOADS */
