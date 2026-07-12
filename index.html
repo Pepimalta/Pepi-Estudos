@@ -10,585 +10,21 @@
 
     <title>Pepi Estudos</title>
 
-    <style>
-        :root {
-            --roxo: #6848f5;
-            --roxo-escuro: #4930bc;
-            --fundo: #f5f3ff;
-            --branco: #ffffff;
-            --texto: #242238;
-            --cinza: #747287;
-            --borda: #e5e0f5;
-            --verde: #2fba80;
-            --vermelho: #e95970;
-            --sombra: 0 18px 50px rgba(64, 43, 150, 0.14);
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            min-height: 100vh;
-            margin: 0;
-            background: var(--fundo);
-            color: var(--texto);
-            font-family: Arial, Helvetica, sans-serif;
-        }
-
-        button,
-        input {
-            font: inherit;
-        }
-
-        button {
-            cursor: pointer;
-        }
-
-        .escondido {
-            display: none !important;
-        }
-
-        /* AUTENTICAÇÃO */
-
-        .pagina-autenticacao {
-            display: grid;
-            min-height: 100vh;
-            place-items: center;
-            padding: 25px;
-            background:
-                radial-gradient(
-                    circle at top left,
-                    #d8d0ff,
-                    transparent 35%
-                ),
-                radial-gradient(
-                    circle at bottom right,
-                    #c9f8ff,
-                    transparent 35%
-                ),
-                var(--fundo);
-        }
-
-        .cartao-autenticacao {
-            width: min(460px, 100%);
-            padding: 38px;
-            border-radius: 28px;
-            background: var(--branco);
-            box-shadow: var(--sombra);
-            text-align: center;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 11px;
-            margin-bottom: 28px;
-        }
-
-        .logo-simbolo {
-            display: grid;
-            width: 48px;
-            height: 48px;
-            place-items: center;
-            border-radius: 15px;
-            background: linear-gradient(135deg, var(--roxo), #38c4d7);
-            color: var(--branco);
-            font-size: 23px;
-            font-weight: bold;
-        }
-
-        .logo strong {
-            font-size: 23px;
-        }
-
-        .cartao-autenticacao h1 {
-            margin: 0 0 10px;
-            font-size: 30px;
-        }
-
-        .subtitulo {
-            margin: 0 0 27px;
-            color: var(--cinza);
-            line-height: 1.5;
-        }
-
-        .botao-principal,
-        .botao-secundario {
-            width: 100%;
-            border-radius: 14px;
-            padding: 13px 18px;
-            font-weight: bold;
-        }
-
-        .botao-principal {
-            border: none;
-            background: var(--roxo);
-            color: var(--branco);
-        }
-
-        .botao-principal:hover {
-            background: var(--roxo-escuro);
-        }
-
-        .botao-secundario {
-            border: 2px solid var(--roxo);
-            background: var(--branco);
-            color: var(--roxo);
-        }
-
-        .ou {
-            margin: 14px 0;
-            color: var(--cinza);
-        }
-
-        .formulario {
-            text-align: left;
-        }
-
-        .formulario h1,
-        .formulario .subtitulo {
-            text-align: center;
-        }
-
-        .formulario label {
-            display: block;
-            margin: 15px 0 7px;
-            font-weight: bold;
-        }
-
-        .formulario input[type="text"],
-        .formulario input[type="email"],
-        .formulario input[type="password"] {
-            width: 100%;
-            border: 2px solid var(--borda);
-            border-radius: 13px;
-            padding: 13px;
-            outline: none;
-        }
-
-        .formulario input:focus {
-            border-color: var(--roxo);
-        }
-
-        .campo-senha {
-            display: flex;
-            gap: 7px;
-        }
-
-        .campo-senha input {
-            flex: 1;
-        }
-
-        .mostrar-senha {
-            width: 48px;
-            border: none;
-            border-radius: 13px;
-            background: #eeeaff;
-        }
-
-        .tipos-conta {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 10px 0 20px;
-        }
-
-        .tipos-conta label {
-            margin: 0;
-            border: 2px solid var(--borda);
-            border-radius: 13px;
-            padding: 12px;
-            text-align: center;
-        }
-
-        .voltar-autenticacao {
-            display: block;
-            margin: 17px auto 0;
-            border: none;
-            background: transparent;
-            color: var(--roxo);
-            font-weight: bold;
-        }
-
-        .mensagem {
-            min-height: 20px;
-            margin-bottom: 0;
-            color: var(--vermelho);
-            text-align: center;
-            font-weight: bold;
-        }
-
-        /* APLICATIVO */
-
-        .cabecalho {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 17px 6%;
-            background: var(--branco);
-            box-shadow: 0 4px 18px rgba(64, 43, 150, 0.08);
-        }
-
-        .logo-cabecalho {
-            display: flex;
-            align-items: center;
-            gap: 9px;
-            border: none;
-            background: transparent;
-            color: var(--texto);
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .logo-cabecalho .logo-simbolo {
-            width: 40px;
-            height: 40px;
-            font-size: 19px;
-        }
-
-        .area-perfil {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-        }
-
-        #botao-conta {
-            border: none;
-            border-radius: 12px;
-            padding: 10px 14px;
-            background: #eeeaff;
-            color: var(--roxo);
-            font-weight: bold;
-        }
-
-        .conteudo {
-            width: min(1100px, 92%);
-            margin: 35px auto 70px;
-            text-align: center;
-        }
-
-        .apresentacao {
-            padding: 35px;
-            border-radius: 28px;
-            background: linear-gradient(125deg, var(--roxo), #9477ff);
-            color: var(--branco);
-            box-shadow: var(--sombra);
-        }
-
-        .apresentacao h1 {
-            margin: 0 0 9px;
-            font-size: 34px;
-        }
-
-        .apresentacao p {
-            margin: 0;
-            line-height: 1.5;
-        }
-
-        .pesquisa {
-            width: min(720px, 100%);
-            margin: 24px auto;
-            padding: 18px;
-            border-radius: 18px;
-            background: var(--branco);
-            box-shadow: var(--sombra);
-        }
-
-        .pesquisa label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-
-        .linha-pesquisa {
-            display: flex;
-            gap: 8px;
-        }
-
-        .linha-pesquisa input {
-            flex: 1;
-            min-width: 0;
-            border: 2px solid var(--borda);
-            border-radius: 12px;
-            padding: 12px;
-            outline: none;
-        }
-
-        .linha-pesquisa button {
-            border: none;
-            border-radius: 12px;
-            padding: 10px 17px;
-            background: var(--roxo);
-            color: var(--branco);
-            font-weight: bold;
-        }
-
-        .titulo-materias {
-            margin: 35px 0 18px;
-        }
-
-        .titulo-materias h2 {
-            margin-bottom: 5px;
-            font-size: 28px;
-        }
-
-        .titulo-materias p {
-            color: var(--cinza);
-        }
-
-        .materias {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 17px;
-            justify-content: center;
-        }
-
-        .materia {
-            display: flex;
-            min-height: 180px;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid transparent;
-            border-radius: 22px;
-            padding: 20px;
-            background: var(--branco);
-            color: var(--texto);
-            box-shadow: var(--sombra);
-            transition: 0.2s;
-        }
-
-        .materia:hover {
-            transform: translateY(-5px);
-            border-color: var(--roxo);
-        }
-
-        .materia span {
-            margin-bottom: 14px;
-            font-size: 38px;
-        }
-
-        .materia strong {
-            margin-bottom: 6px;
-            font-size: 19px;
-        }
-
-        .materia small {
-            color: var(--cinza);
-        }
-
-        /* PÁGINA DA MATÉRIA */
-
-        .voltar {
-            display: block;
-            margin-bottom: 20px;
-            border: none;
-            border-radius: 12px;
-            padding: 11px 15px;
-            background: #eeeaff;
-            color: var(--roxo);
-            font-weight: bold;
-        }
-
-        .cabecalho-materia {
-            padding: 30px;
-            border-radius: 24px;
-            background: var(--branco);
-            box-shadow: var(--sombra);
-        }
-
-        .cabecalho-materia h1 {
-            margin: 5px 0;
-            font-size: 32px;
-        }
-
-        .opcoes-materia {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
-            margin: 22px 0;
-        }
-
-        .opcoes-materia button {
-            border: none;
-            border-radius: 15px;
-            padding: 15px 10px;
-            background: var(--roxo);
-            color: var(--branco);
-            font-weight: bold;
-        }
-
-        .area-dinamica {
-            padding: 25px;
-            border-radius: 22px;
-            background: var(--branco);
-            box-shadow: var(--sombra);
-        }
-
-        .tipos-explicacao {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 13px;
-            margin-top: 20px;
-        }
-
-        .tipos-explicacao button {
-            border: 2px solid var(--borda);
-            border-radius: 16px;
-            padding: 20px;
-            background: var(--branco);
-            color: var(--texto);
-        }
-
-        .tipos-explicacao span {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 30px;
-        }
-
-        .upload {
-            display: inline-block;
-            margin: 15px;
-            border: 2px dashed var(--roxo);
-            border-radius: 15px;
-            padding: 20px;
-            color: var(--roxo);
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .arquivo {
-            margin: 10px auto;
-            border: 1px solid var(--borda);
-            border-radius: 12px;
-            padding: 12px;
-            text-align: left;
-        }
-
-        .alternativa {
-            display: block;
-            width: min(650px, 100%);
-            margin: 10px auto;
-            border: 2px solid var(--borda);
-            border-radius: 13px;
-            padding: 13px;
-            background: var(--branco);
-        }
-
-        .alternativa.correta {
-            border-color: var(--verde);
-            background: #eafff5;
-        }
-
-        .alternativa.errada {
-            border-color: var(--vermelho);
-            background: #fff0f3;
-        }
-
-        /* MINHA CONTA */
-
-        .fundo-modal {
-            position: fixed;
-            inset: 0;
-            display: grid;
-            place-items: center;
-            padding: 20px;
-            background: rgba(28, 22, 58, 0.55);
-        }
-
-        .modal {
-            position: relative;
-            width: min(430px, 100%);
-            border-radius: 24px;
-            padding: 24px;            background: var(--branco);
-            box-shadow: var(--sombra);
-            text-align: center;
-        }
-
-        .fechar {
-            position: absolute;
-            top: 12px;
-            right: 15px;
-            border: none;
-            background: transparent;
-            font-size: 28px;
-        }
-
-        .informacao {
-            margin: 10px 0;
-            border-radius: 13px;
-            padding: 13px;
-            background: var(--fundo);
-            text-align: left;
-        }
-
-        .informacao span,
-        .informacao strong {
-            display: block;
-        }
-
-        .informacao span {
-            margin-bottom: 4px;
-            color: var(--cinza);
-            font-size: 13px;
-        }
-
-        .sair {
-            width: 100%;
-            margin-top: 14px;
-            border: none;
-            border-radius: 13px;
-            padding: 12px;
-            background: #fff0f3;
-            color: var(--vermelho);
-            font-weight: bold;
-        }
-
-        @media (max-width: 800px) {
-            .materias {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .opcoes-materia {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 520px) {
-            .cartao-autenticacao {
-                padding: 27px 20px;
-            }
-
-            .area-perfil > span {
-                display: none;
-            }
-
-            .materias,
-            .tipos-explicacao {
-                grid-template-columns: 1fr;
-            }
-
-            .linha-pesquisa {
-                flex-direction: column;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="css/estilo.css">
 </head>
 
 <body>
     <!-- ESCOLHA INICIAL -->
-    <main id="tela-escolha" class="pagina-autenticacao">
-        <section class="cartao-autenticacao">
+    <main id="escolha" class="pagina-autenticacao">
+        <section class="cartao">
             <div class="logo">
-                <span class="logo-simbolo">P</span>
+                <span>P</span>
                 <strong>Pepi Estudos</strong>
             </div>
 
             <h1>Autenticação</h1>
 
-            <p class="subtitulo">
+            <p>
                 Entre na sua conta ou faça seu cadastro.
             </p>
 
@@ -605,18 +41,17 @@
     </main>
 
     <!-- LOGIN -->
-    <main id="tela-login" class="pagina-autenticacao escondido">
-        <section class="cartao-autenticacao formulario">
+    <main
+        id="login"
+        class="pagina-autenticacao escondido"
+    >
+        <section class="cartao formulario">
             <div class="logo">
-                <span class="logo-simbolo">P</span>
+                <span>P</span>
                 <strong>Pepi Estudos</strong>
             </div>
 
             <h1>Login</h1>
-
-            <p class="subtitulo">
-                Que bom ter você de volta!
-            </p>
 
             <form id="form-login">
                 <label for="login-email">E-mail</label>
@@ -624,59 +59,42 @@
                 <input
                     id="login-email"
                     type="email"
-                    placeholder="seunome@email.com"
                     required
                 >
 
                 <label for="login-senha">Senha</label>
 
-                <div class="campo-senha">
-                    <input
-                        id="login-senha"
-                        type="password"
-                        placeholder="Sua senha"
-                        required
-                    >
-
-                    <button
-                        type="button"
-                        class="mostrar-senha"
-                        data-alvo="login-senha"
-                    >
-                        👁
-                    </button>
-                </div>
-
-                <button
-                    type="submit"
-                    class="botao-principal"
-                    style="margin-top: 20px"
+                <input
+                    id="login-senha"
+                    type="password"
+                    required
                 >
+
+                <button class="botao-principal">
                     Entrar
                 </button>
 
-                <p id="erro-login" class="mensagem"></p>
+                <p id="erro-login" class="erro"></p>
             </form>
 
-            <button class="voltar-autenticacao">
+            <button class="voltar botao-link">
                 ← Voltar
             </button>
         </section>
     </main>
 
     <!-- CADASTRO -->
-    <main id="tela-cadastro" class="pagina-autenticacao escondido">
-        <section class="cartao-autenticacao formulario">
+    <main
+        id="cadastro"
+        class="pagina-autenticacao escondido"
+    >
+        <section class="cartao formulario">
             <div class="logo">
-                <span class="logo-simbolo">P</span>
+                <span>P</span>
                 <strong>Pepi Estudos</strong>
             </div>
 
             <h1>Crie sua conta</h1>
-
-            <p class="subtitulo">
-                Preencha os campos para se cadastrar.
-            </p>
 
             <form id="form-cadastro">
                 <label for="cadastro-nome">Nome</label>
@@ -684,7 +102,6 @@
                 <input
                     id="cadastro-nome"
                     type="text"
-                    placeholder="Seu nome"
                     required
                 >
 
@@ -693,31 +110,19 @@
                 <input
                     id="cadastro-email"
                     type="email"
-                    placeholder="seunome@email.com"
                     required
                 >
 
                 <label for="cadastro-senha">Senha</label>
 
-                <div class="campo-senha">
-                    <input
-                        id="cadastro-senha"
-                        type="password"
-                        minlength="6"
-                        placeholder="Pelo menos 6 caracteres"
-                        required
-                    >
+                <input
+                    id="cadastro-senha"
+                    type="password"
+                    minlength="6"
+                    required
+                >
 
-                    <button
-                        type="button"
-                        class="mostrar-senha"
-                        data-alvo="cadastro-senha"
-                    >
-                        👁
-                    </button>
-                </div>
-
-                <label>Quem utilizará esta conta?</label>
+                <label>Tipo de conta</label>
 
                 <div class="tipos-conta">
                     <label>
@@ -740,63 +145,55 @@
                     </label>
                 </div>
 
-                <button type="submit" class="botao-principal">
-                    <section
-    id="vinculo-filho"
-    class="escondido"
->
-    <div class="informacao" style="margin: 18px 0">
-        <h3 style="margin-top: 0">
-            Vincule seu primeiro filho
-        </h3>
+                <!-- VÍNCULO DO PRIMEIRO FILHO -->
+                <section
+                    id="dados-filho"
+                    class="dados-filho escondido"
+                >
+                    <h2>Vincule seu primeiro filho</h2>
 
-        <p>
-            Faça o vínculo agora ou gere um convite
-            para o aluno aceitar depois.
-        </p>
+                    <label for="filho-nome">
+                        Nome do aluno
+                    </label>
 
-        <label for="nome-filho">
-            Nome do aluno
-        </label>
+                    <input
+                        id="filho-nome"
+                        type="text"
+                    >
 
-        <input
-            id="nome-filho"
-            type="text"
-            placeholder="Nome ou apelido do aluno"
-        >
+                    <label for="filho-email">
+                        E-mail escolar do aluno
+                    </label>
 
-        <label for="email-filho">
-            E-mail escolar do aluno
-        </label>
+                    <input
+                        id="filho-email"
+                        type="email"
+                    >
 
-        <input
-            id="email-filho"
-            type="email"
-            placeholder="aluno@escola.com"
-        >
+                    <label for="filho-codigo">
+                        Código do aluno, se já existir
+                    </label>
 
-        <label for="codigo-aluno">
-            Código do aluno, caso ele já tenha uma conta
-        </label>
+                    <input
+                        id="filho-codigo"
+                        type="text"
+                        placeholder="Exemplo: PEPI-4821"
+                    >
 
-        <input
-            id="codigo-aluno"
-            type="text"
-            placeholder="Exemplo: PEPI-4821"
-        >
+                    <small>
+                        Sem código? O aplicativo criará
+                        um convite automaticamente.
+                    </small>
+                </section>
 
-        <p style="color: var(--cinza); font-size: 13px">
-            Se o aluno ainda não tiver código, deixe esse
-            campo vazio. O aplicativo criará um convite.
-        </p>
-    </div>
-</section>Cadastrar
+                <button class="botao-principal">
+                    Cadastrar
                 </button>
 
-                <p id="erro-cadastro" class="mensagem"></p>
+                <p id="erro-cadastro" class="erro"></p>
             </form>
 
-            <button class="voltar-autenticacao">
+            <button class="voltar botao-link">
                 ← Voltar
             </button>
         </section>
@@ -805,63 +202,101 @@
     <!-- APLICATIVO -->
     <div id="aplicativo" class="escondido">
         <header class="cabecalho">
-            <button id="ir-inicio" class="logo-cabecalho">
-                <span class="logo-simbolo">P</span>
-                Pepi Estudos
+            <button id="inicio" class="logo logo-cabecalho">
+                <span>P</span>
+                <strong>Pepi Estudos</strong>
             </button>
 
-            <div class="area-perfil">
-                <span id="saudacao">Olá!</span>
+            <div class="perfil">
+                <span id="saudacao"></span>
 
-                <button id="botao-conta">
+                <button id="minha-conta">
                     ⚙ Minha conta
                 </button>
             </div>
         </header>
 
         <main class="conteudo">
-            <section id="pagina-materias">
+            <!-- PÁGINA PRINCIPAL -->
+            <section id="pagina-principal">
                 <div class="apresentacao">
-                    <h1>Suas matérias</h1>
+                    <h1 id="titulo-principal">
+                        Suas matérias
+                    </h1>
 
                     <p>
-                        Escolha uma matéria para acessar
-                        seus conteúdos.
+                        Organize conteúdos, atividades
+                        e estudos em um só lugar.
                     </p>
                 </div>
 
+                <!-- SELETOR DE FILHO -->
                 <section
-    id="conexao-classroom"
-    class="pesquisa"
->
-    <h2>Google Classroom</h2>
-
-    <p>
-        Conecte sua conta escolar para carregar
-        suas matérias e atividades.
-    </p>
-
-    <button
-        id="conectar-classroom"
-        class="botao-principal"
-    >
-        Conectar ao Classroom
-    </button>
-
-    <p id="status-classroom"></p>
-</section><section class="pesquisa">
-                    <label for="pesquisa">
-                        O que você não entendeu?
+                    id="area-filhos"
+                    class="caixa escondido"
+                >
+                    <label for="filho-selecionado">
+                        Acompanhando:
                     </label>
 
-                    <div class="linha-pesquisa">
+                    <select id="filho-selecionado"></select>
+
+                    <button
+                        id="adicionar-filho"
+                        class="botao-secundario pequeno"
+                    >
+                        + Adicionar outro filho
+                    </button>
+                </section>
+
+                <!-- CLASSROOM -->
+                <section class="caixa">
+                    <h2>Google Classroom</h2>
+
+                    <p>
+                        Conecte a conta escolar para carregar
+                        turmas, materiais e atividades.
+                    </p>
+
+                    <button
+                        id="conectar-classroom"
+                        class="botao-principal"
+                    >
+                        Conectar ao Classroom
+                    </button>
+
+                    <p id="status-classroom"></p>
+                </section>
+
+                <!-- PESQUISA POR MATÉRIA -->
+                <section class="caixa">
+                    <h2>Pesquisa por matéria</h2>
+
+                    <label for="materia-pesquisa">
+                        Escolha a matéria
+                    </label>
+
+                    <select id="materia-pesquisa">
+                        <option value="">
+                            Escolha uma matéria
+                        </option>
+                    </select>
+
+                    <label for="campo-pesquisa">
+                        Digite sua dúvida
+                    </label>
+
+                    <div class="linha">
                         <input
-                            id="pesquisa"
+                            id="campo-pesquisa"
                             type="text"
-                            placeholder="Digite sua dúvida"
+                            placeholder="O que você não entendeu?"
                         >
 
-                        <button id="pesquisar">
+                        <button
+                            id="pesquisar"
+                            class="botao-principal pequeno"
+                        >
                             Pesquisar
                         </button>
                     </div>
@@ -869,85 +304,67 @@
                     <p id="resposta-pesquisa"></p>
                 </section>
 
-                <div class="titulo-materias">
+                <!-- MATÉRIAS -->
+                <section>
                     <h2>Matérias</h2>
-                    <p>Escolha uma para continuar.</p>
-                </div>
 
-                <section class="materias">
-                    <button class="materia" data-materia="Matemática">
-                        <span>📐</span>
-                        <strong>Matemática</strong>
-                        <small>Frações e geometria</small>
-                    </button>
+                    <div id="lista-materias" class="materias"></div>
+                </section>
 
-                    <button class="materia" data-materia="Português">
-                        <span>📚</span>
-                        <strong>Português</strong>
-                        <small>Gramática e interpretação</small>
-                    </button>
+                <!-- ATIVIDADES DE AMANHÃ -->
+                <section class="caixa">
+                    <h2>Para amanhã</h2>
 
-                    <button class="materia" data-materia="Ciências">
-                        <span>🧪</span>
-                        <strong>Ciências</strong>
-                        <small>Células e ecossistemas</small>
-                    </button>
-
-                    <button class="materia" data-materia="História">
-                        <span>🏛️</span>
-                        <strong>História</strong>
-                        <small>Brasil colonial</small>
-                    </button>
-
-                    <button class="materia" data-materia="Geografia">
-                        <span>🌎</span>
-                        <strong>Geografia</strong>
-                        <small>Clima e relevo</small>
-                    </button>
-
-                    <button class="materia" data-materia="Inglês">
-                        <span>💬</span>
-                        <strong>Inglês</strong>
-                        <small>Vocabulário e conversação</small>
-                    </button>
+                    <div id="atividades-amanha">
+                        <p>
+                            Conecte o Classroom para ver
+                            os próximos prazos.
+                        </p>
+                    </div>
                 </section>
             </section>
 
             <!-- PÁGINA DA MATÉRIA -->
-            <section id="pagina-materia" class="escondido">
-                <button id="voltar-materias" class="voltar">
+            <section
+                id="pagina-materia"
+                class="escondido"
+            >
+                <button
+                    id="voltar-materias"
+                    class="botao-link"
+                >
                     ← Voltar para as matérias
                 </button>
 
-                <div class="cabecalho-materia">
-                    <div id="icone-materia" style="font-size: 45px">
-                        📐
-                    </div>
+                <div class="apresentacao">
+                    <div id="icone-materia">📚</div>
 
-                    <h1 id="nome-materia">Matemática</h1>
-
-                    <p>Escolha o que deseja fazer.</p>
+                    <h1 id="nome-materia"></h1>
                 </div>
 
-                <nav class="opcoes-materia">
+                <nav class="menu-materia">
+                    <button data-opcao="atividades">
+                        Atividades
+                    </button>
+
                     <button data-opcao="explicacoes">
-                        💡 Explicações
+                        Explicações
                     </button>
 
                     <button data-opcao="dia">
-                        📷 Uploads do dia
+                        Uploads do dia
                     </button>
 
                     <button data-opcao="semestre">
-                        📁 Uploads do semestre
+                        Uploads do semestre
                     </button>
 
                     <button data-opcao="simulado">
-                        📝 Simulado
+                        Simulado
                     </button>
                 </nav>
 
-                <section id="area-dinamica" class="area-dinamica">
+                <section id="area-materia" class="caixa">
                     <h2>Escolha uma opção acima</h2>
                 </section>
             </section>
@@ -956,38 +373,33 @@
 
     <!-- MINHA CONTA -->
     <div id="modal-conta" class="fundo-modal escondido">
-        <section class="modal">
-            <button id="fechar-conta" class="fechar">×</button>
-
-            <div style="font-size: 48px">👤</div>
+        <section class="cartao modal">
+            <button id="fechar-conta" class="fechar">
+                ×
+            </button>
 
             <h2>Minha conta</h2>
 
-            <div class="informacao">
-                <span>Nome</span>
+            <p>
                 <strong id="conta-nome"></strong>
-            </div>
+            </p>
 
-            <div class="informacao">
-                <span>E-mail</span>
-                <strong id="conta-email"></strong>
-            </div>
+            <p id="conta-email"></p>
+            <p id="conta-tipo"></p>
+            <p id="codigo-familia"></p>
 
-            <div class="informacao">
-                <span>Tipo de conta</span>
-                <strong id="conta-tipo"></strong>
-            </div>
-
-            <button id="sair" class="sair">
+            <button id="sair" class="botao-sair">
                 Sair da conta
             </button>
         </section>
     </div>
 
-   <script
-    src="https://accounts.google.com/gsi/client"
-    async
-    defer
-></script> <script src="js/app.js"></script>
+    <script
+        src="https://accounts.google.com/gsi/client"
+        async
+        defer
+    ></script>
+
+    <script src="js/app.js"></script>
 </body>
-</html> 
+</html>
