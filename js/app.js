@@ -571,3 +571,337 @@ document
 
         mostrarTela(telaEscolha);
     });
+/* CONEXÃO COM O GOOGLE CLASSROOM */
+
+const CLIENT_ID_CLASSROOM =
+    "201759939378-lt1oj42277jqjr8bppkjbrqi08tml64t.apps.googleusercontent.com";
+
+const ESCOPOS_CLASSROOM = [
+    "https://www.googleapis.com/auth/classroom.courses.readonly",
+    "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
+    "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly"
+].join(" ");
+
+let clienteClassroom = null;
+let tokenClassroom = "";
+
+const botaoClassroom =
+    document.querySelector("#conectar-classroom");
+
+const statusClassroom =
+    document.querySelector("#status-classroom");
+
+botaoClassroom.addEventListener("click", conectarClassroom);
+
+function conectarClassroom() {
+    if (
+        typeof google === "undefined" ||
+        !google.accounts ||
+        !google.accounts.oauth2
+    ) {
+        statusClassroom.textContent =
+            "O serviço do Google ainda está carregando. " +
+            "Aguarde alguns segundos e tente novamente.";
+
+        return;
+    }
+
+    statusClassroom.textContent =
+        "Abrindo autorização do Google...";
+
+    if (clienteClassroom === null) {
+        clienteClassroom =
+            google.accounts.oauth2.initTokenClient({
+                client_id: CLIENT_ID_CLASSROOM,
+
+                scope: ESCOPOS_CLASSROOM,
+
+                callback: receberAutorizacaoClassroom,
+
+                error_callback: function () {
+                    statusClassroom.textContent =
+                        "A autorização foi cancelada ou bloqueada.";
+                }
+            });
+    }
+
+    clienteClassroom.requestAccessToken({
+        prompt: "consent"
+    });
+}
+
+async function receberAutorizacaoClassroom(resposta) {
+    if (resposta.error) {
+        statusClassroom.textContent =
+            "O Google não autorizou o acesso: " +
+            resposta.error;
+
+        return;
+    }
+
+    tokenClassroom = resposta.access_token;
+
+    statusClassroom.textContent =
+        "Classroom conectado! Carregando suas turmas...";
+
+    await carregarTurmasClassroom();
+}
+
+async function chamarClassroom(endereco) {
+    const resposta = await fetch(endereco, {
+        headers: {
+            Authorization: "Bearer " + tokenClassroom
+        }
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+        throw new Error(
+            dados.error?.message ||
+            "O Google Classroom recusou a solicitação."
+        );
+    }
+
+    return dados;
+}
+
+async function carregarTurmasClassroom() {
+    try {
+        const endereco =
+            "https://classroom.googleapis.com/v1/courses" +
+            "?courseStates=ACTIVE" +
+            "&studentId=me" +
+            "&pageSize=100";
+
+        const dados = await chamarClassroom(endereco);
+
+        const turmas = dados.courses || [];
+
+        if (turmas.length === 0) {
+            statusClassroom.textContent =
+                "A conta foi conectada, mas nenhuma turma " +
+                "ativa foi encontrada.";
+
+            return;
+        }
+
+        statusClassroom.textContent =
+            turmas.length +
+            (turmas.length === 1
+                ? " turma carregada."
+                : " turmas carregadas.");
+
+        mostrarTurmasClassroom(turmas);
+    } catch (erro) {
+        console.error(erro);
+
+        statusClassroom.textContent =
+            "Não foi possível carregar as turmas: " +
+            erro.message;
+    }
+}
+
+function mostrarTurmasClassroom(turmas) {
+    const listaMaterias =
+        document.querySelector(".materias");
+
+    listaMaterias.innerHTML = "";
+
+    turmas.forEach(function (turma) {
+        const botao = document.createElement("button");
+
+        botao.className = "materia";
+
+        botao.innerHTML = `
+            <span>🎓</span>
+            <strong>${protegerTexto(turma.name)}</strong>
+            <small>
+                ${protegerTexto(
+                    turma.section ||
+                    turma.descriptionHeading ||
+                    "Google Classroom"
+                )}
+            </small>
+        `;
+
+        botao.addEventListener("click", function () {
+            abrirTurmaClassroom(turma);
+        });
+
+        listaMaterias.appendChild(botao);
+    });
+
+    document.querySelector(".titulo-materias h2").textContent =
+        "Suas turmas do Classroom";
+
+    document.querySelector(".titulo-materias p").textContent =
+        "Escolha uma turma para ver as atividades.";
+}
+
+async function abrirTurmaClassroom(turma) {
+    materiaAtual = turma.name;
+
+    paginaMaterias.classList.add("escondido");
+    paginaMateria.classList.remove("escondido");
+
+    document.querySelector("#nome-materia").textContent =
+        turma.name;
+
+    document.querySelector("#icone-materia").textContent =
+        "🎓";
+
+    areaDinamica.innerHTML = `
+        <h2>Carregando atividades...</h2>
+
+        <p>
+            Aguarde enquanto buscamos os conteúdos
+            do Google Classroom.
+        </p>
+    `;
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+
+    await carregarConteudosDaTurma(turma.id);
+}
+
+async function carregarConteudosDaTurma(idDaTurma) {
+    try {
+        const enderecoAtividades =
+            "https://classroom.googleapis.com/v1/courses/" +
+            encodeURIComponent(idDaTurma) +
+            "/courseWork?pageSize=100&orderBy=updateTime%20desc";
+
+        const enderecoMateriais =
+            "https://classroom.googleapis.com/v1/courses/" +
+            encodeURIComponent(idDaTurma) +
+            "/courseWorkMaterials?pageSize=100" +
+            "&orderBy=updateTime%20desc";
+
+        const resultados = await Promise.allSettled([
+            chamarClassroom(enderecoAtividades),
+            chamarClassroom(enderecoMateriais)
+        ]);
+
+        const atividades =
+            resultados[0].status === "fulfilled"
+                ? resultados[0].value.courseWork || []
+                : [];
+
+        const materiais =
+            resultados[1].status === "fulfilled"
+                ? resultados[1].value.courseWorkMaterial || []
+                : [];
+
+        mostrarConteudosClassroom(
+            atividades,
+            materiais
+        );
+    } catch (erro) {
+        console.error(erro);
+
+        areaDinamica.innerHTML = `
+            <h2>Não foi possível carregar os conteúdos</h2>
+            <p>${protegerTexto(erro.message)}</p>
+        `;
+    }
+}
+
+function mostrarConteudosClassroom(
+    atividades,
+    materiais
+) {
+    const listaAtividades = atividades.length
+        ? atividades.map(function (atividade) {
+            return `
+                <div class="arquivo">
+                    <strong>
+                        📝 ${protegerTexto(atividade.title)}
+                    </strong>
+
+                    <p>
+                        ${formatarPrazo(atividade.dueDate)}
+                    </p>
+
+                    ${
+                        atividade.alternateLink
+                            ? `
+                                <a
+                                    href="${atividade.alternateLink}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Abrir no Classroom
+                                </a>
+                            `
+                            : ""
+                    }
+                </div>
+            `;
+        }).join("")
+        : "<p>Nenhuma atividade encontrada.</p>";
+
+    const listaMateriais = materiais.length
+        ? materiais.map(function (material) {
+            return `
+                <div class="arquivo">
+                    <strong>
+                        📚 ${protegerTexto(material.title)}
+                    </strong>
+
+                    ${
+                        material.alternateLink
+                            ? `
+                                <p>
+                                    <a
+                                        href="${material.alternateLink}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        Abrir material
+                                    </a>
+                                </p>
+                            `
+                            : ""
+                    }
+                </div>
+            `;
+        }).join("")
+        : "<p>Nenhum material encontrado.</p>";
+
+    areaDinamica.innerHTML = `
+        <h2>Atividades do Classroom</h2>
+        ${listaAtividades}
+
+        <h2 style="margin-top: 30px">
+            Materiais do Classroom
+        </h2>
+        ${listaMateriais}
+    `;
+}
+
+function formatarPrazo(data) {
+    if (!data) {
+        return "Sem prazo informado";
+    }
+
+    return (
+        "Entrega: " +
+        String(data.day).padStart(2, "0") +
+        "/" +
+        String(data.month).padStart(2, "0") +
+        "/" +
+        data.year
+    );
+}
+
+function protegerTexto(texto) {
+    const elemento = document.createElement("div");
+
+    elemento.textContent = texto || "";
+
+    return elemento.innerHTML;
+}
