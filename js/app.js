@@ -1,14 +1,34 @@
-const telaEscolha = document.querySelector("#tela-escolha");
-const telaLogin = document.querySelector("#tela-login");
-const telaCadastro = document.querySelector("#tela-cadastro");
+const CLIENT_ID_CLASSROOM =
+    "201759939378-lt1oj42277jqjr8bppkjbrqi08tml64t.apps.googleusercontent.com";
+
+const ESCOPOS_CLASSROOM = [
+    "https://www.googleapis.com/auth/classroom.courses.readonly",
+    "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
+    "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly"
+].join(" ");
+
+const telaEscolha = document.querySelector("#escolha");
+const telaLogin = document.querySelector("#login");
+const telaCadastro = document.querySelector("#cadastro");
 const aplicativo = document.querySelector("#aplicativo");
 
-const paginaMaterias = document.querySelector("#pagina-materias");
-const paginaMateria = document.querySelector("#pagina-materia");
-const areaDinamica = document.querySelector("#area-dinamica");
+const paginaPrincipal =
+    document.querySelector("#pagina-principal");
+
+const paginaMateria =
+    document.querySelector("#pagina-materia");
+
+const areaMateria =
+    document.querySelector("#area-materia");
 
 let usuarioAtual = null;
-let materiaAtual = "";
+let materiaAtual = null;
+let tokenClassroom = "";
+let clienteClassroom = null;
+let turmasClassroom = [];
+let atividadesPorTurma = {};
+
+/* NAVEGAÇÃO DA AUTENTICAÇÃO */
 
 function esconderTelasPrincipais() {
     telaEscolha.classList.add("escondido");
@@ -22,48 +42,56 @@ function mostrarTela(tela) {
     tela.classList.remove("escondido");
 }
 
-/* ESCOLHA ENTRE LOGIN E CADASTRO */
-
-document.querySelector("#ir-login").addEventListener(
-    "click",
-    function () {
+document
+    .querySelector("#ir-login")
+    .addEventListener("click", function () {
         mostrarTela(telaLogin);
-    }
-);
-
-document.querySelector("#ir-cadastro").addEventListener(
-    "click",
-    function () {
-        mostrarTela(telaCadastro);
-    }
-);
+    });
 
 document
-    .querySelectorAll(".voltar-autenticacao")
+    .querySelector("#ir-cadastro")
+    .addEventListener("click", function () {
+        mostrarTela(telaCadastro);
+    });
+
+document
+    .querySelectorAll(".voltar")
     .forEach(function (botao) {
         botao.addEventListener("click", function () {
             mostrarTela(telaEscolha);
         });
     });
 
-/* MOSTRAR E ESCONDER SENHA */
+/* ALUNO OU RESPONSÁVEL */
 
-document
-    .querySelectorAll(".mostrar-senha")
-    .forEach(function (botao) {
-        botao.addEventListener("click", function () {
-            const idDoCampo = botao.dataset.alvo;
-            const campo = document.querySelector("#" + idDoCampo);
+const opcoesTipoConta = document.querySelectorAll(
+    'input[name="tipo-conta"]'
+);
 
-            if (campo.type === "password") {
-                campo.type = "text";
-                botao.textContent = "🙈";
-            } else {
-                campo.type = "password";
-                botao.textContent = "👁";
-            }
-        });
+const dadosFilho =
+    document.querySelector("#dados-filho");
+
+const filhoNome =
+    document.querySelector("#filho-nome");
+
+const filhoEmail =
+    document.querySelector("#filho-email");
+
+opcoesTipoConta.forEach(function (opcao) {
+    opcao.addEventListener("change", function () {
+        const responsavel =
+            opcao.checked &&
+            opcao.value === "Responsável";
+
+        dadosFilho.classList.toggle(
+            "escondido",
+            !responsavel
+        );
+
+        filhoNome.required = responsavel;
+        filhoEmail.required = responsavel;
     });
+});
 
 /* CADASTRO */
 
@@ -90,20 +118,18 @@ document
             'input[name="tipo-conta"]:checked'
         ).value;
 
-        const mensagem = document.querySelector(
-            "#erro-cadastro"
-        );
-
         if (nome.length < 2) {
-            mensagem.textContent =
-                "Digite um nome válido.";
+            mostrarErroCadastro(
+                "Digite um nome válido."
+            );
 
             return;
         }
 
         if (senha.length < 6) {
-            mensagem.textContent =
-                "A senha precisa ter pelo menos 6 caracteres.";
+            mostrarErroCadastro(
+                "A senha precisa ter pelo menos 6 caracteres."
+            );
 
             return;
         }
@@ -112,18 +138,52 @@ document
             nome: nome,
             email: email,
             senha: senha,
-            tipo: tipo
+            tipo: tipo,
+            filhos: []
         };
 
+        if (tipo === "Responsável") {
+            const primeiroFilho = {
+                nome: filhoNome.value.trim(),
+                email: filhoEmail.value.trim(),
+
+                codigo:
+                    document
+                        .querySelector("#filho-codigo")
+                        .value
+                        .trim() ||
+                    gerarCodigo()
+            };
+
+            usuarioAtual.filhos.push(primeiroFilho);
+
+            usuarioAtual.codigoFamilia =
+                gerarCodigo();
+        } else {
+            usuarioAtual.codigoAluno =
+                gerarCodigo();
+        }
+
         localStorage.setItem(
-            "contaPepiEstudos",
+            "usuarioPepiEstudos",
             JSON.stringify(usuarioAtual)
         );
 
-        mensagem.textContent = "";
-
         entrarNoAplicativo();
     });
+
+function mostrarErroCadastro(mensagem) {
+    document.querySelector(
+        "#erro-cadastro"
+    ).textContent = mensagem;
+}
+
+function gerarCodigo() {
+    const numero =
+        Math.floor(1000 + Math.random() * 9000);
+
+    return "PEPI-" + numero;
+}
 
 /* LOGIN */
 
@@ -141,59 +201,308 @@ document
             .querySelector("#login-senha")
             .value;
 
-        const mensagem = document.querySelector("#erro-login");
-
-        const contaSalva = JSON.parse(
-            localStorage.getItem("contaPepiEstudos")
+        const usuarioSalvo = JSON.parse(
+            localStorage.getItem(
+                "usuarioPepiEstudos"
+            )
         );
 
-        if (!contaSalva) {
-            mensagem.textContent =
-                "Nenhuma conta foi cadastrada neste navegador.";
+        if (!usuarioSalvo) {
+            mostrarErroLogin(
+                "Nenhuma conta foi cadastrada neste navegador."
+            );
 
             return;
         }
 
         if (
-            contaSalva.email !== email ||
-            contaSalva.senha !== senha
+            usuarioSalvo.email !== email ||
+            usuarioSalvo.senha !== senha
         ) {
-            mensagem.textContent =
-                "E-mail ou senha incorretos.";
+            mostrarErroLogin(
+                "E-mail ou senha incorretos."
+            );
 
             return;
         }
 
-        usuarioAtual = contaSalva;
-        mensagem.textContent = "";
+        usuarioAtual = usuarioSalvo;
 
         entrarNoAplicativo();
     });
+
+function mostrarErroLogin(mensagem) {
+    document.querySelector(
+        "#erro-login"
+    ).textContent = mensagem;
+}
 
 /* ENTRAR NO APLICATIVO */
 
 function entrarNoAplicativo() {
     mostrarTela(aplicativo);
 
-    document.querySelector("#saudacao").textContent =
+    document.querySelector(
+        "#saudacao"
+    ).textContent =
         "Olá, " + usuarioAtual.nome + "!";
 
-    document.querySelector("#conta-nome").textContent =
+    document.querySelector(
+        "#conta-nome"
+    ).textContent =
         usuarioAtual.nome;
 
-    document.querySelector("#conta-email").textContent =
+    document.querySelector(
+        "#conta-email"
+    ).textContent =
         usuarioAtual.email;
 
-    document.querySelector("#conta-tipo").textContent =
+    document.querySelector(
+        "#conta-tipo"
+    ).textContent =
         usuarioAtual.tipo;
 
-    mostrarPaginaMaterias();
+    const codigo =
+        usuarioAtual.codigoFamilia ||
+        usuarioAtual.codigoAluno;
+
+    document.querySelector(
+        "#codigo-familia"
+    ).textContent =
+        codigo
+            ? "Código: " + codigo
+            : "";
+
+    if (usuarioAtual.tipo === "Responsável") {
+        prepararPainelResponsavel();
+    } else {
+        prepararPainelAluno();
+    }
+
+    mostrarPaginaPrincipal();
 }
 
-/* TELA DAS MATÉRIAS */
+function prepararPainelAluno() {
+    document.querySelector(
+        "#titulo-principal"
+    ).textContent =
+        "Suas matérias";
 
-function mostrarPaginaMaterias() {
-    paginaMaterias.classList.remove("escondido");
+    document.querySelector(
+        "#area-filhos"
+    ).classList.add("escondido");
+}
+
+function prepararPainelResponsavel() {
+    document.querySelector(
+        "#titulo-principal"
+    ).textContent =
+        "Acompanhamento dos estudos";
+
+    document.querySelector(
+        "#area-filhos"
+    ).classList.remove("escondido");
+
+    atualizarListaDeFilhos();
+}
+
+/* VÁRIOS FILHOS */
+
+function atualizarListaDeFilhos() {
+    const seletor = document.querySelector(
+        "#filho-selecionado"
+    );
+
+    seletor.innerHTML = "";
+
+    const filhos = usuarioAtual.filhos || [];
+
+    filhos.forEach(function (filho, indice) {
+        const opcao = document.createElement(
+            "option"
+        );
+
+        opcao.value = indice;
+        opcao.textContent = filho.nome;
+
+        seletor.appendChild(opcao);
+    });
+}
+
+document
+    .querySelector("#adicionar-filho")
+    .addEventListener("click", function () {
+        const nome = prompt(
+            "Digite o nome do aluno:"
+        );
+
+        if (!nome) {
+            return;
+        }
+
+        const email = prompt(
+            "Digite o e-mail escolar do aluno:"
+        );
+
+        if (!email) {
+            return;
+        }
+
+        const novoFilho = {
+            nome: nome.trim(),
+            email: email.trim(),
+            codigo: gerarCodigo()
+        };
+
+        usuarioAtual.filhos =
+            usuarioAtual.filhos || [];
+
+        usuarioAtual.filhos.push(novoFilho);
+
+        localStorage.setItem(
+            "usuarioPepiEstudos",
+            JSON.stringify(usuarioAtual)
+        );
+
+        atualizarListaDeFilhos();
+    });
+
+/* MATÉRIAS DE DEMONSTRAÇÃO */
+
+const materiasDemonstracao = [
+    {
+        id: "matematica",
+        name: "Matemática",
+        icon: "📐",
+        descricao: "Frações e geometria"
+    },
+    {
+        id: "portugues",
+        name: "Português",
+        icon: "📚",
+        descricao: "Gramática e interpretação"
+    },
+    {
+        id: "ciencias",
+        name: "Ciências",
+        icon: "🧪",
+        descricao: "Células e ecossistemas"
+    },
+    {
+        id: "historia",
+        name: "História",
+        icon: "🏛️",
+        descricao: "Brasil colonial"
+    },
+    {
+        id: "geografia",
+        name: "Geografia",
+        icon: "🌎",
+        descricao: "Clima e relevo"
+    },
+    {
+        id: "ingles",
+        name: "Inglês",
+        icon: "💬",
+        descricao: "Vocabulário"
+    }
+];
+
+function desenharMaterias(materias) {
+    const lista =
+        document.querySelector("#lista-materias");
+
+    const seletorPesquisa =
+        document.querySelector("#materia-pesquisa");
+
+    lista.innerHTML = "";
+
+    seletorPesquisa.innerHTML = `
+        <option value="">
+            Escolha uma matéria
+        </option>
+    `;
+
+    materias.forEach(function (materia) {
+        const botao =
+            document.createElement("button");
+
+        botao.className = "cartao-materia";
+
+        botao.innerHTML = `
+            <span>${materia.icon || "🎓"}</span>
+
+            <strong>
+                ${protegerTexto(materia.name)}
+            </strong>
+
+            <small>
+                ${protegerTexto(
+                    materia.descricao ||
+                    materia.section ||
+                    "Google Classroom"
+                )}
+            </small>
+        `;
+
+        botao.addEventListener(
+            "click",
+            function () {
+                abrirMateria(materia);
+            }
+        );
+
+        lista.appendChild(botao);
+
+        const opcao =
+            document.createElement("option");
+
+        opcao.value = materia.name;
+        opcao.textContent = materia.name;
+
+        seletorPesquisa.appendChild(opcao);
+    });
+}
+
+desenharMaterias(materiasDemonstracao);
+
+/* ABRIR MATÉRIA */
+
+function abrirMateria(materia) {
+    materiaAtual = materia;
+
+    paginaPrincipal.classList.add("escondido");
+    paginaMateria.classList.remove("escondido");
+
+    document.querySelector(
+        "#nome-materia"
+    ).textContent =
+        materia.name;
+
+    document.querySelector(
+        "#icone-materia"
+    ).textContent =
+        materia.icon || "🎓";
+
+    areaMateria.innerHTML = `
+        <h2>
+            O que você quer fazer em
+            ${protegerTexto(materia.name)}?
+        </h2>
+
+        <p>
+            Escolha uma das opções acima.
+        </p>
+    `;
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+function mostrarPaginaPrincipal() {
+    paginaPrincipal.classList.remove("escondido");
     paginaMateria.classList.add("escondido");
 
     window.scrollTo({
@@ -203,147 +512,176 @@ function mostrarPaginaMaterias() {
 }
 
 document
-    .querySelector("#ir-inicio")
-    .addEventListener("click", mostrarPaginaMaterias);
+    .querySelector("#inicio")
+    .addEventListener(
+        "click",
+        mostrarPaginaPrincipal
+    );
 
 document
     .querySelector("#voltar-materias")
-    .addEventListener("click", mostrarPaginaMaterias);
+    .addEventListener(
+        "click",
+        mostrarPaginaPrincipal
+    );
 
-const iconesDasMaterias = {
-    "Matemática": "📐",
-    "Português": "📚",
-    "Ciências": "🧪",
-    "História": "🏛️",
-    "Geografia": "🌎",
-    "Inglês": "💬"
-};
+/* MENU DA MATÉRIA */
 
 document
-    .querySelectorAll(".materia")
+    .querySelectorAll(".menu-materia button")
     .forEach(function (botao) {
-        botao.addEventListener("click", function () {
-            materiaAtual = botao.dataset.materia;
+        botao.addEventListener(
+            "click",
+            function () {
+                const opcao =
+                    botao.dataset.opcao;
 
-            paginaMaterias.classList.add("escondido");
-            paginaMateria.classList.remove("escondido");
+                if (opcao === "atividades") {
+                    mostrarAtividades();
+                }
 
-            document.querySelector("#nome-materia").textContent =
-                materiaAtual;
+                if (opcao === "explicacoes") {
+                    mostrarExplicacoes();
+                }
 
-            document.querySelector("#icone-materia").textContent =
-                iconesDasMaterias[materiaAtual];
+                if (opcao === "dia") {
+                    mostrarUpload("dia");
+                }
 
-            areaDinamica.innerHTML = `
-                <h2>O que você quer fazer em ${materiaAtual}?</h2>
+                if (opcao === "semestre") {
+                    mostrarUpload("semestre");
+                }
 
-                <p>
-                    Escolha uma das opções acima para continuar.
-                </p>
+                if (opcao === "simulado") {
+                    mostrarSimulado();
+                }
+            }
+        );
+    });
+
+/* ATIVIDADES */
+
+async function mostrarAtividades() {
+    if (
+        !materiaAtual ||
+        !materiaAtual.id ||
+        !String(materiaAtual.id).match(/^\d+$/)
+    ) {
+        areaMateria.innerHTML = `
+            <h2>Atividades</h2>
+
+            <p>
+                Conecte o Classroom para carregar
+                atividades reais desta matéria.
+            </p>
+        `;
+
+        return;
+    }
+
+    areaMateria.innerHTML = `
+        <h2>Carregando atividades...</h2>
+    `;
+
+    try {
+        let atividades =
+            atividadesPorTurma[materiaAtual.id];
+
+        if (!atividades) {
+            const dados = await chamarClassroom(
+                "courses/" +
+                materiaAtual.id +
+                "/courseWork?pageSize=100"
+            );
+
+            atividades =
+                dados.courseWork || [];
+
+            atividadesPorTurma[
+                materiaAtual.id
+            ] = atividades;
+        }
+
+        desenharAtividades(atividades);
+    } catch (erro) {
+        areaMateria.innerHTML = `
+            <h2>Não foi possível carregar</h2>
+
+            <p>${protegerTexto(erro.message)}</p>
+        `;
+    }
+}
+
+function desenharAtividades(atividades) {
+    if (atividades.length === 0) {
+        areaMateria.innerHTML = `
+            <h2>Atividades</h2>
+            <p>Nenhuma atividade encontrada.</p>
+        `;
+
+        return;
+    }
+
+    const itens = atividades
+        .map(function (atividade) {
+            return `
+                <div class="arquivo">
+                    <strong>
+                        📝 ${protegerTexto(
+                            atividade.title
+                        )}
+                    </strong>
+
+                    <p>
+                        ${formatarPrazo(
+                            atividade.dueDate
+                        )}
+                    </p>
+
+                    ${
+                        atividade.alternateLink
+                            ? `
+                                <a
+                                    href="${atividade.alternateLink}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Abrir no Classroom
+                                </a>
+                            `
+                            : ""
+                    }
+                </div>
             `;
+        })
+        .join("");
 
-            window.scrollTo({
-                top: 0,
-                behavior: "smooth"
-            });
-        });
-    });
-
-/* OPÇÕES DE CADA MATÉRIA */
-
-document
-    .querySelectorAll(".opcoes-materia button")
-    .forEach(function (botao) {
-        botao.addEventListener("click", function () {
-            const opcao = botao.dataset.opcao;
-
-            if (opcao === "explicacoes") {
-                mostrarExplicacoes();
-            }
-
-            if (opcao === "dia") {
-                mostrarUpload("dia");
-            }
-
-            if (opcao === "semestre") {
-                mostrarUpload("semestre");
-            }
-
-            if (opcao === "simulado") {
-                mostrarSimulado();
-            }
-        });
-    });
+    areaMateria.innerHTML = `
+        <h2>Atividades</h2>
+        ${itens}
+    `;
+}
 
 /* EXPLICAÇÕES */
 
 function mostrarExplicacoes() {
-    areaDinamica.innerHTML = `
-        <h2>Explicações de ${materiaAtual}</h2>
+    areaMateria.innerHTML = `
+        <h2>
+            Explicações de
+            ${protegerTexto(materiaAtual.name)}
+        </h2>
+
+        <div class="opcoes-explicacao">
+            <button>🖥️ Slides</button>
+            <button>✍️ Cópia guiada</button>
+            <button>🎧 Áudio</button>
+            <button>🔁 Revisão</button>
+        </div>
 
         <p>
-            Escolha como você prefere aprender.
+            Em uma próxima etapa, essas explicações
+            usarão os materiais desta disciplina.
         </p>
-
-        <div class="tipos-explicacao">
-            <button
-                class="tipo-explicacao"
-                data-tipo="Slides"
-            >
-                <span>🖥️</span>
-                <strong>Slides</strong>
-            </button>
-
-            <button
-                class="tipo-explicacao"
-                data-tipo="Cópia guiada"
-            >
-                <span>✍️</span>
-                <strong>Cópia guiada</strong>
-            </button>
-
-            <button
-                class="tipo-explicacao"
-                data-tipo="Áudio explicativo"
-            >
-                <span>🎧</span>
-                <strong>Áudio explicativo</strong>
-            </button>
-        </div>
-
-        <div id="resultado-explicacao"></div>
-    `;
-
-    document
-        .querySelectorAll(".tipo-explicacao")
-        .forEach(function (botao) {
-            botao.addEventListener("click", function () {
-                mostrarTipoDeExplicacao(
-                    botao.dataset.tipo
-                );
-            });
-        });
-}
-
-function mostrarTipoDeExplicacao(tipo) {
-    document.querySelector(
-        "#resultado-explicacao"
-    ).innerHTML = `
-        <div class="informacao" style="margin-top: 20px">
-            <span>Formato escolhido</span>
-
-            <strong>${tipo}</strong>
-
-            <p>
-                Aqui aparecerá a explicação de
-                ${materiaAtual} no formato escolhido.
-            </p>
-
-            <p>
-                Em uma próxima etapa, esta área utilizará
-                os materiais enviados pelo aluno.
-            </p>
-        </div>
     `;
 }
 
@@ -355,14 +693,13 @@ function mostrarUpload(periodo) {
             ? "Uploads do dia"
             : "Uploads do semestre";
 
-    areaDinamica.innerHTML = `
-        <h2>${titulo} — ${materiaAtual}</h2>
+    areaMateria.innerHTML = `
+        <h2>${titulo}</h2>
 
-        <p>
-            Escolha fotos, PDFs ou outros materiais.
-        </p>
-
-        <label class="upload" for="seletor-arquivos">
+        <label
+            class="botao-upload"
+            for="seletor-arquivos"
+        >
             📷 Escolher arquivos
         </label>
 
@@ -379,53 +716,46 @@ function mostrarUpload(periodo) {
 
     document
         .querySelector("#seletor-arquivos")
-        .addEventListener("change", function (evento) {
-            const arquivos = Array.from(
-                evento.target.files
-            );
+        .addEventListener(
+            "change",
+            function (evento) {
+                const arquivos = Array.from(
+                    evento.target.files
+                );
 
-            const lista = document.querySelector(
-                "#lista-arquivos"
-            );
-
-            lista.innerHTML = "";
-
-            if (arquivos.length === 0) {
-                lista.innerHTML =
-                    "<p>Nenhum arquivo escolhido.</p>";
-
-                return;
+                document.querySelector(
+                    "#lista-arquivos"
+                ).innerHTML =
+                    arquivos
+                        .map(function (arquivo) {
+                            return `
+                                <div class="arquivo">
+                                    📄 ${protegerTexto(
+                                        arquivo.name
+                                    )}
+                                </div>
+                            `;
+                        })
+                        .join("");
             }
-
-            arquivos.forEach(function (arquivo) {
-                const tamanho = (
-                    arquivo.size / 1024
-                ).toFixed(1);
-
-                lista.innerHTML += `
-                    <div class="arquivo">
-                        <strong>📄 ${arquivo.name}</strong>
-                        <br>
-                        <small>${tamanho} KB</small>
-                    </div>
-                `;
-            });
-        });
+        );
 }
 
 /* SIMULADO */
 
 function mostrarSimulado() {
-    areaDinamica.innerHTML = `
-        <h2>Simulado de ${materiaAtual}</h2>
+    areaMateria.innerHTML = `
+        <h2>
+            Simulado de
+            ${protegerTexto(materiaAtual.name)}
+        </h2>
 
         <p>
             Este treino é opcional e não vale nota.
         </p>
 
         <h3>
-            Qual é a melhor maneira de estudar
-            ${materiaAtual}?
+            Qual é a melhor maneira de estudar?
         </h3>
 
         <button
@@ -455,95 +785,320 @@ function mostrarSimulado() {
     document
         .querySelectorAll(".alternativa")
         .forEach(function (botao) {
-            botao.addEventListener("click", function () {
-                responderSimulado(botao);
-            });
+            botao.addEventListener(
+                "click",
+                function () {
+                    const correta =
+                        botao.dataset.correta ===
+                        "true";
+
+                    botao.classList.add(
+                        correta
+                            ? "correta"
+                            : "errada"
+                    );
+
+                    document.querySelector(
+                        "#resultado-simulado"
+                    ).textContent =
+                        correta
+                            ? "✅ Muito bem!"
+                            : "💡 Revise e tente novamente.";
+                }
+            );
         });
 }
 
-function responderSimulado(botao) {
-    const acertou =
-        botao.dataset.correta === "true";
-
-    document
-        .querySelectorAll(".alternativa")
-        .forEach(function (alternativa) {
-            alternativa.disabled = true;
-        });
-
-    if (acertou) {
-        botao.classList.add("correta");
-
-        document.querySelector(
-            "#resultado-simulado"
-        ).textContent =
-            "✅ Muito bem! Você acertou.";
-    } else {
-        botao.classList.add("errada");
-
-        document.querySelector(
-            "#resultado-simulado"
-        ).textContent =
-            "💡 Quase! Revise e tente novamente.";
-    }
-}
-
-/* PESQUISA */
-
-/* PESQUISA NO GOOGLE */
+/* PESQUISA ORGANIZADA POR MATÉRIA */
 
 document
     .querySelector("#pesquisar")
-    .addEventListener("click", pesquisarNoGoogle);
+    .addEventListener("click", function () {
+        const materia = document
+            .querySelector("#materia-pesquisa")
+            .value;
 
-document
-    .querySelector("#pesquisa")
-    .addEventListener("keydown", function (evento) {
-        if (evento.key === "Enter") {
-            pesquisarNoGoogle();
+        const pergunta = document
+            .querySelector("#campo-pesquisa")
+            .value
+            .trim();
+
+        const resposta = document.querySelector(
+            "#resposta-pesquisa"
+        );
+
+        if (!materia) {
+            resposta.textContent =
+                "Escolha uma matéria primeiro.";
+
+            return;
         }
+
+        if (!pergunta) {
+            resposta.textContent =
+                "Digite uma pergunta.";
+
+            return;
+        }
+
+        resposta.textContent =
+            `Pergunta em ${materia}: “${pergunta}”. ` +
+            `A resposta inteligente será conectada depois.`;
     });
 
-function pesquisarNoGoogle() {
-    const campoPesquisa =
-        document.querySelector("#pesquisa");
+/* GOOGLE CLASSROOM */
 
-    const pergunta = campoPesquisa.value.trim();
+const botaoClassroom = document.querySelector(
+    "#conectar-classroom"
+);
 
-    const resposta =
-        document.querySelector("#resposta-pesquisa");
+const statusClassroom = document.querySelector(
+    "#status-classroom"
+);
 
-    if (pergunta === "") {
-        resposta.textContent =
-            "Digite uma pergunta primeiro.";
+botaoClassroom.addEventListener(
+    "click",
+    conectarClassroom
+);
+
+function conectarClassroom() {
+    if (
+        typeof google === "undefined" ||
+        !google.accounts ||
+        !google.accounts.oauth2
+    ) {
+        statusClassroom.textContent =
+            "O Google ainda está carregando. " +
+            "Aguarde e tente novamente.";
 
         return;
     }
 
-    resposta.textContent =
-        "Abrindo a pesquisa no Google...";
+    if (!clienteClassroom) {
+        clienteClassroom =
+            google.accounts.oauth2.initTokenClient({
+                client_id:
+                    CLIENT_ID_CLASSROOM,
 
-    const pesquisaCompleta =
-        materiaAtual !== ""
-            ? pergunta + " " + materiaAtual
-            : pergunta;
+                scope:
+                    ESCOPOS_CLASSROOM,
 
-    const enderecoGoogle =
-        "https://www.google.com/search?q=" +
-        encodeURIComponent(pesquisaCompleta);
+                callback:
+                    receberTokenClassroom,
 
-    window.open(
-        enderecoGoogle,
-        "_blank",
-        "noopener,noreferrer"
+                error_callback:
+                    function () {
+                        statusClassroom.textContent =
+                            "A autorização foi cancelada.";
+                    }
+            });
+    }
+
+    clienteClassroom.requestAccessToken({
+        prompt: "consent"
+    });
+}
+
+async function receberTokenClassroom(resposta) {
+    if (resposta.error) {
+        statusClassroom.textContent =
+            "O Google não autorizou o acesso.";
+
+        return;
+    }
+
+    tokenClassroom = resposta.access_token;
+
+    statusClassroom.textContent =
+        "Classroom conectado. Carregando turmas...";
+
+    await carregarTurmas();
+}
+
+async function chamarClassroom(caminho) {
+    const resposta = await fetch(
+        "https://classroom.googleapis.com/v1/" +
+        caminho,
+        {
+            headers: {
+                Authorization:
+                    "Bearer " + tokenClassroom
+            }
+        }
+    );
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+        throw new Error(
+            dados.error?.message ||
+            "Erro no Google Classroom."
+        );
+    }
+
+    return dados;
+}
+
+async function carregarTurmas() {
+    try {
+        const dados = await chamarClassroom(
+            "courses" +
+            "?courseStates=ACTIVE" +
+            "&studentId=me" +
+            "&pageSize=100"
+        );
+
+        turmasClassroom =
+            dados.courses || [];
+
+        if (turmasClassroom.length === 0) {
+            statusClassroom.textContent =
+                "A conta foi conectada, mas nenhuma " +
+                "turma ativa foi encontrada.";
+
+            return;
+        }
+
+        const materiasReais =
+            turmasClassroom.map(function (turma) {
+                return {
+                    id: turma.id,
+                    name: turma.name,
+                    icon: "🎓",
+
+                    descricao:
+                        turma.section ||
+                        "Google Classroom"
+                };
+            });
+
+        desenharMaterias(materiasReais);
+
+        statusClassroom.textContent =
+            turmasClassroom.length +
+            (
+                turmasClassroom.length === 1
+                    ? " turma carregada."
+                    : " turmas carregadas."
+            );
+
+        await carregarAtividadesDeAmanha();
+    } catch (erro) {
+        statusClassroom.textContent =
+            "Não foi possível carregar: " +
+            erro.message;
+    }
+}
+
+/* AVISOS PARA AMANHÃ */
+
+async function carregarAtividadesDeAmanha() {
+    const amanha = new Date();
+
+    amanha.setDate(amanha.getDate() + 1);
+
+    const atividadesAmanha = [];
+
+    for (const turma of turmasClassroom) {
+        try {
+            const dados = await chamarClassroom(
+                "courses/" +
+                turma.id +
+                "/courseWork?pageSize=100"
+            );
+
+            const atividades =
+                dados.courseWork || [];
+
+            atividadesPorTurma[
+                turma.id
+            ] = atividades;
+
+            atividades.forEach(
+                function (atividade) {
+                    if (
+                        dataIgualAmanha(
+                            atividade.dueDate,
+                            amanha
+                        )
+                    ) {
+                        atividadesAmanha.push({
+                            atividade:
+                                atividade,
+
+                            turma:
+                                turma.name
+                        });
+                    }
+                }
+            );
+        } catch (erro) {
+            console.error(erro);
+        }
+    }
+
+    desenharAtividadesDeAmanha(
+        atividadesAmanha
     );
 }
+
+function dataIgualAmanha(data, amanha) {
+    if (!data) {
+        return false;
+    }
+
+    return (
+        data.year === amanha.getFullYear() &&
+        data.month === amanha.getMonth() + 1 &&
+        data.day === amanha.getDate()
+    );
+}
+
+function desenharAtividadesDeAmanha(itens) {
+    const area = document.querySelector(
+        "#atividades-amanha"
+    );
+
+    if (itens.length === 0) {
+        area.innerHTML = `
+            <p>
+                Nenhuma atividade do Classroom
+                para amanhã.
+            </p>
+        `;
+
+        return;
+    }
+
+    area.innerHTML =
+        itens
+            .map(function (item) {
+                return `
+                    <div class="arquivo">
+                        <strong>
+                            ${protegerTexto(
+                                item.atividade.title
+                            )}
+                        </strong>
+
+                        <p>
+                            ${protegerTexto(
+                                item.turma
+                            )}
+                        </p>
+                    </div>
+                `;
+            })
+            .join("");
+}
+
 /* MINHA CONTA */
 
-const modalConta = document.querySelector("#modal-conta");
+const modalConta =
+    document.querySelector("#modal-conta");
 
 document
-    .querySelector("#botao-conta")
+    .querySelector("#minha-conta")
     .addEventListener("click", function () {
         modalConta.classList.remove("escondido");
     });
@@ -554,12 +1109,6 @@ document
         modalConta.classList.add("escondido");
     });
 
-modalConta.addEventListener("click", function (evento) {
-    if (evento.target === modalConta) {
-        modalConta.classList.add("escondido");
-    }
-});
-
 document
     .querySelector("#sair")
     .addEventListener("click", function () {
@@ -567,321 +1116,10 @@ document
 
         modalConta.classList.add("escondido");
 
-        document.querySelector("#form-login").reset();
-
         mostrarTela(telaEscolha);
     });
-/* CONEXÃO COM O GOOGLE CLASSROOM */
 
-const CLIENT_ID_CLASSROOM =
-    "201759939378-lt1oj42277jqjr8bppkjbrqi08tml64t.apps.googleusercontent.com";
-
-const ESCOPOS_CLASSROOM = [
-    "https://www.googleapis.com/auth/classroom.courses.readonly",
-    "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
-    "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly"
-].join(" ");
-
-let clienteClassroom = null;
-let tokenClassroom = "";
-
-const botaoClassroom =
-    document.querySelector("#conectar-classroom");
-
-const statusClassroom =
-    document.querySelector("#status-classroom");
-
-botaoClassroom.addEventListener("click", conectarClassroom);
-
-function conectarClassroom() {
-    if (
-        typeof google === "undefined" ||
-        !google.accounts ||
-        !google.accounts.oauth2
-    ) {
-        statusClassroom.textContent =
-            "O serviço do Google ainda está carregando. " +
-            "Aguarde alguns segundos e tente novamente.";
-
-        return;
-    }
-
-    statusClassroom.textContent =
-        "Abrindo autorização do Google...";
-
-    if (clienteClassroom === null) {
-        clienteClassroom =
-            google.accounts.oauth2.initTokenClient({
-                client_id: CLIENT_ID_CLASSROOM,
-
-                scope: ESCOPOS_CLASSROOM,
-
-                callback: receberAutorizacaoClassroom,
-
-                error_callback: function () {
-                    statusClassroom.textContent =
-                        "A autorização foi cancelada ou bloqueada.";
-                }
-            });
-    }
-
-    clienteClassroom.requestAccessToken({
-        prompt: "consent"
-    });
-}
-
-async function receberAutorizacaoClassroom(resposta) {
-    if (resposta.error) {
-        statusClassroom.textContent =
-            "O Google não autorizou o acesso: " +
-            resposta.error;
-
-        return;
-    }
-
-    tokenClassroom = resposta.access_token;
-
-    statusClassroom.textContent =
-        "Classroom conectado! Carregando suas turmas...";
-
-    await carregarTurmasClassroom();
-}
-
-async function chamarClassroom(endereco) {
-    const resposta = await fetch(endereco, {
-        headers: {
-            Authorization: "Bearer " + tokenClassroom
-        }
-    });
-
-    const dados = await resposta.json();
-
-    if (!resposta.ok) {
-        throw new Error(
-            dados.error?.message ||
-            "O Google Classroom recusou a solicitação."
-        );
-    }
-
-    return dados;
-}
-
-async function carregarTurmasClassroom() {
-    try {
-        const endereco =
-            "https://classroom.googleapis.com/v1/courses" +
-            "?courseStates=ACTIVE" +
-            "&studentId=me" +
-            "&pageSize=100";
-
-        const dados = await chamarClassroom(endereco);
-
-        const turmas = dados.courses || [];
-
-        if (turmas.length === 0) {
-            statusClassroom.textContent =
-                "A conta foi conectada, mas nenhuma turma " +
-                "ativa foi encontrada.";
-
-            return;
-        }
-
-        statusClassroom.textContent =
-            turmas.length +
-            (turmas.length === 1
-                ? " turma carregada."
-                : " turmas carregadas.");
-
-        mostrarTurmasClassroom(turmas);
-    } catch (erro) {
-        console.error(erro);
-
-        statusClassroom.textContent =
-            "Não foi possível carregar as turmas: " +
-            erro.message;
-    }
-}
-
-function mostrarTurmasClassroom(turmas) {
-    const listaMaterias =
-        document.querySelector(".materias");
-
-    listaMaterias.innerHTML = "";
-
-    turmas.forEach(function (turma) {
-        const botao = document.createElement("button");
-
-        botao.className = "materia";
-
-        botao.innerHTML = `
-            <span>🎓</span>
-            <strong>${protegerTexto(turma.name)}</strong>
-            <small>
-                ${protegerTexto(
-                    turma.section ||
-                    turma.descriptionHeading ||
-                    "Google Classroom"
-                )}
-            </small>
-        `;
-
-        botao.addEventListener("click", function () {
-            abrirTurmaClassroom(turma);
-        });
-
-        listaMaterias.appendChild(botao);
-    });
-
-    document.querySelector(".titulo-materias h2").textContent =
-        "Suas turmas do Classroom";
-
-    document.querySelector(".titulo-materias p").textContent =
-        "Escolha uma turma para ver as atividades.";
-}
-
-async function abrirTurmaClassroom(turma) {
-    materiaAtual = turma.name;
-
-    paginaMaterias.classList.add("escondido");
-    paginaMateria.classList.remove("escondido");
-
-    document.querySelector("#nome-materia").textContent =
-        turma.name;
-
-    document.querySelector("#icone-materia").textContent =
-        "🎓";
-
-    areaDinamica.innerHTML = `
-        <h2>Carregando atividades...</h2>
-
-        <p>
-            Aguarde enquanto buscamos os conteúdos
-            do Google Classroom.
-        </p>
-    `;
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-
-    await carregarConteudosDaTurma(turma.id);
-}
-
-async function carregarConteudosDaTurma(idDaTurma) {
-    try {
-        const enderecoAtividades =
-            "https://classroom.googleapis.com/v1/courses/" +
-            encodeURIComponent(idDaTurma) +
-            "/courseWork?pageSize=100&orderBy=updateTime%20desc";
-
-        const enderecoMateriais =
-            "https://classroom.googleapis.com/v1/courses/" +
-            encodeURIComponent(idDaTurma) +
-            "/courseWorkMaterials?pageSize=100" +
-            "&orderBy=updateTime%20desc";
-
-        const resultados = await Promise.allSettled([
-            chamarClassroom(enderecoAtividades),
-            chamarClassroom(enderecoMateriais)
-        ]);
-
-        const atividades =
-            resultados[0].status === "fulfilled"
-                ? resultados[0].value.courseWork || []
-                : [];
-
-        const materiais =
-            resultados[1].status === "fulfilled"
-                ? resultados[1].value.courseWorkMaterial || []
-                : [];
-
-        mostrarConteudosClassroom(
-            atividades,
-            materiais
-        );
-    } catch (erro) {
-        console.error(erro);
-
-        areaDinamica.innerHTML = `
-            <h2>Não foi possível carregar os conteúdos</h2>
-            <p>${protegerTexto(erro.message)}</p>
-        `;
-    }
-}
-
-function mostrarConteudosClassroom(
-    atividades,
-    materiais
-) {
-    const listaAtividades = atividades.length
-        ? atividades.map(function (atividade) {
-            return `
-                <div class="arquivo">
-                    <strong>
-                        📝 ${protegerTexto(atividade.title)}
-                    </strong>
-
-                    <p>
-                        ${formatarPrazo(atividade.dueDate)}
-                    </p>
-
-                    ${
-                        atividade.alternateLink
-                            ? `
-                                <a
-                                    href="${atividade.alternateLink}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    Abrir no Classroom
-                                </a>
-                            `
-                            : ""
-                    }
-                </div>
-            `;
-        }).join("")
-        : "<p>Nenhuma atividade encontrada.</p>";
-
-    const listaMateriais = materiais.length
-        ? materiais.map(function (material) {
-            return `
-                <div class="arquivo">
-                    <strong>
-                        📚 ${protegerTexto(material.title)}
-                    </strong>
-
-                    ${
-                        material.alternateLink
-                            ? `
-                                <p>
-                                    <a
-                                        href="${material.alternateLink}"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                    >
-                                        Abrir material
-                                    </a>
-                                </p>
-                            `
-                            : ""
-                    }
-                </div>
-            `;
-        }).join("")
-        : "<p>Nenhum material encontrado.</p>";
-
-    areaDinamica.innerHTML = `
-        <h2>Atividades do Classroom</h2>
-        ${listaAtividades}
-
-        <h2 style="margin-top: 30px">
-            Materiais do Classroom
-        </h2>
-        ${listaMateriais}
-    `;
-}
+/* FUNÇÕES AUXILIARES */
 
 function formatarPrazo(data) {
     if (!data) {
@@ -899,37 +1137,9 @@ function formatarPrazo(data) {
 }
 
 function protegerTexto(texto) {
-    const elemento = document.createElement("div");
-/* MOSTRAR VÍNCULO DO FILHO NO CADASTRO */
+    const elemento =
+        document.createElement("div");
 
-const opcoesTipoConta = document.querySelectorAll(
-    'input[name="tipo-conta"]'
-);
-
-const areaVinculoFilho =
-    document.querySelector("#vinculo-filho");
-
-const campoNomeFilho =
-    document.querySelector("#nome-filho");
-
-const campoEmailFilho =
-    document.querySelector("#email-filho");
-
-opcoesTipoConta.forEach(function (opcao) {
-    opcao.addEventListener("change", function () {
-        if (opcao.value === "Responsável") {
-            areaVinculoFilho.classList.remove("escondido");
-
-            campoNomeFilho.required = true;
-            campoEmailFilho.required = true;
-        } else {
-            areaVinculoFilho.classList.add("escondido");
-
-            campoNomeFilho.required = false;
-            campoEmailFilho.required = false;
-        }
-    });
-});
     elemento.textContent = texto || "";
 
     return elemento.innerHTML;
