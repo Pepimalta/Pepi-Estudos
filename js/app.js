@@ -669,7 +669,7 @@ function desenharAtividades(atividades) {
 
 /* EXPLICAÇÕES */
 
-function mostrarExplicacoes() {
+
    async function mostrarExplicacoes() {
     areaMateria.innerHTML = `
         <h2>Preparando o material...</h2>
