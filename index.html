@@ -10,159 +10,392 @@
 
     <title>Pepi Estudos</title>
 
-    <link rel="stylesheet" href="CSS/style.css">
+    <link rel="stylesheet" href="css/estilo.css">
 </head>
 
 <body>
-    <header class="cabecalho">
-        <div class="logo">
-            <span class="simbolo-logo">P</span>
-            <h1>Pepi Estudos</h1>
-        </div>
+    <!-- TELA DE AUTENTICAÇÃO -->
+    <main id="tela-autenticacao" class="tela-autenticacao">
+        <section class="cartao-autenticacao">
+            <div class="logo-autenticacao">
+                <span class="simbolo-logo">P</span>
+                <h1>Pepi Estudos</h1>
+            </div>
 
-        <div class="perfil">
-            <span>Olá, Pepi!</span>
-            <button id="botao-perfil">Meu perfil</button>
-        </div>
-    </header>
+            <!-- PRIMEIRO PASSO -->
+            <div id="escolha-autenticacao">
+                <p class="etapa">1º passo</p>
 
-    <main class="conteudo">
-        <section class="apresentacao">
-            <div>
-                <p class="saudacao">Vamos estudar?</p>
-                <h2>O que você quer aprender hoje?</h2>
+                <h2>Autenticação</h2>
 
                 <p>
-                    Escolha uma matéria, veja seus materiais
-                    e pratique o que aprendeu.
+                    Entre na sua conta ou faça seu cadastro
+                    para começar.
                 </p>
-            </div>
 
-            <div class="icone-apresentacao">🚀</div>
-        </section>
-
-        <section class="pesquisa">
-            <label for="campo-pesquisa">
-                Pesquise algo que você não entendeu:
-            </label>
-
-            <div class="caixa-pesquisa">
-                <input
-                    id="campo-pesquisa"
-                    type="text"
-                    placeholder="Exemplo: como funcionam as frações?"
+                <button
+                    id="abrir-login"
+                    class="botao-principal"
                 >
-
-                <button id="botao-pesquisar">
-                    Pesquisar
+                    Login
                 </button>
-            </div>
 
-            <p id="resposta-pesquisa"></p>
-        </section>
-
-        <section class="secao-materias">
-            <div class="titulo-secao">
-                <div>
-                    <p class="titulo-pequeno">SUAS MATÉRIAS</p>
-                    <h2>Escolha uma matéria</h2>
+                <div class="separador">
+                    <span>ou</span>
                 </div>
 
-                <span>6 matérias</span>
+                <button
+                    id="abrir-cadastro"
+                    class="botao-secundario"
+                >
+                    Cadastro
+                </button>
             </div>
 
-            <div class="lista-materias">
-                <button
-                    class="cartao-materia matematica"
-                    data-materia="Matemática"
-                >
-                    <span class="icone-materia">📐</span>
-                    <strong>Matemática</strong>
-                    <small>Frações e geometria</small>
-                </button>
+            <!-- LOGIN -->
+            <form id="formulario-login" class="escondido">
+                <p class="etapa">Login</p>
 
-                <button
-                    class="cartao-materia portugues"
-                    data-materia="Português"
-                >
-                    <span class="icone-materia">📚</span>
-                    <strong>Português</strong>
-                    <small>Gramática e interpretação</small>
-                </button>
+                <h2>Que bom ter você de volta!</h2>
 
-                <button
-                    class="cartao-materia ciencias"
-                    data-materia="Ciências"
-                >
-                    <span class="icone-materia">🧪</span>
-                    <strong>Ciências</strong>
-                    <small>Células e ecossistemas</small>
-                </button>
+                <label for="login-email">
+                    Digite seu e-mail
+                </label>
 
-                <button
-                    class="cartao-materia historia"
-                    data-materia="História"
+                <input
+                    id="login-email"
+                    type="email"
+                    placeholder="seunome@email.com"
+                    required
                 >
-                    <span class="icone-materia">🏛️</span>
-                    <strong>História</strong>
-                    <small>Brasil colonial</small>
-                </button>
 
-                <button
-                    class="cartao-materia geografia"
-                    data-materia="Geografia"
-                >
-                    <span class="icone-materia">🌎</span>
-                    <strong>Geografia</strong>
-                    <small>Clima e relevo</small>
+                <label for="login-senha">
+                    Digite sua senha
+                </label>
+
+                <div class="campo-senha">
+                    <input
+                        id="login-senha"
+                        type="password"
+                        placeholder="Sua senha"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="mostrar-senha"
+                        data-campo="login-senha"
+                    >
+                        👁
+                    </button>
+                </div>
+
+                <button type="submit" class="botao-principal">
+                    Entrar
                 </button>
 
                 <button
-                    class="cartao-materia ingles"
-                    data-materia="Inglês"
+                    type="button"
+                    class="botao-voltar-autenticacao"
                 >
-                    <span class="icone-materia">💬</span>
-                    <strong>Inglês</strong>
-                    <small>Vocabulário e conversação</small>
-                </button>
-            </div>
-        </section>
-
-        <section
-            id="area-materia"
-            class="area-materia escondido"
-        >
-            <button id="botao-voltar">
-                ← Voltar para as matérias
-            </button>
-
-            <h2 id="nome-materia"></h2>
-
-            <nav class="menu-materia">
-                <button data-tela="materiais-dia">
-                    Materiais de hoje
+                    ← Voltar
                 </button>
 
-                <button data-tela="materiais-semestre">
-                    Materiais do semestre
-                </button>
+                <p id="mensagem-login" class="mensagem-formulario"></p>
+            </form>
 
-                <button data-tela="explicacoes">
-                    Explicações
-                </button>
+            <!-- CADASTRO -->
+            <form id="formulario-cadastro" class="escondido">
+                <p class="etapa">Cadastro</p>
 
-                <button data-tela="simulado">
-                    Simulado
-                </button>
-            </nav>
+                <h2>Crie sua conta</h2>
 
-            <div id="conteudo-materia">
-                <p>
-                    Escolha uma das opções acima para começar.
+                <label for="cadastro-nome">
+                    Seu nome
+                </label>
+
+                <input
+                    id="cadastro-nome"
+                    type="text"
+                    placeholder="Como podemos chamar você?"
+                    required
+                >
+
+                <label for="cadastro-email">
+                    Seu e-mail
+                </label>
+
+                <input
+                    id="cadastro-email"
+                    type="email"
+                    placeholder="seunome@email.com"
+                    required
+                >
+
+                <label for="cadastro-senha">
+                    Crie uma senha
+                </label>
+
+                <div class="campo-senha">
+                    <input
+                        id="cadastro-senha"
+                        type="password"
+                        placeholder="Pelo menos 6 caracteres"
+                        minlength="6"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="mostrar-senha"
+                        data-campo="cadastro-senha"
+                    >
+                        👁
+                    </button>
+                </div>
+
+                <p class="pergunta-perfil">
+                    Quem utilizará esta conta?
                 </p>
-            </div>
+
+                <div class="escolha-perfil">
+                    <label>
+                        <input
+                            type="radio"
+                            name="tipo-conta"
+                            value="Aluno"
+                            checked
+                        >
+                        Aluno
+                    </label>
+
+                    <label>
+                        <input
+                            type="radio"
+                            name="tipo-conta"
+                            value="Responsável"
+                        >
+                        Responsável
+                    </label>
+                </div>
+
+                <button type="submit" class="botao-principal">
+                    Cadastrar
+                </button>
+
+                <button
+                    type="button"
+                    class="botao-voltar-autenticacao"
+                >
+                    ← Voltar
+                </button>
+
+                <p
+                    id="mensagem-cadastro"
+                    class="mensagem-formulario"
+                ></p>
+            </form>
         </section>
     </main>
+
+    <!-- APLICATIVO DO ALUNO -->
+    <div id="aplicativo" class="escondido">
+        <header class="cabecalho">
+            <button id="logo-inicio" class="logo">
+                <span class="simbolo-logo">P</span>
+                <span>Pepi Estudos</span>
+            </button>
+
+            <div class="perfil">
+                <span id="saudacao-usuario">Olá!</span>
+
+                <button id="botao-perfil">
+                    ⚙ Minha conta
+                </button>
+            </div>
+        </header>
+
+        <main class="conteudo">
+            <!-- TELA PRINCIPAL -->
+            <section id="pagina-inicial">
+                <section class="apresentacao">
+                    <div>
+                        <p class="saudacao">Olá!</p>
+
+                        <h1>Suas matérias</h1>
+
+                        <p>
+                            Escolha uma matéria para ver os
+                            materiais e continuar estudando.
+                        </p>
+                    </div>
+
+                    <div class="icone-apresentacao">📚</div>
+                </section>
+
+                <section class="pesquisa">
+                    <label for="campo-pesquisa">
+                        O que você não entendeu?
+                    </label>
+
+                    <div class="caixa-pesquisa">
+                        <input
+                            id="campo-pesquisa"
+                            type="text"
+                            placeholder="Pesquise uma dúvida"
+                        >
+
+                        <button id="botao-pesquisar">
+                            Pesquisar
+                        </button>
+                    </div>
+
+                    <p id="resposta-pesquisa"></p>
+                </section>
+
+                <section class="secao-materias">
+                    <div class="titulo-secao">
+                        <div>
+                            <p class="titulo-pequeno">
+                                2º PASSO
+                            </p>
+
+                            <h2>Matérias</h2>
+                        </div>
+
+                        <span>6 matérias</span>
+                    </div>
+
+                    <div class="lista-materias">
+                        <button
+                            class="cartao-materia matematica"
+                            data-materia="Matemática"
+                        >
+                            <span class="icone-materia">📐</span>
+                            <strong>Matemática</strong>
+                            <small>Frações e geometria</small>
+                        </button>
+
+                        <button
+                            class="cartao-materia portugues"
+                            data-materia="Português"
+                        >
+                            <span class="icone-materia">📚</span>
+                            <strong>Português</strong>
+                            <small>Gramática e interpretação</small>
+                        </button>
+
+                        <button
+                            class="cartao-materia ciencias"
+                            data-materia="Ciências"
+                        >
+                            <span class="icone-materia">🧪</span>
+                            <strong>Ciências</strong>
+                            <small>Células e ecossistemas</small>
+                        </button>
+
+                        <button
+                            class="cartao-materia historia"
+                            data-materia="História"
+                        >
+                            <span class="icone-materia">🏛️</span>
+                            <strong>História</strong>
+                            <small>Brasil colonial</small>
+                        </button>
+
+                        <button
+                            class="cartao-materia geografia"
+                            data-materia="Geografia"
+                        >
+                            <span class="icone-materia">🌎</span>
+                            <strong>Geografia</strong>
+                            <small>Clima e relevo</small>
+                        </button>
+
+                        <button
+                            class="cartao-materia ingles"
+                            data-materia="Inglês"
+                        >
+                            <span class="icone-materia">💬</span>
+                            <strong>Inglês</strong>
+                            <small>Vocabulário e conversação</small>
+                        </button>
+                    </div>
+                </section>
+            </section>
+
+            <!-- PÁGINA DE UMA MATÉRIA -->
+            <section id="area-materia" class="area-materia escondido">
+                <button id="botao-voltar">
+                    ← Voltar para as matérias
+                </button>
+
+                <p class="titulo-pequeno">3º PASSO</p>
+
+                <h2 id="nome-materia">Matéria</h2>
+
+                <p>
+                    Escolha o que deseja acessar.
+                </p>
+
+                <nav class="menu-materia">
+                    <button data-tela="explicacoes">
+                        💡 Explicações
+                    </button>
+
+                    <button data-tela="materiais-dia">
+                        📷 Uploads do dia
+                    </button>
+
+                    <button data-tela="materiais-semestre">
+                        📁 Uploads do semestre
+                    </button>
+
+                    <button data-tela="simulado">
+                        📝 Simulado
+                    </button>
+                </nav>
+
+                <div id="conteudo-materia">
+                    <p>
+                        Escolha uma das opções acima.
+                    </p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- JANELA MINHA CONTA -->
+    <div id="fundo-conta" class="fundo-modal escondido">
+        <section class="janela-conta">
+            <button id="fechar-conta" class="fechar-modal">
+                ×
+            </button>
+
+            <div class="avatar-conta">👤</div>
+
+            <h2>Minha conta</h2>
+
+            <div class="informacao-conta">
+                <span>Nome</span>
+                <strong id="conta-nome">Pepi</strong>
+            </div>
+
+            <div class="informacao-conta">
+                <span>E-mail</span>
+                <strong id="conta-email">Não informado</strong>
+            </div>
+
+            <div class="informacao-conta">
+                <span>Tipo de conta</span>
+                <strong id="conta-tipo">Aluno</strong>
+            </div>
+
+            <button id="botao-sair" class="botao-sair">
+                Sair da conta
+            </button>
+        </section>
+    </div>
 
     <script src="js/app.js"></script>
 </body>
