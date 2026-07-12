@@ -10,393 +10,496 @@
 
     <title>Pepi Estudos</title>
 
-    <link rel="stylesheet" href="css/estilo.css">
-</head>
-
-<body>
-    <!-- TELA DE AUTENTICAÇÃO -->
-    <main id="tela-autenticacao" class="tela-autenticacao">
-        <section class="cartao-autenticacao">
-            <div class="logo-autenticacao">
-                <span class="simbolo-logo">P</span>
-                <h1>Pepi Estudos</h1>
-            </div>
-
-            <!-- PRIMEIRO PASSO -->
-            <div id="escolha-autenticacao">
-                <p class="etapa">1º passo</p>
-
-                <h2>Autenticação</h2>
-
-                <p>
-                    Entre na sua conta ou faça seu cadastro
-                    para começar.
-                </p>
-
-                <button
-                    id="abrir-login"
-                    class="botao-principal"
-                >
-                    Login
-                </button>
-
-                <div class="separador">
-                    <span>ou</span>
-                </div>
-
-                <button
-                    id="abrir-cadastro"
-                    class="botao-secundario"
-                >
-                    Cadastro
-                </button>
-            </div>
-
-            <!-- LOGIN -->
-            <form id="formulario-login" class="escondido">
-                <p class="etapa">Login</p>
-
-                <h2>Que bom ter você de volta!</h2>
-
-                <label for="login-email">
-                    Digite seu e-mail
-                </label>
-
-                <input
-                    id="login-email"
-                    type="email"
-                    placeholder="seunome@email.com"
-                    required
-                >
-
-                <label for="login-senha">
-                    Digite sua senha
-                </label>
-
-                <div class="campo-senha">
-                    <input
-                        id="login-senha"
-                        type="password"
-                        placeholder="Sua senha"
-                        required
-                    >
-
-                    <button
-                        type="button"
-                        class="mostrar-senha"
-                        data-campo="login-senha"
-                    >
-                        👁
-                    </button>
-                </div>
-
-                <button type="submit" class="botao-principal">
-                    Entrar
-                </button>
-
-                <button
-                    type="button"
-                    class="botao-voltar-autenticacao"
-                >
-                    ← Voltar
-                </button>
-
-                <p id="mensagem-login" class="mensagem-formulario"></p>
-            </form>
-
-            <!-- CADASTRO -->
-            <form id="formulario-cadastro" class="escondido">
-                <p class="etapa">Cadastro</p>
-
-                <h2>Crie sua conta</h2>
-
-                <label for="cadastro-nome">
-                    Seu nome
-                </label>
-
-                <input
-                    id="cadastro-nome"
-                    type="text"
-                    placeholder="Como podemos chamar você?"
-                    required
-                >
-
-                <label for="cadastro-email">
-                    Seu e-mail
-                </label>
-
-                <input
-                    id="cadastro-email"
-                    type="email"
-                    placeholder="seunome@email.com"
-                    required
-                >
-
-                <label for="cadastro-senha">
-                    Crie uma senha
-                </label>
-
-                <div class="campo-senha">
-                    <input
-                        id="cadastro-senha"
-                        type="password"
-                        placeholder="Pelo menos 6 caracteres"
-                        minlength="6"
-                        required
-                    >
-
-                    <button
-                        type="button"
-                        class="mostrar-senha"
-                        data-campo="cadastro-senha"
-                    >
-                        👁
-                    </button>
-                </div>
-
-                <p class="pergunta-perfil">
-                    Quem utilizará esta conta?
-                </p>
-
-                <div class="escolha-perfil">
-                    <label>
-                        <input
-                            type="radio"
-                            name="tipo-conta"
-                            value="Aluno"
-                            checked
-                        >
-                        Aluno
-                    </label>
-
-                    <label>
-                        <input
-                            type="radio"
-                            name="tipo-conta"
-                            value="Responsável"
-                        >
-                        Responsável
-                    </label>
-                </div>
-
-                <button type="submit" class="botao-principal">
-                    Cadastrar
-                </button>
-
-                <button
-                    type="button"
-                    class="botao-voltar-autenticacao"
-                >
-                    ← Voltar
-                </button>
-
-                <p
-                    id="mensagem-cadastro"
-                    class="mensagem-formulario"
-                ></p>
-            </form>
-        </section>
-    </main>
-
-    <!-- APLICATIVO DO ALUNO -->
-    <div id="aplicativo" class="escondido">
-        <header class="cabecalho">
-            <button id="logo-inicio" class="logo">
-                <span class="simbolo-logo">P</span>
-                <span>Pepi Estudos</span>
-            </button>
-
-            <div class="perfil">
-                <span id="saudacao-usuario">Olá!</span>
-
-                <button id="botao-perfil">
-                    ⚙ Minha conta
-                </button>
-            </div>
-        </header>
-
-        <main class="conteudo">
-            <!-- TELA PRINCIPAL -->
-            <section id="pagina-inicial">
-                <section class="apresentacao">
-                    <div>
-                        <p class="saudacao">Olá!</p>
-
-                        <h1>Suas matérias</h1>
-
-                        <p>
-                            Escolha uma matéria para ver os
-                            materiais e continuar estudando.
-                        </p>
-                    </div>
-
-                    <div class="icone-apresentacao">📚</div>
-                </section>
-
-                <section class="pesquisa">
-                    <label for="campo-pesquisa">
-                        O que você não entendeu?
-                    </label>
-
-                    <div class="caixa-pesquisa">
-                        <input
-                            id="campo-pesquisa"
-                            type="text"
-                            placeholder="Pesquise uma dúvida"
-                        >
-
-                        <button id="botao-pesquisar">
-                            Pesquisar
-                        </button>
-                    </div>
-
-                    <p id="resposta-pesquisa"></p>
-                </section>
-
-                <section class="secao-materias">
-                    <div class="titulo-secao">
-                        <div>
-                            <p class="titulo-pequeno">
-                                2º PASSO
-                            </p>
-
-                            <h2>Matérias</h2>
-                        </div>
-
-                        <span>6 matérias</span>
-                    </div>
-
-                    <div class="lista-materias">
-                        <button
-                            class="cartao-materia matematica"
-                            data-materia="Matemática"
-                        >
-                            <span class="icone-materia">📐</span>
-                            <strong>Matemática</strong>
-                            <small>Frações e geometria</small>
-                        </button>
-
-                        <button
-                            class="cartao-materia portugues"
-                            data-materia="Português"
-                        >
-                            <span class="icone-materia">📚</span>
-                            <strong>Português</strong>
-                            <small>Gramática e interpretação</small>
-                        </button>
-
-                        <button
-                            class="cartao-materia ciencias"
-                            data-materia="Ciências"
-                        >
-                            <span class="icone-materia">🧪</span>
-                            <strong>Ciências</strong>
-                            <small>Células e ecossistemas</small>
-                        </button>
-
-                        <button
-                            class="cartao-materia historia"
-                            data-materia="História"
-                        >
-                            <span class="icone-materia">🏛️</span>
-                            <strong>História</strong>
-                            <small>Brasil colonial</small>
-                        </button>
-
-                        <button
-                            class="cartao-materia geografia"
-                            data-materia="Geografia"
-                        >
-                            <span class="icone-materia">🌎</span>
-                            <strong>Geografia</strong>
-                            <small>Clima e relevo</small>
-                        </button>
-
-                        <button
-                            class="cartao-materia ingles"
-                            data-materia="Inglês"
-                        >
-                            <span class="icone-materia">💬</span>
-                            <strong>Inglês</strong>
-                            <small>Vocabulário e conversação</small>
-                        </button>
-                    </div>
-                </section>
-            </section>
-
-            <!-- PÁGINA DE UMA MATÉRIA -->
-            <section id="area-materia" class="area-materia escondido">
-                <button id="botao-voltar">
-                    ← Voltar para as matérias
-                </button>
-
-                <p class="titulo-pequeno">3º PASSO</p>
-
-                <h2 id="nome-materia">Matéria</h2>
-
-                <p>
-                    Escolha o que deseja acessar.
-                </p>
-
-                <nav class="menu-materia">
-                    <button data-tela="explicacoes">
-                        💡 Explicações
-                    </button>
-
-                    <button data-tela="materiais-dia">
-                        📷 Uploads do dia
-                    </button>
-
-                    <button data-tela="materiais-semestre">
-                        📁 Uploads do semestre
-                    </button>
-
-                    <button data-tela="simulado">
-                        📝 Simulado
-                    </button>
-                </nav>
-
-                <div id="conteudo-materia">
-                    <p>
-                        Escolha uma das opções acima.
-                    </p>
-                </div>
-            </section>
-        </main>
-    </div>
-
-    <!-- JANELA MINHA CONTA -->
-    <div id="fundo-conta" class="fundo-modal escondido">
-        <section class="janela-conta">
-            <button id="fechar-conta" class="fechar-modal">
-                ×
-            </button>
-
-            <div class="avatar-conta">👤</div>
-
-            <h2>Minha conta</h2>
-
-            <div class="informacao-conta">
-                <span>Nome</span>
-                <strong id="conta-nome">Pepi</strong>
-            </div>
-
-            <div class="informacao-conta">
-                <span>E-mail</span>
-                <strong id="conta-email">Não informado</strong>
-            </div>
-
-            <div class="informacao-conta">
-                <span>Tipo de conta</span>
-                <strong id="conta-tipo">Aluno</strong>
-            </div>
-
-            <button id="botao-sair" class="botao-sair">
-                Sair da conta
-            </button>
-        </section>
-    </div>
-
-    <script src="js/app.js"></script>
-</body>
-</html>
+    <style>
+        :root {
+            --roxo: #6848f5;
+            --roxo-escuro: #4930bc;
+            --fundo: #f5f3ff;
+            --branco: #ffffff;
+            --texto: #242238;
+            --cinza: #747287;
+            --borda: #e5e0f5;
+            --verde: #2fba80;
+            --vermelho: #e95970;
+            --sombra: 0 18px 50px rgba(64, 43, 150, 0.14);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            background: var(--fundo);
+            color: var(--texto);
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .escondido {
+            display: none !important;
+        }
+
+        /* AUTENTICAÇÃO */
+
+        .pagina-autenticacao {
+            display: grid;
+            min-height: 100vh;
+            place-items: center;
+            padding: 25px;
+            background:
+                radial-gradient(
+                    circle at top left,
+                    #d8d0ff,
+                    transparent 35%
+                ),
+                radial-gradient(
+                    circle at bottom right,
+                    #c9f8ff,
+                    transparent 35%
+                ),
+                var(--fundo);
+        }
+
+        .cartao-autenticacao {
+            width: min(460px, 100%);
+            padding: 38px;
+            border-radius: 28px;
+            background: var(--branco);
+            box-shadow: var(--sombra);
+            text-align: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 11px;
+            margin-bottom: 28px;
+        }
+
+        .logo-simbolo {
+            display: grid;
+            width: 48px;
+            height: 48px;
+            place-items: center;
+            border-radius: 15px;
+            background: linear-gradient(135deg, var(--roxo), #38c4d7);
+            color: var(--branco);
+            font-size: 23px;
+            font-weight: bold;
+        }
+
+        .logo strong {
+            font-size: 23px;
+        }
+
+        .cartao-autenticacao h1 {
+            margin: 0 0 10px;
+            font-size: 30px;
+        }
+
+        .subtitulo {
+            margin: 0 0 27px;
+            color: var(--cinza);
+            line-height: 1.5;
+        }
+
+        .botao-principal,
+        .botao-secundario {
+            width: 100%;
+            border-radius: 14px;
+            padding: 13px 18px;
+            font-weight: bold;
+        }
+
+        .botao-principal {
+            border: none;
+            background: var(--roxo);
+            color: var(--branco);
+        }
+
+        .botao-principal:hover {
+            background: var(--roxo-escuro);
+        }
+
+        .botao-secundario {
+            border: 2px solid var(--roxo);
+            background: var(--branco);
+            color: var(--roxo);
+        }
+
+        .ou {
+            margin: 14px 0;
+            color: var(--cinza);
+        }
+
+        .formulario {
+            text-align: left;
+        }
+
+        .formulario h1,
+        .formulario .subtitulo {
+            text-align: center;
+        }
+
+        .formulario label {
+            display: block;
+            margin: 15px 0 7px;
+            font-weight: bold;
+        }
+
+        .formulario input[type="text"],
+        .formulario input[type="email"],
+        .formulario input[type="password"] {
+            width: 100%;
+            border: 2px solid var(--borda);
+            border-radius: 13px;
+            padding: 13px;
+            outline: none;
+        }
+
+        .formulario input:focus {
+            border-color: var(--roxo);
+        }
+
+        .campo-senha {
+            display: flex;
+            gap: 7px;
+        }
+
+        .campo-senha input {
+            flex: 1;
+        }
+
+        .mostrar-senha {
+            width: 48px;
+            border: none;
+            border-radius: 13px;
+            background: #eeeaff;
+        }
+
+        .tipos-conta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 10px 0 20px;
+        }
+
+        .tipos-conta label {
+            margin: 0;
+            border: 2px solid var(--borda);
+            border-radius: 13px;
+            padding: 12px;
+            text-align: center;
+        }
+
+        .voltar-autenticacao {
+            display: block;
+            margin: 17px auto 0;
+            border: none;
+            background: transparent;
+            color: var(--roxo);
+            font-weight: bold;
+        }
+
+        .mensagem {
+            min-height: 20px;
+            margin-bottom: 0;
+            color: var(--vermelho);
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* APLICATIVO */
+
+        .cabecalho {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 17px 6%;
+            background: var(--branco);
+            box-shadow: 0 4px 18px rgba(64, 43, 150, 0.08);
+        }
+
+        .logo-cabecalho {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            border: none;
+            background: transparent;
+            color: var(--texto);
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .logo-cabecalho .logo-simbolo {
+            width: 40px;
+            height: 40px;
+            font-size: 19px;
+        }
+
+        .area-perfil {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        #botao-conta {
+            border: none;
+            border-radius: 12px;
+            padding: 10px 14px;
+            background: #eeeaff;
+            color: var(--roxo);
+            font-weight: bold;
+        }
+
+        .conteudo {
+            width: min(1100px, 92%);
+            margin: 35px auto 70px;
+            text-align: center;
+        }
+
+        .apresentacao {
+            padding: 35px;
+            border-radius: 28px;
+            background: linear-gradient(125deg, var(--roxo), #9477ff);
+            color: var(--branco);
+            box-shadow: var(--sombra);
+        }
+
+        .apresentacao h1 {
+            margin: 0 0 9px;
+            font-size: 34px;
+        }
+
+        .apresentacao p {
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .pesquisa {
+            width: min(720px, 100%);
+            margin: 24px auto;
+            padding: 18px;
+            border-radius: 18px;
+            background: var(--branco);
+            box-shadow: var(--sombra);
+        }
+
+        .pesquisa label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .linha-pesquisa {
+            display: flex;
+            gap: 8px;
+        }
+
+        .linha-pesquisa input {
+            flex: 1;
+            min-width: 0;
+            border: 2px solid var(--borda);
+            border-radius: 12px;
+            padding: 12px;
+            outline: none;
+        }
+
+        .linha-pesquisa button {
+            border: none;
+            border-radius: 12px;
+            padding: 10px 17px;
+            background: var(--roxo);
+            color: var(--branco);
+            font-weight: bold;
+        }
+
+        .titulo-materias {
+            margin: 35px 0 18px;
+        }
+
+        .titulo-materias h2 {
+            margin-bottom: 5px;
+            font-size: 28px;
+        }
+
+        .titulo-materias p {
+            color: var(--cinza);
+        }
+
+        .materias {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 17px;
+            justify-content: center;
+        }
+
+        .materia {
+            display: flex;
+            min-height: 180px;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid transparent;
+            border-radius: 22px;
+            padding: 20px;
+            background: var(--branco);
+            color: var(--texto);
+            box-shadow: var(--sombra);
+            transition: 0.2s;
+        }
+
+        .materia:hover {
+            transform: translateY(-5px);
+            border-color: var(--roxo);
+        }
+
+        .materia span {
+            margin-bottom: 14px;
+            font-size: 38px;
+        }
+
+        .materia strong {
+            margin-bottom: 6px;
+            font-size: 19px;
+        }
+
+        .materia small {
+            color: var(--cinza);
+        }
+
+        /* PÁGINA DA MATÉRIA */
+
+        .voltar {
+            display: block;
+            margin-bottom: 20px;
+            border: none;
+            border-radius: 12px;
+            padding: 11px 15px;
+            background: #eeeaff;
+            color: var(--roxo);
+            font-weight: bold;
+        }
+
+        .cabecalho-materia {
+            padding: 30px;
+            border-radius: 24px;
+            background: var(--branco);
+            box-shadow: var(--sombra);
+        }
+
+        .cabecalho-materia h1 {
+            margin: 5px 0;
+            font-size: 32px;
+        }
+
+        .opcoes-materia {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin: 22px 0;
+        }
+
+        .opcoes-materia button {
+            border: none;
+            border-radius: 15px;
+            padding: 15px 10px;
+            background: var(--roxo);
+            color: var(--branco);
+            font-weight: bold;
+        }
+
+        .area-dinamica {
+            padding: 25px;
+            border-radius: 22px;
+            background: var(--branco);
+            box-shadow: var(--sombra);
+        }
+
+        .tipos-explicacao {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 13px;
+            margin-top: 20px;
+        }
+
+        .tipos-explicacao button {
+            border: 2px solid var(--borda);
+            border-radius: 16px;
+            padding: 20px;
+            background: var(--branco);
+            color: var(--texto);
+        }
+
+        .tipos-explicacao span {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 30px;
+        }
+
+        .upload {
+            display: inline-block;
+            margin: 15px;
+            border: 2px dashed var(--roxo);
+            border-radius: 15px;
+            padding: 20px;
+            color: var(--roxo);
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .arquivo {
+            margin: 10px auto;
+            border: 1px solid var(--borda);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: left;
+        }
+
+        .alternativa {
+            display: block;
+            width: min(650px, 100%);
+            margin: 10px auto;
+            border: 2px solid var(--borda);
+            border-radius: 13px;
+            padding: 13px;
+            background: var(--branco);
+        }
+
+        .alternativa.correta {
+            border-color: var(--verde);
+            background: #eafff5;
+        }
+
+        .alternativa.errada {
+            border-color: var(--vermelho);
+            background: #fff0f3;
+        }
+
+        /* MINHA CONTA */
+
+        .fundo-modal {
+            position: fixed;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgba(28, 22, 58, 0.55);
+        }
+
+        .modal {
+            position: relative;
+            width: min(430px, 100%);
+            border-radius: 24px;
+            padding: 
