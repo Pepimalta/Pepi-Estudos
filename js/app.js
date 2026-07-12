@@ -4,7 +4,8 @@ const CLIENT_ID_CLASSROOM =
 const ESCOPOS_CLASSROOM = [
     "https://www.googleapis.com/auth/classroom.courses.readonly",
     "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
-    "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly"
+    "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly",
+    "https://www.googleapis.com/auth/drive.readonly"
 ].join(" ");
 
 const telaEscolha = document.querySelector("#escolha");
