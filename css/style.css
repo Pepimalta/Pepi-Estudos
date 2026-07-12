@@ -1,1 +1,346 @@
 /* Estilos do Pepi Estudos */
+:root {
+    --roxo: #6c4df6;
+    --roxo-escuro: #4d35c7;
+    --fundo: #f5f3ff;
+    --branco: #ffffff;
+    --texto: #24233b;
+    --texto-claro: #737389;
+    --verde: #35bd83;
+    --azul: #38bcd7;
+    --rosa: #f66f92;
+    --laranja: #ff9d42;
+    --sombra: 0 12px 35px rgba(63, 48, 135, 0.12);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background-color: var(--fundo);
+    color: var(--texto);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+.cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 6%;
+    background-color: var(--branco);
+    box-shadow: 0 4px 20px rgba(63, 48, 135, 0.08);
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo h1 {
+    margin: 0;
+    font-size: 22px;
+}
+
+.simbolo-logo {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border-radius: 14px;
+    background: linear-gradient(135deg, var(--roxo), var(--azul));
+    color: var(--branco);
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.perfil {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+#botao-perfil {
+    border: none;
+    border-radius: 12px;
+    padding: 10px 15px;
+    background-color: #eeeaff;
+    color: var(--roxo);
+    font-weight: bold;
+}
+
+.conteudo {
+    width: min(1180px, 90%);
+    margin: 30px auto 70px;
+}
+
+.apresentacao {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 190px;
+    padding: 30px;
+    border-radius: 28px;
+    background: linear-gradient(120deg, var(--roxo), #9474ff);
+    color: var(--branco);
+    box-shadow: var(--sombra);
+}
+
+.apresentacao h2 {
+    margin: 5px 0 10px;
+    font-size: 32px;
+}
+
+.apresentacao p {
+    margin-bottom: 0;
+}
+
+.saudacao {
+    font-weight: bold;
+    opacity: 0.9;
+}
+
+.icone-apresentacao {
+    padding: 18px;
+    border-radius: 24px;
+    background-color: rgba(255, 255, 255, 0.14);
+    font-size: 65px;
+}
+
+.pesquisa {
+    margin-top: 25px;
+    padding: 22px;
+    border-radius: 20px;
+    background-color: var(--branco);
+    box-shadow: var(--sombra);
+}
+
+.pesquisa label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.caixa-pesquisa {
+    display: flex;
+    gap: 10px;
+}
+
+.caixa-pesquisa input {
+    flex: 1;
+    min-width: 0;
+    padding: 13px 15px;
+    border: 2px solid #ded9f5;
+    border-radius: 13px;
+    outline: none;
+}
+
+.caixa-pesquisa input:focus {
+    border-color: var(--roxo);
+}
+
+.caixa-pesquisa button {
+    border: none;
+    border-radius: 13px;
+    padding: 12px 20px;
+    background-color: var(--roxo);
+    color: var(--branco);
+    font-weight: bold;
+}
+
+#resposta-pesquisa {
+    margin-bottom: 0;
+    color: var(--roxo-escuro);
+    font-weight: bold;
+}
+
+.titulo-secao {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    margin: 34px 0 16px;
+}
+
+.titulo-secao h2 {
+    margin: 4px 0 0;
+}
+
+.titulo-pequeno {
+    margin: 0;
+    color: var(--roxo);
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.titulo-secao span {
+    color: var(--texto-claro);
+}
+
+.lista-materias {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 17px;
+}
+
+.cartao-materia {
+    display: flex;
+    min-height: 190px;
+    flex-direction: column;
+    align-items: flex-start;
+    border: none;
+    border-radius: 22px;
+    padding: 21px;
+    background-color: var(--branco);
+    color: var(--texto);
+    text-align: left;
+    box-shadow: var(--sombra);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cartao-materia:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 17px 40px rgba(63, 48, 135, 0.18);
+}
+
+.icone-materia {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 28px;
+    place-items: center;
+    border-radius: 16px;
+    font-size: 27px;
+}
+
+.cartao-materia strong {
+    margin-bottom: 6px;
+    font-size: 19px;
+}
+
+.cartao-materia small {
+    color: var(--texto-claro);
+    font-size: 14px;
+}
+
+.matematica .icone-materia {
+    background-color: #eeeaff;
+}
+
+.portugues .icone-materia {
+    background-color: #fff0f4;
+}
+
+.ciencias .icone-materia {
+    background-color: #eafff5;
+}
+
+.historia .icone-materia {
+    background-color: #fff4e9;
+}
+
+.geografia .icone-materia {
+    background-color: #e8fbfd;
+}
+
+.ingles .icone-materia {
+    background-color: #edf5ff;
+}
+
+.area-materia {
+    margin-top: 30px;
+    padding: 25px;
+    border-radius: 24px;
+    background-color: var(--branco);
+    box-shadow: var(--sombra);
+}
+
+.area-materia h2 {
+    font-size: 28px;
+}
+
+.escondido {
+    display: none;
+}
+
+#botao-voltar {
+    border: none;
+    border-radius: 12px;
+    padding: 10px 14px;
+    background-color: #eeeaff;
+    color: var(--roxo);
+    font-weight: bold;
+}
+
+.menu-materia {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.menu-materia button {
+    border: none;
+    border-radius: 12px;
+    padding: 11px 16px;
+    background-color: var(--roxo);
+    color: var(--branco);
+    font-weight: bold;
+}
+
+#conteudo-materia {
+    padding: 20px;
+    border: 2px solid #ece9f8;
+    border-radius: 17px;
+}
+
+@media (max-width: 800px) {
+    .lista-materias {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .apresentacao h2 {
+        font-size: 27px;
+    }
+}
+
+@media (max-width: 550px) {
+    .cabecalho {
+        align-items: flex-start;
+    }
+
+    .perfil span {
+        display: none;
+    }
+
+    .conteudo {
+        width: 92%;
+        margin-top: 18px;
+    }
+
+    .icone-apresentacao {
+        display: none;
+    }
+
+    .lista-materias {
+        grid-template-columns: 1fr;
+    }
+
+    .caixa-pesquisa {
+        flex-direction: column;
+    }
+
+    .menu-materia {
+        display: grid;
+    }
+}
