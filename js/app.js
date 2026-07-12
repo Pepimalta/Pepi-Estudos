@@ -900,7 +900,36 @@ function formatarPrazo(data) {
 
 function protegerTexto(texto) {
     const elemento = document.createElement("div");
+/* MOSTRAR VÍNCULO DO FILHO NO CADASTRO */
 
+const opcoesTipoConta = document.querySelectorAll(
+    'input[name="tipo-conta"]'
+);
+
+const areaVinculoFilho =
+    document.querySelector("#vinculo-filho");
+
+const campoNomeFilho =
+    document.querySelector("#nome-filho");
+
+const campoEmailFilho =
+    document.querySelector("#email-filho");
+
+opcoesTipoConta.forEach(function (opcao) {
+    opcao.addEventListener("change", function () {
+        if (opcao.value === "Responsável") {
+            areaVinculoFilho.classList.remove("escondido");
+
+            campoNomeFilho.required = true;
+            campoEmailFilho.required = true;
+        } else {
+            areaVinculoFilho.classList.add("escondido");
+
+            campoNomeFilho.required = false;
+            campoEmailFilho.required = false;
+        }
+    });
+});
     elemento.textContent = texto || "";
 
     return elemento.innerHTML;
