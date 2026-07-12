@@ -1,1 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
 
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Pepi Estudos</title>
+
+    <link rel="stylesheet" href="CSS/style.css">
+</head>
+
+<body>
+    <header class="cabecalho">
+        <div class="logo">
+            <span class="simbolo-logo">P</span>
+            <h1>Pepi Estudos</h1>
+        </div>
+
+        <div class="perfil">
+            <span>Olá, Pepi!</span>
+            <button id="botao-perfil">Meu perfil</button>
+        </div>
+    </header>
+
+    <main class="conteudo">
+        <section class="apresentacao">
+            <div>
+                <p class="saudacao">Vamos estudar?</p>
+                <h2>O que você quer aprender hoje?</h2>
+
+                <p>
+                    Escolha uma matéria, veja seus materiais
+                    e pratique o que aprendeu.
+                </p>
+            </div>
+
+            <div class="icone-apresentacao">🚀</div>
+        </section>
+
+        <section class="pesquisa">
+            <label for="campo-pesquisa">
+                Pesquise algo que você não entendeu:
+            </label>
+
+            <div class="caixa-pesquisa">
+                <input
+                    id="campo-pesquisa"
+                    type="text"
+                    placeholder="Exemplo: como funcionam as frações?"
+                >
+
+                <button id="botao-pesquisar">
+                    Pesquisar
+                </button>
+            </div>
+
+            <p id="resposta-pesquisa"></p>
+        </section>
+
+        <section class="secao-materias">
+            <div class="titulo-secao">
+                <div>
+                    <p class="titulo-pequeno">SUAS MATÉRIAS</p>
+                    <h2>Escolha uma matéria</h2>
+                </div>
+
+                <span>6 matérias</span>
+            </div>
+
+            <div class="lista-materias">
+                <button
+                    class="cartao-materia matematica"
+                    data-materia="Matemática"
+                >
+                    <span class="icone-materia">📐</span>
+                    <strong>Matemática</strong>
+                    <small>Frações e geometria</small>
+                </button>
+
+                <button
+                    class="cartao-materia portugues"
+                    data-materia="Português"
+                >
+                    <span class="icone-materia">📚</span>
+                    <strong>Português</strong>
+                    <small>Gramática e interpretação</small>
+                </button>
+
+                <button
+                    class="cartao-materia ciencias"
+                    data-materia="Ciências"
+                >
+                    <span class="icone-materia">🧪</span>
+                    <strong>Ciências</strong>
+                    <small>Células e ecossistemas</small>
+                </button>
+
+                <button
+                    class="cartao-materia historia"
+                    data-materia="História"
+                >
+                    <span class="icone-materia">🏛️</span>
+                    <strong>História</strong>
+                    <small>Brasil colonial</small>
+                </button>
+
+                <button
+                    class="cartao-materia geografia"
+                    data-materia="Geografia"
+                >
+                    <span class="icone-materia">🌎</span>
+                    <strong>Geografia</strong>
+                    <small>Clima e relevo</small>
+                </button>
+
+                <button
+                    class="cartao-materia ingles"
+                    data-materia="Inglês"
+                >
+                    <span class="icone-materia">💬</span>
+                    <strong>Inglês</strong>
+                    <small>Vocabulário e conversação</small>
+                </button>
+            </div>
+        </section>
+
+        <section
+            id="area-materia"
+            class="area-materia escondido"
+        >
+            <button id="botao-voltar">
+                ← Voltar para as matérias
+            </button>
+
+            <h2 id="nome-materia"></h2>
+
+            <nav class="menu-materia">
+                <button data-tela="materiais-dia">
+                    Materiais de hoje
+                </button>
+
+                <button data-tela="materiais-semestre">
+                    Materiais do semestre
+                </button>
+
+                <button data-tela="explicacoes">
+                    Explicações
+                </button>
+
+                <button data-tela="simulado">
+                    Simulado
+                </button>
+            </nav>
+
+            <div id="conteudo-materia">
+                <p>
+                    Escolha uma das opções acima para começar.
+                </p>
+            </div>
+        </section>
+    </main>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
