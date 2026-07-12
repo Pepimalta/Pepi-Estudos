@@ -1,198 +1,297 @@
-const cartoesMaterias = document.querySelectorAll(".cartao-materia");
-const secaoMaterias = document.querySelector(".secao-materias");
-const areaMateria = document.querySelector("#area-materia");
-const nomeMateria = document.querySelector("#nome-materia");
-const conteudoMateria = document.querySelector("#conteudo-materia");
-const botaoVoltar = document.querySelector("#botao-voltar");
+const telaEscolha = document.querySelector("#tela-escolha");
+const telaLogin = document.querySelector("#tela-login");
+const telaCadastro = document.querySelector("#tela-cadastro");
+const aplicativo = document.querySelector("#aplicativo");
 
-const campoPesquisa = document.querySelector("#campo-pesquisa");
-const botaoPesquisar = document.querySelector("#botao-pesquisar");
-const respostaPesquisa = document.querySelector("#resposta-pesquisa");
+const paginaMaterias = document.querySelector("#pagina-materias");
+const paginaMateria = document.querySelector("#pagina-materia");
+const areaDinamica = document.querySelector("#area-dinamica");
 
-let materiaSelecionada = "";
+let usuarioAtual = null;
+let materiaAtual = "";
 
-cartoesMaterias.forEach(function (cartao) {
-    cartao.addEventListener("click", function () {
-        materiaSelecionada = cartao.dataset.materia;
+function esconderTelasPrincipais() {
+    telaEscolha.classList.add("escondido");
+    telaLogin.classList.add("escondido");
+    telaCadastro.classList.add("escondido");
+    aplicativo.classList.add("escondido");
+}
 
-        nomeMateria.textContent = materiaSelecionada;
+function mostrarTela(tela) {
+    esconderTelasPrincipais();
+    tela.classList.remove("escondido");
+}
 
-        secaoMaterias.classList.add("escondido");
-        areaMateria.classList.remove("escondido");
+/* ESCOLHA ENTRE LOGIN E CADASTRO */
 
-        mostrarInicioMateria();
+document.querySelector("#ir-login").addEventListener(
+    "click",
+    function () {
+        mostrarTela(telaLogin);
+    }
+);
 
-        areaMateria.scrollIntoView({
-            behavior: "smooth"
+document.querySelector("#ir-cadastro").addEventListener(
+    "click",
+    function () {
+        mostrarTela(telaCadastro);
+    }
+);
+
+document
+    .querySelectorAll(".voltar-autenticacao")
+    .forEach(function (botao) {
+        botao.addEventListener("click", function () {
+            mostrarTela(telaEscolha);
         });
     });
-});
 
-botaoVoltar.addEventListener("click", function () {
-    areaMateria.classList.add("escondido");
-    secaoMaterias.classList.remove("escondido");
+/* MOSTRAR E ESCONDER SENHA */
 
-    materiaSelecionada = "";
+document
+    .querySelectorAll(".mostrar-senha")
+    .forEach(function (botao) {
+        botao.addEventListener("click", function () {
+            const idDoCampo = botao.dataset.alvo;
+            const campo = document.querySelector("#" + idDoCampo);
 
-    secaoMaterias.scrollIntoView({
+            if (campo.type === "password") {
+                campo.type = "text";
+                botao.textContent = "🙈";
+            } else {
+                campo.type = "password";
+                botao.textContent = "👁";
+            }
+        });
+    });
+
+/* CADASTRO */
+
+document
+    .querySelector("#form-cadastro")
+    .addEventListener("submit", function (evento) {
+        evento.preventDefault();
+
+        const nome = document
+            .querySelector("#cadastro-nome")
+            .value
+            .trim();
+
+        const email = document
+            .querySelector("#cadastro-email")
+            .value
+            .trim();
+
+        const senha = document
+            .querySelector("#cadastro-senha")
+            .value;
+
+        const tipo = document.querySelector(
+            'input[name="tipo-conta"]:checked'
+        ).value;
+
+        const mensagem = document.querySelector(
+            "#erro-cadastro"
+        );
+
+        if (nome.length < 2) {
+            mensagem.textContent =
+                "Digite um nome válido.";
+
+            return;
+        }
+
+        if (senha.length < 6) {
+            mensagem.textContent =
+                "A senha precisa ter pelo menos 6 caracteres.";
+
+            return;
+        }
+
+        usuarioAtual = {
+            nome: nome,
+            email: email,
+            senha: senha,
+            tipo: tipo
+        };
+
+        localStorage.setItem(
+            "contaPepiEstudos",
+            JSON.stringify(usuarioAtual)
+        );
+
+        mensagem.textContent = "";
+
+        entrarNoAplicativo();
+    });
+
+/* LOGIN */
+
+document
+    .querySelector("#form-login")
+    .addEventListener("submit", function (evento) {
+        evento.preventDefault();
+
+        const email = document
+            .querySelector("#login-email")
+            .value
+            .trim();
+
+        const senha = document
+            .querySelector("#login-senha")
+            .value;
+
+        const mensagem = document.querySelector("#erro-login");
+
+        const contaSalva = JSON.parse(
+            localStorage.getItem("contaPepiEstudos")
+        );
+
+        if (!contaSalva) {
+            mensagem.textContent =
+                "Nenhuma conta foi cadastrada neste navegador.";
+
+            return;
+        }
+
+        if (
+            contaSalva.email !== email ||
+            contaSalva.senha !== senha
+        ) {
+            mensagem.textContent =
+                "E-mail ou senha incorretos.";
+
+            return;
+        }
+
+        usuarioAtual = contaSalva;
+        mensagem.textContent = "";
+
+        entrarNoAplicativo();
+    });
+
+/* ENTRAR NO APLICATIVO */
+
+function entrarNoAplicativo() {
+    mostrarTela(aplicativo);
+
+    document.querySelector("#saudacao").textContent =
+        "Olá, " + usuarioAtual.nome + "!";
+
+    document.querySelector("#conta-nome").textContent =
+        usuarioAtual.nome;
+
+    document.querySelector("#conta-email").textContent =
+        usuarioAtual.email;
+
+    document.querySelector("#conta-tipo").textContent =
+        usuarioAtual.tipo;
+
+    mostrarPaginaMaterias();
+}
+
+/* TELA DAS MATÉRIAS */
+
+function mostrarPaginaMaterias() {
+    paginaMaterias.classList.remove("escondido");
+    paginaMateria.classList.add("escondido");
+
+    window.scrollTo({
+        top: 0,
         behavior: "smooth"
     });
-});
-
-function mostrarInicioMateria() {
-    conteudoMateria.innerHTML = `
-        <h3>Bem-vindo à área de ${materiaSelecionada}!</h3>
-
-        <p>
-            Aqui você poderá adicionar materiais,
-            receber explicações e fazer simulados.
-        </p>
-
-        <p>
-            Escolha uma opção no menu acima para começar.
-        </p>
-    `;
 }
 
-const botoesMenu = document.querySelectorAll(".menu-materia button");
+document
+    .querySelector("#ir-inicio")
+    .addEventListener("click", mostrarPaginaMaterias);
 
-botoesMenu.forEach(function (botao) {
-    botao.addEventListener("click", function () {
-        const telaEscolhida = botao.dataset.tela;
+document
+    .querySelector("#voltar-materias")
+    .addEventListener("click", mostrarPaginaMaterias);
 
-        if (telaEscolhida === "materiais-dia") {
-            mostrarMateriaisDoDia();
-        }
+const iconesDasMaterias = {
+    "Matemática": "📐",
+    "Português": "📚",
+    "Ciências": "🧪",
+    "História": "🏛️",
+    "Geografia": "🌎",
+    "Inglês": "💬"
+};
 
-        if (telaEscolhida === "materiais-semestre") {
-            mostrarMateriaisDoSemestre();
-        }
+document
+    .querySelectorAll(".materia")
+    .forEach(function (botao) {
+        botao.addEventListener("click", function () {
+            materiaAtual = botao.dataset.materia;
 
-        if (telaEscolhida === "explicacoes") {
-            mostrarExplicacoes();
-        }
+            paginaMaterias.classList.add("escondido");
+            paginaMateria.classList.remove("escondido");
 
-        if (telaEscolhida === "simulado") {
-            mostrarSimulado();
-        }
+            document.querySelector("#nome-materia").textContent =
+                materiaAtual;
+
+            document.querySelector("#icone-materia").textContent =
+                iconesDasMaterias[materiaAtual];
+
+            areaDinamica.innerHTML = `
+                <h2>O que você quer fazer em ${materiaAtual}?</h2>
+
+                <p>
+                    Escolha uma das opções acima para continuar.
+                </p>
+            `;
+
+            window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+            });
+        });
     });
-});
 
-function mostrarMateriaisDoDia() {
-    conteudoMateria.innerHTML = `
-        <h3>Materiais de hoje — ${materiaSelecionada}</h3>
+/* OPÇÕES DE CADA MATÉRIA */
 
-        <p>
-            Tire uma foto da folha ou escolha um arquivo
-            que você recebeu hoje.
-        </p>
+document
+    .querySelectorAll(".opcoes-materia button")
+    .forEach(function (botao) {
+        botao.addEventListener("click", function () {
+            const opcao = botao.dataset.opcao;
 
-        <label class="botao-upload" for="upload-dia">
-            📷 Escolher fotos ou arquivos
-        </label>
+            if (opcao === "explicacoes") {
+                mostrarExplicacoes();
+            }
 
-        <input
-            id="upload-dia"
-            type="file"
-            accept="image/*,.pdf"
-            multiple
-            hidden
-        >
+            if (opcao === "dia") {
+                mostrarUpload("dia");
+            }
 
-        <div id="lista-upload-dia"></div>
-    `;
+            if (opcao === "semestre") {
+                mostrarUpload("semestre");
+            }
 
-    const uploadDia = document.querySelector("#upload-dia");
-
-    uploadDia.addEventListener("change", function () {
-        mostrarArquivosEscolhidos(
-            uploadDia.files,
-            "#lista-upload-dia"
-        );
+            if (opcao === "simulado") {
+                mostrarSimulado();
+            }
+        });
     });
-}
 
-function mostrarMateriaisDoSemestre() {
-    conteudoMateria.innerHTML = `
-        <h3>Materiais do semestre — ${materiaSelecionada}</h3>
-
-        <p>
-            Aqui ficarão todos os materiais adicionados
-            durante o semestre.
-        </p>
-
-        <label class="botao-upload" for="upload-semestre">
-            📁 Adicionar material do semestre
-        </label>
-
-        <input
-            id="upload-semestre"
-            type="file"
-            accept="image/*,.pdf"
-            multiple
-            hidden
-        >
-
-        <div id="lista-upload-semestre"></div>
-    `;
-
-    const uploadSemestre =
-        document.querySelector("#upload-semestre");
-
-    uploadSemestre.addEventListener("change", function () {
-        mostrarArquivosEscolhidos(
-            uploadSemestre.files,
-            "#lista-upload-semestre"
-        );
-    });
-}
-
-function mostrarArquivosEscolhidos(arquivos, localDaLista) {
-    const lista = document.querySelector(localDaLista);
-
-    if (arquivos.length === 0) {
-        lista.innerHTML = "<p>Nenhum arquivo escolhido.</p>";
-        return;
-    }
-
-    lista.innerHTML = "<h4>Arquivos adicionados:</h4>";
-
-    Array.from(arquivos).forEach(function (arquivo) {
-        const item = document.createElement("div");
-
-        item.classList.add("arquivo-adicionado");
-
-        item.innerHTML = `
-            <span>📄</span>
-
-            <div>
-                <strong>${arquivo.name}</strong>
-                <small>
-                    ${(arquivo.size / 1024).toFixed(1)} KB
-                </small>
-            </div>
-        `;
-
-        lista.appendChild(item);
-    });
-}
+/* EXPLICAÇÕES */
 
 function mostrarExplicacoes() {
-    conteudoMateria.innerHTML = `
-        <h3>Como você quer estudar ${materiaSelecionada}?</h3>
+    areaDinamica.innerHTML = `
+        <h2>Explicações de ${materiaAtual}</h2>
 
         <p>
-            Escolha o formato que combina mais com você.
+            Escolha como você prefere aprender.
         </p>
 
         <div class="tipos-explicacao">
             <button
                 class="tipo-explicacao"
-                data-tipo="Áudio explicativo"
+                data-tipo="Slides"
             >
-                <span>🎧</span>
-                <strong>Ouvir a explicação</strong>
-                <small>Aula em áudio com exemplos.</small>
+                <span>🖥️</span>
+                <strong>Slides</strong>
             </button>
 
             <button
@@ -201,176 +300,250 @@ function mostrarExplicacoes() {
             >
                 <span>✍️</span>
                 <strong>Cópia guiada</strong>
-                <small>Texto organizado para copiar.</small>
             </button>
 
             <button
                 class="tipo-explicacao"
-                data-tipo="Slides"
+                data-tipo="Áudio explicativo"
             >
-                <span>🖥️</span>
-                <strong>Slides</strong>
-                <small>Resumo visual do conteúdo.</small>
-            </button>
-
-            <button
-                class="tipo-explicacao"
-                data-tipo="Material explicativo"
-            >
-                <span>💡</span>
-                <strong>Material explicativo</strong>
-                <small>Explicação completa com exemplos.</small>
+                <span>🎧</span>
+                <strong>Áudio explicativo</strong>
             </button>
         </div>
 
-        <div id="explicacao-escolhida"></div>
-
-        <button id="ir-simulado" class="botao-principal">
-            Já entendi: ir direto ao simulado
-        </button>
+        <div id="resultado-explicacao"></div>
     `;
-
-    const tiposExplicacao =
-        document.querySelectorAll(".tipo-explicacao");
-
-    tiposExplicacao.forEach(function (botao) {
-        botao.addEventListener("click", function () {
-            const tipo = botao.dataset.tipo;
-            mostrarExplicacaoEscolhida(tipo);
-        });
-    });
 
     document
-        .querySelector("#ir-simulado")
-        .addEventListener("click", mostrarSimulado);
+        .querySelectorAll(".tipo-explicacao")
+        .forEach(function (botao) {
+            botao.addEventListener("click", function () {
+                mostrarTipoDeExplicacao(
+                    botao.dataset.tipo
+                );
+            });
+        });
 }
 
-function mostrarExplicacaoEscolhida(tipo) {
-    const localExplicacao =
-        document.querySelector("#explicacao-escolhida");
+function mostrarTipoDeExplicacao(tipo) {
+    document.querySelector(
+        "#resultado-explicacao"
+    ).innerHTML = `
+        <div class="informacao" style="margin-top: 20px">
+            <span>Formato escolhido</span>
 
-    localExplicacao.innerHTML = `
-        <div class="caixa-explicacao">
-            <h4>${tipo}</h4>
+            <strong>${tipo}</strong>
 
             <p>
-                Aqui aparecerá uma explicação de
-                <strong>${materiaSelecionada}</strong>
-                criada a partir dos materiais enviados.
+                Aqui aparecerá a explicação de
+                ${materiaAtual} no formato escolhido.
             </p>
 
             <p>
-                Esta função será conectada à inteligência
-                artificial em uma etapa futura.
+                Em uma próxima etapa, esta área utilizará
+                os materiais enviados pelo aluno.
             </p>
         </div>
     `;
 }
 
-function mostrarSimulado() {
-    conteudoMateria.innerHTML = `
-        <div class="cabecalho-simulado">
-            <p>SIMULADO DE ${materiaSelecionada.toUpperCase()}</p>
-            <h3>Treino rápido</h3>
-        </div>
+/* UPLOADS */
+
+function mostrarUpload(periodo) {
+    const titulo =
+        periodo === "dia"
+            ? "Uploads do dia"
+            : "Uploads do semestre";
+
+    areaDinamica.innerHTML = `
+        <h2>${titulo} — ${materiaAtual}</h2>
 
         <p>
-            Este simulado é opcional e não vale nota.
-            Ele serve para você praticar.
+            Escolha fotos, PDFs ou outros materiais.
         </p>
 
-        <div class="pergunta">
-            <h4>
-                Qual é uma boa maneira de aprender
-                ${materiaSelecionada}?
-            </h4>
+        <label class="upload" for="seletor-arquivos">
+            📷 Escolher arquivos
+        </label>
 
-            <button
-                class="alternativa"
-                data-correta="false"
-            >
-                Apenas decorar tudo sem compreender.
-            </button>
+        <input
+            id="seletor-arquivos"
+            type="file"
+            accept="image/*,.pdf"
+            multiple
+            hidden
+        >
 
-            <button
-                class="alternativa"
-                data-correta="true"
-            >
-                Entender, praticar e revisar o conteúdo.
-            </button>
-
-            <button
-                class="alternativa"
-                data-correta="false"
-            >
-                Fazer tudo rapidamente sem prestar atenção.
-            </button>
-
-            <p id="resultado-simulado"></p>
-        </div>
+        <div id="lista-arquivos"></div>
     `;
 
-    const alternativas =
-        document.querySelectorAll(".alternativa");
+    document
+        .querySelector("#seletor-arquivos")
+        .addEventListener("change", function (evento) {
+            const arquivos = Array.from(
+                evento.target.files
+            );
 
-    alternativas.forEach(function (alternativa) {
-        alternativa.addEventListener("click", function () {
-            responderSimulado(alternativa);
+            const lista = document.querySelector(
+                "#lista-arquivos"
+            );
+
+            lista.innerHTML = "";
+
+            if (arquivos.length === 0) {
+                lista.innerHTML =
+                    "<p>Nenhum arquivo escolhido.</p>";
+
+                return;
+            }
+
+            arquivos.forEach(function (arquivo) {
+                const tamanho = (
+                    arquivo.size / 1024
+                ).toFixed(1);
+
+                lista.innerHTML += `
+                    <div class="arquivo">
+                        <strong>📄 ${arquivo.name}</strong>
+                        <br>
+                        <small>${tamanho} KB</small>
+                    </div>
+                `;
+            });
         });
-    });
 }
 
-function responderSimulado(alternativaEscolhida) {
-    const resultado =
-        document.querySelector("#resultado-simulado");
+/* SIMULADO */
 
-    const alternativas =
-        document.querySelectorAll(".alternativa");
+function mostrarSimulado() {
+    areaDinamica.innerHTML = `
+        <h2>Simulado de ${materiaAtual}</h2>
 
-    alternativas.forEach(function (alternativa) {
-        alternativa.disabled = true;
-    });
+        <p>
+            Este treino é opcional e não vale nota.
+        </p>
 
-    if (alternativaEscolhida.dataset.correta === "true") {
-        alternativaEscolhida.classList.add("alternativa-correta");
+        <h3>
+            Qual é a melhor maneira de estudar
+            ${materiaAtual}?
+        </h3>
 
-        resultado.textContent =
+        <button
+            class="alternativa"
+            data-correta="false"
+        >
+            Decorar sem compreender.
+        </button>
+
+        <button
+            class="alternativa"
+            data-correta="true"
+        >
+            Entender, praticar e revisar.
+        </button>
+
+        <button
+            class="alternativa"
+            data-correta="false"
+        >
+            Fazer tudo com pressa.
+        </button>
+
+        <p id="resultado-simulado"></p>
+    `;
+
+    document
+        .querySelectorAll(".alternativa")
+        .forEach(function (botao) {
+            botao.addEventListener("click", function () {
+                responderSimulado(botao);
+            });
+        });
+}
+
+function responderSimulado(botao) {
+    const acertou =
+        botao.dataset.correta === "true";
+
+    document
+        .querySelectorAll(".alternativa")
+        .forEach(function (alternativa) {
+            alternativa.disabled = true;
+        });
+
+    if (acertou) {
+        botao.classList.add("correta");
+
+        document.querySelector(
+            "#resultado-simulado"
+        ).textContent =
             "✅ Muito bem! Você acertou.";
     } else {
-        alternativaEscolhida.classList.add("alternativa-errada");
+        botao.classList.add("errada");
 
-        resultado.textContent =
-            "💡 Quase! Revise a explicação e tente novamente.";
+        document.querySelector(
+            "#resultado-simulado"
+        ).textContent =
+            "💡 Quase! Revise e tente novamente.";
     }
 }
 
-botaoPesquisar.addEventListener("click", pesquisarDuvida);
+/* PESQUISA */
 
-campoPesquisa.addEventListener("keydown", function (evento) {
-    if (evento.key === "Enter") {
-        pesquisarDuvida();
+document
+    .querySelector("#pesquisar")
+    .addEventListener("click", function () {
+        const pergunta = document
+            .querySelector("#pesquisa")
+            .value
+            .trim();
+
+        const resposta = document.querySelector(
+            "#resposta-pesquisa"
+        );
+
+        if (pergunta === "") {
+            resposta.textContent =
+                "Digite uma pergunta primeiro.";
+
+            return;
+        }
+
+        resposta.textContent =
+            `Sua pergunta foi recebida: “${pergunta}”. ` +
+            `A resposta inteligente será adicionada depois.`;
+    });
+
+/* MINHA CONTA */
+
+const modalConta = document.querySelector("#modal-conta");
+
+document
+    .querySelector("#botao-conta")
+    .addEventListener("click", function () {
+        modalConta.classList.remove("escondido");
+    });
+
+document
+    .querySelector("#fechar-conta")
+    .addEventListener("click", function () {
+        modalConta.classList.add("escondido");
+    });
+
+modalConta.addEventListener("click", function (evento) {
+    if (evento.target === modalConta) {
+        modalConta.classList.add("escondido");
     }
 });
 
-function pesquisarDuvida() {
-    const pergunta = campoPesquisa.value.trim();
+document
+    .querySelector("#sair")
+    .addEventListener("click", function () {
+        usuarioAtual = null;
 
-    if (pergunta === "") {
-        respostaPesquisa.textContent =
-            "Digite uma pergunta antes de pesquisar.";
+        modalConta.classList.add("escondido");
 
-        return;
-    }
+        document.querySelector("#form-login").reset();
 
-    if (materiaSelecionada === "") {
-        respostaPesquisa.textContent =
-            "Escolha uma matéria antes de fazer a pesquisa.";
-
-        return;
-    }
-
-    respostaPesquisa.textContent =
-        `Sua pergunta sobre ${materiaSelecionada} foi recebida: ` +
-        `"${pergunta}". A resposta com inteligência artificial ` +
-        `será adicionada futuramente.`;
-}
+        mostrarTela(telaEscolha);
+    });
