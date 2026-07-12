@@ -741,7 +741,56 @@
                 </div>
 
                 <button type="submit" class="botao-principal">
-                    Cadastrar
+                    <section
+    id="vinculo-filho"
+    class="escondido"
+>
+    <div class="informacao" style="margin: 18px 0">
+        <h3 style="margin-top: 0">
+            Vincule seu primeiro filho
+        </h3>
+
+        <p>
+            Faça o vínculo agora ou gere um convite
+            para o aluno aceitar depois.
+        </p>
+
+        <label for="nome-filho">
+            Nome do aluno
+        </label>
+
+        <input
+            id="nome-filho"
+            type="text"
+            placeholder="Nome ou apelido do aluno"
+        >
+
+        <label for="email-filho">
+            E-mail escolar do aluno
+        </label>
+
+        <input
+            id="email-filho"
+            type="email"
+            placeholder="aluno@escola.com"
+        >
+
+        <label for="codigo-aluno">
+            Código do aluno, caso ele já tenha uma conta
+        </label>
+
+        <input
+            id="codigo-aluno"
+            type="text"
+            placeholder="Exemplo: PEPI-4821"
+        >
+
+        <p style="color: var(--cinza); font-size: 13px">
+            Se o aluno ainda não tiver código, deixe esse
+            campo vazio. O aplicativo criará um convite.
+        </p>
+    </div>
+</section>Cadastrar
                 </button>
 
                 <p id="erro-cadastro" class="mensagem"></p>
