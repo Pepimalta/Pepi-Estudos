@@ -781,7 +781,26 @@
                     </p>
                 </div>
 
-                <section class="pesquisa">
+                <section
+    id="conexao-classroom"
+    class="pesquisa"
+>
+    <h2>Google Classroom</h2>
+
+    <p>
+        Conecte sua conta escolar para carregar
+        suas matérias e atividades.
+    </p>
+
+    <button
+        id="conectar-classroom"
+        class="botao-principal"
+    >
+        Conectar ao Classroom
+    </button>
+
+    <p id="status-classroom"></p>
+</section><section class="pesquisa">
                     <label for="pesquisa">
                         O que você não entendeu?
                     </label>
@@ -916,6 +935,10 @@
         </section>
     </div>
 
-    <script src="js/app.js"></script>
+   <script
+    src="https://accounts.google.com/gsi/client"
+    async
+    defer
+></script> <script src="js/app.js"></script>
 </body>
 </html> 
