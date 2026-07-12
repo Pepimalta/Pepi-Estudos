@@ -8,6 +8,10 @@ const ESCOPOS_CLASSROOM = [
     "https://www.googleapis.com/auth/drive.readonly"
 ].join(" ");
 
+const ENDERECO_IA =
+    "https://pepi-estudos.vercel.app/api/estudar";
+
+let estudoGerado = null;
 const telaEscolha = document.querySelector("#escolha");
 const telaLogin = document.querySelector("#login");
 const telaCadastro = document.querySelector("#cadastro");
