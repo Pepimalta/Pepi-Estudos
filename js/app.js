@@ -963,72 +963,200 @@ function mostrarUpload(periodo) {
 
 /* SIMULADO */
 
-function mostrarSimulado() {
-    areaMateria.innerHTML = `
-        <h2>
-            Simulado de
-            ${protegerTexto(materiaAtual.name)}
-        </h2>
+async function mostrarSimulado() {
+    if (!estudoGerado) {
+        areaMateria.innerHTML = `
+            <h2>Criando o simulado...</h2>
 
-        <p>
-            Este treino é opcional e não vale nota.
-        </p>
+            <p>
+                Lendo os materiais da disciplina.
+            </p>
+        `;
 
-        <h3>
-            Qual é a melhor maneira de estudar?
-        </h3>
+        try {
+            estudoGerado =
+                await gerarEstudoDaMateria();
+        } catch (erro) {
+            areaMateria.innerHTML = `
+                <h2>
+                    Não foi possível criar o simulado
+                </h2>
 
-        <button
-            class="alternativa"
-            data-correta="false"
-        >
-            Decorar sem compreender.
-        </button>
+                <p>
+                    ${protegerTexto(erro.message)}
+                </p>
+            `;
 
-        <button
-            class="alternativa"
-            data-correta="true"
-        >
-            Entender, praticar e revisar.
-        </button>
+            return;
+        }
+    }
 
-        <button
-            class="alternativa"
-            data-correta="false"
-        >
-            Fazer tudo com pressa.
-        </button>
+    let questaoAtual = 0;
+    let pontos = 0;
 
-        <p id="resultado-simulado"></p>
-    `;
+    function desenharQuestao() {
+        const questao =
+            estudoGerado.simulado[
+                questaoAtual
+            ];
 
-    document
-        .querySelectorAll(".alternativa")
-        .forEach(function (botao) {
-            botao.addEventListener(
-                "click",
-                function () {
-                    const correta =
-                        botao.dataset.correta ===
-                        "true";
+        const alternativas =
+            questao.alternativas
+                .map(function (
+                    alternativa,
+                    indice
+                ) {
+                    return `
+                        <button
+                            class="alternativa"
+                            data-indice="${indice}"
+                        >
+                            ${protegerTexto(
+                                alternativa
+                            )}
+                        </button>
+                    `;
+                })
+                .join("");
 
+        areaMateria.innerHTML = `
+            <h2>
+                Simulado de
+                ${protegerTexto(
+                    materiaAtual.name
+                )}
+            </h2>
+
+            <p>
+                Questão ${questaoAtual + 1}
+                de ${estudoGerado.simulado.length}
+            </p>
+
+            <h3>
+                ${protegerTexto(
+                    questao.pergunta
+                )}
+            </h3>
+
+            ${alternativas}
+
+            <div id="retorno-questao"></div>
+        `;
+
+        document
+            .querySelectorAll(".alternativa")
+            .forEach(function (botao) {
+                botao.addEventListener(
+                    "click",
+                    function () {
+                        responderQuestao(
+                            Number(
+                                botao.dataset.indice
+                            )
+                        );
+                    }
+                );
+            });
+    }
+
+    function responderQuestao(indice) {
+        const questao =
+            estudoGerado.simulado[
+                questaoAtual
+            ];
+
+        const acertou =
+            indice === questao.correta;
+
+        if (acertou) {
+            pontos++;
+        }
+
+        document
+            .querySelectorAll(".alternativa")
+            .forEach(function (
+                botao,
+                indiceBotao
+            ) {
+                botao.disabled = true;
+
+                if (
+                    indiceBotao ===
+                    questao.correta
+                ) {
                     botao.classList.add(
-                        correta
-                            ? "correta"
-                            : "errada"
+                        "correta"
                     );
-
-                    document.querySelector(
-                        "#resultado-simulado"
-                    ).textContent =
-                        correta
-                            ? "✅ Muito bem!"
-                            : "💡 Revise e tente novamente.";
+                } else if (
+                    indiceBotao === indice
+                ) {
+                    botao.classList.add(
+                        "errada"
+                    );
                 }
-            );
-        });
-}
+            });
 
+        document.querySelector(
+            "#retorno-questao"
+        ).innerHTML = `
+            <div class="arquivo">
+                <strong>
+                    ${
+                        acertou
+                            ? "✅ Acertou!"
+                            : "💡 Vamos revisar."
+                    }
+                </strong>
+
+                <p>
+                    ${protegerTexto(
+                        questao.explicacao
+                    )}
+                </p>
+
+                <button
+                    id="proxima-questao"
+                    class="botao-principal"
+                >
+                    ${
+                        questaoAtual + 1 <
+                        estudoGerado.simulado.length
+                            ? "Próxima questão"
+                            : "Ver resultado"
+                    }
+                </button>
+            </div>
+        `;
+
+        document.querySelector(
+            "#proxima-questao"
+        ).addEventListener(
+            "click",
+            function () {
+                questaoAtual++;
+
+                if (
+                    questaoAtual <
+                    estudoGerado.simulado.length
+                ) {
+                    desenharQuestao();
+                } else {
+                    areaMateria.innerHTML = `
+                        <h2>Resultado</h2>
+
+                        <p>
+                            Você acertou
+                            ${pontos} de
+                            ${estudoGerado.simulado.length}.
+                        </p>
+                    `;
+                }
+            }
+        );
+    }
+
+    desenharQuestao();
+}
 /* PESQUISA ORGANIZADA POR MATÉRIA */
 
 document
@@ -1312,7 +1440,256 @@ function desenharAtividadesDeAmanha(itens) {
             .join("");
 }
 
-/* MINHA CONTA */
+async function gerarEstudoDaMateria() {
+    const conteudo =
+        await obterConteudoDaMateria();
+
+    if (conteudo.trim().length < 40) {
+        throw new Error(
+            "Não encontrei material suficiente " +
+            "nesta matéria."
+        );
+    }
+
+    const resposta = await fetch(
+        ENDERECO_IA,
+        {
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+
+            body: JSON.stringify({
+                materia:
+                    materiaAtual.name,
+
+                titulo:
+                    "Materiais do Classroom",
+
+                conteudo:
+                    conteudo
+            })
+        }
+    );
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+        throw new Error(
+            dados.erro ||
+            "O servidor da IA recusou a solicitação."
+        );
+    }
+
+    return dados;
+}
+
+async function obterConteudoDaMateria() {
+    let texto = `
+Matéria: ${materiaAtual.name}
+`;
+
+    if (
+        !materiaAtual.id ||
+        !String(materiaAtual.id).match(/^\d+$/)
+    ) {
+        throw new Error(
+            "Esta ainda é uma matéria de demonstração. " +
+            "Conecte o Classroom primeiro."
+        );
+    }
+
+    let atividades =
+        atividadesPorTurma[materiaAtual.id];
+
+    if (!atividades) {
+        const dados = await chamarClassroom(
+            "courses/" +
+            materiaAtual.id +
+            "/courseWork?pageSize=100"
+        );
+
+        atividades =
+            dados.courseWork || [];
+
+        atividadesPorTurma[
+            materiaAtual.id
+        ] = atividades;
+    }
+
+    const dadosMateriais =
+        await chamarClassroom(
+            "courses/" +
+            materiaAtual.id +
+            "/courseWorkMaterials?pageSize=100"
+        );
+
+    const publicacoes =
+        dadosMateriais.courseWorkMaterial || [];
+
+    const anexosDrive = [];
+
+    atividades.forEach(function (atividade) {
+        texto += `
+ATIVIDADE: ${atividade.title || ""}
+DESCRIÇÃO: ${atividade.description || ""}
+`;
+
+        recolherAnexos(
+            atividade.materials,
+            anexosDrive
+        );
+    });
+
+    publicacoes.forEach(function (publicacao) {
+        texto += `
+MATERIAL: ${publicacao.title || ""}
+DESCRIÇÃO: ${publicacao.description || ""}
+`;
+
+        recolherAnexos(
+            publicacao.materials,
+            anexosDrive
+        );
+    });
+
+    const anexosUnicos = Array.from(
+        new Map(
+            anexosDrive.map(function (anexo) {
+                return [anexo.id, anexo];
+            })
+        ).values()
+    );
+
+    for (const anexo of anexosUnicos) {
+        try {
+            const textoDoArquivo =
+                await lerArquivoDoDrive(anexo.id);
+
+            texto += `
+ARQUIVO: ${anexo.nome}
+CONTEÚDO:
+${textoDoArquivo}
+`;
+        } catch (erro) {
+            console.warn(
+                "Não foi possível ler:",
+                anexo.nome,
+                erro
+            );
+        }
+    }
+
+    return texto.slice(0, 60000);
+}
+
+function recolherAnexos(
+    materiais,
+    destino
+) {
+    (materiais || []).forEach(
+        function (material) {
+            const arquivo =
+                material.driveFile?.driveFile;
+
+            if (arquivo?.id) {
+                destino.push({
+                    id: arquivo.id,
+
+                    nome:
+                        arquivo.title ||
+                        "Arquivo do Drive"
+                });
+            }
+        }
+    );
+}
+
+async function lerArquivoDoDrive(id) {
+    const metadadosResposta = await fetch(
+        "https://www.googleapis.com/drive/v3/files/" +
+        encodeURIComponent(id) +
+        "?fields=id,name,mimeType",
+        {
+            headers: {
+                Authorization:
+                    "Bearer " + tokenClassroom
+            }
+        }
+    );
+
+    const metadados =
+        await metadadosResposta.json();
+
+    if (!metadadosResposta.ok) {
+        throw new Error(
+            metadados.error?.message ||
+            "Não foi possível abrir o arquivo."
+        );
+    }
+
+    const tipo = metadados.mimeType;
+
+    let endereco;
+
+    if (
+        tipo ===
+        "application/vnd.google-apps.document"
+    ) {
+        endereco =
+            "https://www.googleapis.com/drive/v3/files/" +
+            encodeURIComponent(id) +
+            "/export?mimeType=text%2Fplain";
+    } else if (
+        tipo ===
+        "application/vnd.google-apps.presentation"
+    ) {
+        endereco =
+            "https://www.googleapis.com/drive/v3/files/" +
+            encodeURIComponent(id) +
+            "/export?mimeType=text%2Fplain";
+    } else if (
+        tipo.startsWith("text/")
+    ) {
+        endereco =
+            "https://www.googleapis.com/drive/v3/files/" +
+            encodeURIComponent(id) +
+            "?alt=media";
+    } else {
+        return (
+            "Arquivo anexado: " +
+            metadados.name +
+            ". Formato ainda não convertido: " +
+            tipo
+        );
+    }
+
+    const arquivoResposta = await fetch(
+        endereco,
+        {
+            headers: {
+                Authorization:
+                    "Bearer " + tokenClassroom
+            }
+        }
+    );
+
+    if (!arquivoResposta.ok) {
+        const erro =
+            await arquivoResposta.text();
+
+        throw new Error(erro);
+    }
+
+    return await arquivoResposta.text();
+}
+
+function formatarTexto(texto) {
+    return protegerTexto(texto)
+        .replace(/\n/g, "<br>");
+}/* MINHA CONTA */
 
 const modalConta =
     document.querySelector("#modal-conta");
