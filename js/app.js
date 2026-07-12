@@ -490,30 +490,54 @@ function responderSimulado(botao) {
 
 /* PESQUISA */
 
+/* PESQUISA NO GOOGLE */
+
 document
     .querySelector("#pesquisar")
-    .addEventListener("click", function () {
-        const pergunta = document
-            .querySelector("#pesquisa")
-            .value
-            .trim();
+    .addEventListener("click", pesquisarNoGoogle);
 
-        const resposta = document.querySelector(
-            "#resposta-pesquisa"
-        );
-
-        if (pergunta === "") {
-            resposta.textContent =
-                "Digite uma pergunta primeiro.";
-
-            return;
+document
+    .querySelector("#pesquisa")
+    .addEventListener("keydown", function (evento) {
+        if (evento.key === "Enter") {
+            pesquisarNoGoogle();
         }
-
-        resposta.textContent =
-            `Sua pergunta foi recebida: “${pergunta}”. ` +
-            `A resposta inteligente será adicionada depois.`;
     });
 
+function pesquisarNoGoogle() {
+    const campoPesquisa =
+        document.querySelector("#pesquisa");
+
+    const pergunta = campoPesquisa.value.trim();
+
+    const resposta =
+        document.querySelector("#resposta-pesquisa");
+
+    if (pergunta === "") {
+        resposta.textContent =
+            "Digite uma pergunta primeiro.";
+
+        return;
+    }
+
+    resposta.textContent =
+        "Abrindo a pesquisa no Google...";
+
+    const pesquisaCompleta =
+        materiaAtual !== ""
+            ? pergunta + " " + materiaAtual
+            : pergunta;
+
+    const enderecoGoogle =
+        "https://www.google.com/search?q=" +
+        encodeURIComponent(pesquisaCompleta);
+
+    window.open(
+        enderecoGoogle,
+        "_blank",
+        "noopener,noreferrer"
+    );
+}
 /* MINHA CONTA */
 
 const modalConta = document.querySelector("#modal-conta");
