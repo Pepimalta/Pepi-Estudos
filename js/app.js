@@ -3370,7 +3370,7 @@ async function carregarTurmas() {
                     : " turmas conectadas"
             );
 
-        await carregarAtividadesDeAmanha();
+        await carregarAtividadesDaData();
     } catch (erro) {
         statusClassroom.textContent =
             "A conta foi lembrada, mas é preciso " +
@@ -3385,14 +3385,41 @@ async function carregarTurmas() {
     }
 }
 
-/* AVISOS PARA AMANHÃ */
+/* AVISOS POR DATA */
 
-async function carregarAtividadesDeAmanha() {
+const campoDataAtividades =
+    document.querySelector("#data-atividades");
+
+const tituloAtividadesData =
+    document.querySelector("#titulo-atividades-data");
+
+function prepararDataInicialAtividades() {
     const amanha = new Date();
-
     amanha.setDate(amanha.getDate() + 1);
 
-    const atividadesAmanha = [];
+    if (!campoDataAtividades.value) {
+        campoDataAtividades.value =
+            dataParaCampo(amanha);
+    }
+}
+
+async function carregarAtividadesDaData() {
+    prepararDataInicialAtividades();
+
+    const dataEscolhida = new Date(
+        campoDataAtividades.value + "T12:00:00"
+    );
+
+    const atividadesDaData = [];
+
+    tituloAtividadesData.textContent =
+        dataParaCampo(dataEscolhida) ===
+        dataParaCampo(new Date(Date.now() + 86400000))
+            ? "Para amanhã"
+            : "Para " + dataEscolhida.toLocaleDateString("pt-BR");
+
+    document.querySelector("#atividades-amanha").innerHTML =
+        "<p>Consultando as atividades do Classroom...</p>";
 
     for (const turma of turmasClassroom) {
         try {
@@ -3412,12 +3439,12 @@ async function carregarAtividadesDeAmanha() {
             atividades.forEach(
                 function (atividade) {
                     if (
-                        dataIgualAmanha(
+                        dataIgualAEscolhida(
                             atividade.dueDate,
-                            amanha
+                            dataEscolhida
                         )
                     ) {
-                        atividadesAmanha.push({
+                        atividadesDaData.push({
                             atividade:
                                 atividade,
 
@@ -3432,24 +3459,25 @@ async function carregarAtividadesDeAmanha() {
         }
     }
 
-    desenharAtividadesDeAmanha(
-        atividadesAmanha
+    desenharAtividadesDaData(
+        atividadesDaData,
+        dataEscolhida
     );
 }
 
-function dataIgualAmanha(data, amanha) {
+function dataIgualAEscolhida(data, escolhida) {
     if (!data) {
         return false;
     }
 
     return (
-        data.year === amanha.getFullYear() &&
-        data.month === amanha.getMonth() + 1 &&
-        data.day === amanha.getDate()
+        data.year === escolhida.getFullYear() &&
+        data.month === escolhida.getMonth() + 1 &&
+        data.day === escolhida.getDate()
     );
 }
 
-function desenharAtividadesDeAmanha(itens) {
+function desenharAtividadesDaData(itens, dataEscolhida) {
     const area = document.querySelector(
         "#atividades-amanha"
     );
@@ -3457,8 +3485,8 @@ function desenharAtividadesDeAmanha(itens) {
     if (itens.length === 0) {
         area.innerHTML = `
             <p>
-                Nenhuma atividade do Classroom
-                para amanhã.
+                Nenhuma atividade do Classroom com entrega em
+                ${protegerTexto(dataEscolhida.toLocaleDateString("pt-BR"))}.
             </p>
         `;
 
@@ -3486,6 +3514,19 @@ function desenharAtividadesDeAmanha(itens) {
             })
             .join("");
 }
+
+prepararDataInicialAtividades();
+
+campoDataAtividades.addEventListener("change", function () {
+    if (turmasClassroom.length > 0) {
+        carregarAtividadesDaData();
+    } else {
+        tituloAtividadesData.textContent =
+            "Para " + new Date(
+                campoDataAtividades.value + "T12:00:00"
+            ).toLocaleDateString("pt-BR");
+    }
+});
 
 async function gerarEstudoDaMateria() {
     const conteudo =
@@ -3542,9 +3583,8 @@ async function obterConteudoDaMateria(
     periodo
 ) {
     let texto =
-        "Matéria: " +
-        materiaAtual.name +
-        "\n";
+        "PACOTE DE ESTUDO DO MALTÉRIA\n" +
+        "Matéria: " + materiaAtual.name + "\n";
 
     if (periodo) {
         texto +=
@@ -3590,57 +3630,146 @@ async function obterConteudoDaMateria(
     const publicacoes =
         dadosMateriais.courseWorkMaterial || [];
 
-    const atividadesFiltradas =
-        atividades.filter(function (item) {
-            return itemEstaNoPeriodoDeEstudo(
-                item,
-                periodo
-            );
-        });
+    let eventosAgenda = [];
 
-    const publicacoesFiltradas =
-        publicacoes.filter(function (item) {
+    if (periodo?.inicio) {
+        try {
+            const agenda = await obterEventosAgenda(
+                periodo.inicio,
+                periodo.inicio
+            );
+
+            eventosAgenda = agenda.fontes.filter(
+                eventoCombinaComMateriaAtual
+            );
+        } catch (erro) {
+            console.warn(
+                "A Agenda não pôde ser consultada:",
+                erro
+            );
+        }
+    }
+
+    const atividadesDoDia = atividades.filter(
+        function (item) {
             return itemEstaNoPeriodoDeEstudo(
                 item,
                 periodo
             );
-        });
+        }
+    );
+
+    const publicacoesDoDia = publicacoes.filter(
+        function (item) {
+            return itemEstaNoPeriodoDeEstudo(
+                item,
+                periodo
+            );
+        }
+    );
+
+    const contextoDoDia = [
+        ...eventosAgenda.map(function (evento) {
+            return evento.titulo + " " + evento.descricao;
+        }),
+        ...atividadesDoDia.map(function (atividade) {
+            return atividade.title + " " +
+                (atividade.description || "");
+        })
+    ].join(" ");
+
+    const atividadesRelacionadas = escolherItensRelacionados(
+        atividades,
+        atividadesDoDia,
+        contextoDoDia,
+        6
+    );
+
+    const publicacoesRelacionadas = escolherItensRelacionados(
+        publicacoes,
+        publicacoesDoDia,
+        contextoDoDia,
+        8
+    );
+
+    const atividadesSelecionadas = unirItensSemRepetir(
+        atividadesDoDia,
+        atividadesRelacionadas
+    );
+
+    const publicacoesSelecionadas = unirItensSemRepetir(
+        publicacoesDoDia,
+        publicacoesRelacionadas
+    );
 
     const anexosDrive = [];
 
-    atividadesFiltradas.forEach(
+    texto += "\n=== 1. AGENDA E TAREFAS DA DATA ===\n";
+
+    if (eventosAgenda.length === 0) {
+        texto +=
+            "Nenhum evento da Agenda identificado como pertencente " +
+            "a esta matéria na data escolhida.\n";
+    }
+
+    eventosAgenda.forEach(function (evento) {
+        texto +=
+            "\nAGENDA: " + evento.titulo +
+            "\nDESCRIÇÃO: " + (evento.descricao || "") +
+            "\n";
+    });
+
+    atividadesSelecionadas.forEach(
         function (atividade) {
             texto +=
-                "\nATIVIDADE: " +
+                "\nATIVIDADE DO CLASSROOM: " +
                 (atividade.title || "") +
                 "\nDESCRIÇÃO: " +
                 (atividade.description || "") +
+                "\nRELAÇÃO COM A DATA: " +
+                (atividadesDoDia.includes(atividade)
+                    ? "atividade localizada na data solicitada"
+                    : "atividade relacionada usada como apoio") +
                 "\n";
 
             recolherAnexos(
                 atividade.materials,
                 anexosDrive
             );
+
+            texto += descreverMateriaisClassroom(
+                atividade.materials
+            );
         }
     );
 
-    publicacoesFiltradas.forEach(
+    texto += "\n=== 2. MATERIAIS DA DISCIPLINA NO CLASSROOM ===\n";
+
+    publicacoesSelecionadas.forEach(
         function (publicacao) {
             texto +=
                 "\nMATERIAL: " +
                 (publicacao.title || "") +
                 "\nDESCRIÇÃO: " +
                 (publicacao.description || "") +
+                "\nRELAÇÃO COM A DATA: " +
+                (publicacoesDoDia.includes(publicacao)
+                    ? "material publicado/atualizado na data solicitada"
+                    : "material relacionado ou material de apoio da disciplina") +
                 "\n";
 
             recolherAnexos(
                 publicacao.materials,
                 anexosDrive
             );
+
+            texto += descreverMateriaisClassroom(
+                publicacao.materials
+            );
         }
     );
 
-    const uploads = uploadsDaSessao.filter(
+    let uploads = uploadsDaSessao.filter(
         function (upload) {
             return (
                 upload.materiaId ===
@@ -3652,6 +3781,17 @@ async function obterConteudoDaMateria(
             );
         }
     );
+
+    if (uploads.length === 0) {
+        uploads = uploadsDaSessao
+            .filter(function (upload) {
+                return upload.materiaId ===
+                    String(materiaAtual.id);
+            })
+            .slice(-5);
+    }
+
+    texto += "\n=== 3. UPLOADS DO ALUNO ===\n";
 
     uploads.forEach(function (upload) {
         texto +=
@@ -3675,6 +3815,10 @@ async function obterConteudoDaMateria(
         ).values()
     );
 
+    texto += "\n=== 4. CONTEÚDO DOS ANEXOS ===\n";
+
+    let anexosLidos = 0;
+
     for (const anexo of anexosUnicos) {
         try {
             const textoDoArquivo =
@@ -3688,6 +3832,8 @@ async function obterConteudoDaMateria(
                 "\nCONTEÚDO:\n" +
                 textoDoArquivo +
                 "\n";
+
+            anexosLidos++;
         } catch (erro) {
             console.warn(
                 "Não foi possível ler:",
@@ -3697,7 +3843,144 @@ async function obterConteudoDaMateria(
         }
     }
 
+    const quantidadeFontes =
+        eventosAgenda.length +
+        atividadesSelecionadas.length +
+        publicacoesSelecionadas.length +
+        uploads.length +
+        anexosLidos;
+
+    texto +=
+        "\n=== 5. VERIFICAÇÃO DA BUSCA ===\n" +
+        "Agenda consultada: " + (periodo?.inicio ? "sim" : "não") + "\n" +
+        "Eventos da matéria na data: " + eventosAgenda.length + "\n" +
+        "Atividades do Classroom usadas: " + atividadesSelecionadas.length + "\n" +
+        "Materiais do Classroom usados: " + publicacoesSelecionadas.length + "\n" +
+        "Anexos com conteúdo lido: " + anexosLidos + "\n" +
+        "Uploads usados: " + uploads.length + "\n" +
+        "TOTAL DE FONTES: " + quantidadeFontes + "\n" +
+        (quantidadeFontes > 0
+            ? "RESULTADO: há material disponível para produzir a explicação.\n"
+            : "RESULTADO: nenhuma fonte com conteúdo foi encontrada após consultar Agenda e Classroom.\n");
+
     return texto.slice(0, 60000);
+}
+
+function palavrasImportantes(texto) {
+    const ignoradas = new Set([
+        "ano", "turma", "para", "com", "dos", "das", "uma",
+        "sobre", "aula", "atividade", "material", "dever",
+        "casa", "classe", "classroom"
+    ]);
+
+    return normalizarPesquisa(texto)
+        .split(/\s+/)
+        .filter(function (palavra) {
+            return palavra.length >= 4 && !ignoradas.has(palavra);
+        });
+}
+
+function eventoCombinaComMateriaAtual(evento) {
+    const palavrasMateria = palavrasImportantes(
+        materiaAtual.name
+    );
+    const textoEvento = normalizarPesquisa(
+        evento.materia + " " + evento.titulo + " " + evento.descricao
+    );
+
+    return palavrasMateria.some(function (palavra) {
+        return textoEvento.includes(palavra);
+    });
+}
+
+function pontuarItemPorContexto(item, contexto) {
+    const palavras = palavrasImportantes(contexto);
+    const textoItem = normalizarPesquisa(
+        (item.title || "") + " " + (item.description || "")
+    );
+
+    return palavras.reduce(function (total, palavra) {
+        return total + (textoItem.includes(palavra) ? 1 : 0);
+    }, 0);
+}
+
+function escolherItensRelacionados(
+    todos,
+    itensDoDia,
+    contexto,
+    limite
+) {
+    const restantes = todos.filter(function (item) {
+        return !itensDoDia.includes(item);
+    });
+
+    const pontuados = restantes
+        .map(function (item) {
+            return {
+                item: item,
+                pontos: pontuarItemPorContexto(item, contexto),
+                data: new Date(
+                    item.updateTime || item.creationTime || 0
+                ).getTime()
+            };
+        })
+        .sort(function (a, b) {
+            return b.pontos - a.pontos || b.data - a.data;
+        });
+
+    const relacionados = pontuados.filter(function (registro) {
+        return registro.pontos > 0;
+    });
+
+    return (relacionados.length > 0 ? relacionados : pontuados)
+        .slice(0, limite)
+        .map(function (registro) {
+            return registro.item;
+        });
+}
+
+function unirItensSemRepetir(principais, complementares) {
+    const vistos = new Set();
+
+    return [...principais, ...complementares].filter(function (item) {
+        const chave = item.id ||
+            item.title + "-" + item.creationTime;
+
+        if (vistos.has(chave)) {
+            return false;
+        }
+
+        vistos.add(chave);
+        return true;
+    });
+}
+
+function descreverMateriaisClassroom(materiais) {
+    return (materiais || []).map(function (material) {
+        const drive = material.driveFile?.driveFile;
+
+        if (drive) {
+            return "ANEXO DO DRIVE: " + (drive.title || "Arquivo") + "\n";
+        }
+
+        if (material.youtubeVideo) {
+            return "VÍDEO: " +
+                (material.youtubeVideo.title || "Vídeo da aula") +
+                " - https://youtu.be/" + material.youtubeVideo.id + "\n";
+        }
+
+        if (material.link) {
+            return "LINK: " + (material.link.title || material.link.url) +
+                " - " + material.link.url + "\n";
+        }
+
+        if (material.form) {
+            return "FORMULÁRIO: " +
+                (material.form.title || "Formulário") + "\n";
+        }
+
+        return "";
+    }).join("");
 }
 
 function itemEstaNoPeriodoDeEstudo(
@@ -3708,29 +3991,27 @@ function itemEstaNoPeriodoDeEstudo(
         return true;
     }
 
-    const textoData =
-        item.creationTime ||
-        item.updateTime ||
-        item.scheduledTime;
+    const datas = [];
 
-    let data;
-
-    if (textoData) {
-        data = new Date(textoData);
-    } else if (item.dueDate) {
-        data = new Date(
+    if (item.dueDate) {
+        datas.push(new Date(
             item.dueDate.year,
             item.dueDate.month - 1,
             item.dueDate.day
-        );
-    } else {
-        return false;
+        ));
     }
 
-    return (
-        dataParaCampo(data) ===
-        periodo.inicio
-    );
+    [
+        item.creationTime,
+        item.updateTime,
+        item.scheduledTime
+    ].filter(Boolean).forEach(function (textoData) {
+        datas.push(new Date(textoData));
+    });
+
+    return datas.some(function (data) {
+        return dataParaCampo(data) === periodo.inicio;
+    });
 }
 
 function recolherAnexos(
