@@ -334,58 +334,111 @@ async function chamarGemini(
     instrucao,
     schema
 ) {
-    const respostaGemini = await fetch(
-        "https://generativelanguage.googleapis.com/" +
-        "v1beta/models/gemini-3.5-flash:generateContent",
+    const modelos = [
         {
-            method: "POST",
-
-            headers: {
-                "Content-Type": "application/json",
-
-                "x-goog-api-key":
-                    process.env.GEMINI_API_KEY
-            },
-
-            body: JSON.stringify({
-                contents: [
-                    {
-                        role: "user",
-
-                        parts: [
-                            {
-                                text: instrucao
-                            }
-                        ]
-                    }
-                ],
-
-                generationConfig: {
-                    temperature: 0.2,
-
-                    maxOutputTokens: 8192,
-
-                    responseMimeType:
-                        "application/json",
-
-                    responseSchema: schema
-                }
-            })
+            nome: "gemini-3.5-flash",
+            tentativas: 2
+        },
+        {
+            nome: "gemini-3.1-flash-lite",
+            tentativas: 1
         }
-    );
+    ];
 
-    const dadosGemini =
-        await respostaGemini.json();
+    let ultimoErro = null;
 
-    if (!respostaGemini.ok) {
-        console.error(dadosGemini);
+    for (const modelo of modelos) {
+        for (
+            let tentativa = 0;
+            tentativa < modelo.tentativas;
+            tentativa++
+        ) {
+            const respostaGemini = await fetch(
+                "https://generativelanguage.googleapis.com/" +
+                "v1beta/models/" +
+                modelo.nome +
+                ":generateContent",
+                {
+                    method: "POST",
 
-        throw new Error(
-            dadosGemini.error?.message ||
-            "O Gemini recusou a solicitação."
-        );
+                    headers: {
+                        "Content-Type": "application/json",
+
+                        "x-goog-api-key":
+                            process.env.GEMINI_API_KEY
+                    },
+
+                    body: JSON.stringify({
+                        contents: [
+                            {
+                                role: "user",
+
+                                parts: [
+                                    {
+                                        text: instrucao
+                                    }
+                                ]
+                            }
+                        ],
+
+                        generationConfig: {
+                            temperature: 0.2,
+
+                            maxOutputTokens: 8192,
+
+                            responseMimeType:
+                                "application/json",
+
+                            responseSchema: schema
+                        }
+                    })
+                }
+            );
+
+            const dadosGemini =
+                await respostaGemini.json();
+
+            if (respostaGemini.ok) {
+                return interpretarRespostaGemini(
+                    dadosGemini
+                );
+            }
+
+            const mensagem =
+                dadosGemini.error?.message ||
+                "O Gemini recusou a solicitação.";
+
+            ultimoErro = new Error(mensagem);
+
+            console.error(
+                "Falha no modelo " + modelo.nome + ":",
+                dadosGemini
+            );
+
+            const erroTemporario =
+                respostaGemini.status === 429 ||
+                respostaGemini.status >= 500 ||
+                /high demand|temporar|try again|unavailable/i
+                    .test(mensagem);
+
+            if (!erroTemporario) {
+                throw ultimoErro;
+            }
+
+            if (tentativa + 1 < modelo.tentativas) {
+                await esperar(900 * (tentativa + 1));
+            }
+        }
     }
 
+    throw new Error(
+        "A inteligência está muito ocupada agora. " +
+        "A Maltéria tentou dois modelos automaticamente. " +
+        "Aguarde um minuto e tente novamente."
+    );
+}
+
+function interpretarRespostaGemini(dadosGemini) {
     const texto =
         dadosGemini
             .candidates?.[0]
@@ -413,3 +466,8 @@ async function chamarGemini(
     }
 }
 
+function esperar(tempo) {
+    return new Promise(function (resolver) {
+        setTimeout(resolver, tempo);
+    });
+}
