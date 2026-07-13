@@ -1159,40 +1159,504 @@ async function mostrarSimulado() {
 }
 /* PESQUISA ORGANIZADA POR MATÉRIA */
 
+/* PESQUISA INTELIGENTE */
+
 document
     .querySelector("#pesquisar")
-    .addEventListener("click", function () {
-        const materia = document
-            .querySelector("#materia-pesquisa")
-            .value;
+    .addEventListener("click", pesquisarMateriais);
 
-        const pergunta = document
-            .querySelector("#campo-pesquisa")
-            .value
-            .trim();
+async function pesquisarMateriais() {
+    const nomeMateria = document
+        .querySelector("#materia-pesquisa")
+        .value;
 
-        const resposta = document.querySelector(
-            "#resposta-pesquisa"
+    const dataInicial = document
+        .querySelector("#data-inicial")
+        .value;
+
+    const dataFinal = document
+        .querySelector("#data-final")
+        .value;
+
+    const pergunta = document
+        .querySelector("#campo-pesquisa")
+        .value
+        .trim();
+
+    const botao = document.querySelector("#pesquisar");
+
+    const status = document.querySelector(
+        "#status-pesquisa"
+    );
+
+    const areaResposta = document.querySelector(
+        "#resposta-pesquisa"
+    );
+
+    areaResposta.classList.add("escondido");
+    areaResposta.innerHTML = "";
+
+    if (!tokenClassroom) {
+        status.textContent =
+            "Conecte o Google Classroom antes de pesquisar.";
+
+        return;
+    }
+
+    if (!nomeMateria) {
+        status.textContent =
+            "Escolha uma matéria.";
+
+        return;
+    }
+
+    if (!dataInicial || !dataFinal) {
+        status.textContent =
+            "Escolha a data inicial e a data final.";
+
+        return;
+    }
+
+    if (dataInicial > dataFinal) {
+        status.textContent =
+            "A data inicial não pode ser depois da data final.";
+
+        return;
+    }
+
+    if (!pergunta) {
+        status.textContent =
+            "Digite o que você quer pesquisar.";
+
+        return;
+    }
+
+    const turma = turmasClassroom.find(
+        function (item) {
+            return item.name === nomeMateria;
+        }
+    );
+
+    if (!turma) {
+        status.textContent =
+            "Não encontrei essa matéria no Classroom.";
+
+        return;
+    }
+
+    botao.disabled = true;
+    botao.textContent = "Pesquisando...";
+
+    status.textContent =
+        "Procurando atividades, provas, deveres e materiais...";
+
+    try {
+        const resultado =
+            await obterMateriaisDoPeriodo(
+                turma,
+                dataInicial,
+                dataFinal
+            );
+
+        if (resultado.conteudo.trim().length < 40) {
+            throw new Error(
+                "Não encontrei materiais dessa matéria " +
+                "dentro do período escolhido."
+            );
+        }
+
+        status.textContent =
+            "A inteligência da Maltéria está estudando os materiais...";
+
+        const respostaServidor = await fetch(
+            ENDERECO_IA,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                body: JSON.stringify({
+                    tipo: "pesquisa",
+
+                    materia: turma.name,
+
+                    pergunta: pergunta,
+
+                    dataInicial: dataInicial,
+
+                    dataFinal: dataFinal,
+
+                    conteudo: resultado.conteudo
+                })
+            }
         );
 
-        if (!materia) {
-            resposta.textContent =
-                "Escolha uma matéria primeiro.";
+        const dados =
+            await respostaServidor.json();
 
-            return;
+        if (!respostaServidor.ok) {
+            throw new Error(
+                dados.erro ||
+                "A inteligência não conseguiu responder."
+            );
         }
 
-        if (!pergunta) {
-            resposta.textContent =
-                "Digite uma pergunta.";
+        desenharResultadoPesquisa(
+            dados,
+            resultado.fontes,
+            turma.name,
+            dataInicial,
+            dataFinal
+        );
 
-            return;
+        status.textContent =
+            resultado.fontes.length +
+            (
+                resultado.fontes.length === 1
+                    ? " item encontrado e analisado."
+                    : " itens encontrados e analisados."
+            );
+    } catch (erro) {
+        console.error(erro);
+
+        status.textContent = erro.message;
+    } finally {
+        botao.disabled = false;
+
+        botao.textContent =
+            "🔎 Pesquisar nos materiais";
+    }
+}
+
+async function obterMateriaisDoPeriodo(
+    turma,
+    dataInicial,
+    dataFinal
+) {
+    const inicio =
+        new Date(dataInicial + "T00:00:00");
+
+    const fim =
+        new Date(dataFinal + "T23:59:59");
+
+    const [
+        dadosAtividades,
+        dadosMateriais
+    ] = await Promise.all([
+        chamarClassroom(
+            "courses/" +
+            turma.id +
+            "/courseWork?pageSize=100"
+        ),
+
+        chamarClassroom(
+            "courses/" +
+            turma.id +
+            "/courseWorkMaterials?pageSize=100"
+        )
+    ]);
+
+    const atividades =
+        dadosAtividades.courseWork || [];
+
+    const materiais =
+        dadosMateriais.courseWorkMaterial || [];
+
+    const itensEncontrados = [];
+
+    atividades.forEach(function (atividade) {
+        const data =
+            obterDataDoItem(atividade);
+
+        if (dataEstaNoPeriodo(data, inicio, fim)) {
+            itensEncontrados.push({
+                tipo: identificarTipoAtividade(
+                    atividade.title,
+                    atividade.description
+                ),
+
+                titulo:
+                    atividade.title ||
+                    "Atividade sem título",
+
+                descricao:
+                    atividade.description || "",
+
+                data: data,
+
+                materiais:
+                    atividade.materials || [],
+
+                link:
+                    atividade.alternateLink || ""
+            });
         }
-
-        resposta.textContent =
-            `Pergunta em ${materia}: “${pergunta}”. ` +
-            `A resposta inteligente será conectada depois.`;
     });
+
+    materiais.forEach(function (material) {
+        const data =
+            obterDataDoItem(material);
+
+        if (dataEstaNoPeriodo(data, inicio, fim)) {
+            itensEncontrados.push({
+                tipo: "Material",
+
+                titulo:
+                    material.title ||
+                    "Material sem título",
+
+                descricao:
+                    material.description || "",
+
+                data: data,
+
+                materiais:
+                    material.materials || [],
+
+                link:
+                    material.alternateLink || ""
+            });
+        }
+    });
+
+    itensEncontrados.sort(
+        function (a, b) {
+            return b.data - a.data;
+        }
+    );
+
+    let conteudo = `
+MATÉRIA: ${turma.name}
+PERÍODO: ${dataInicial} até ${dataFinal}
+`;
+
+    const fontes = [];
+    const anexos = [];
+
+    itensEncontrados.forEach(function (item) {
+        conteudo += `
+
+TIPO: ${item.tipo}
+TÍTULO: ${item.titulo}
+DATA: ${formatarDataPesquisa(item.data)}
+DESCRIÇÃO:
+${item.descricao}
+`;
+
+        fontes.push({
+            tipo: item.tipo,
+            titulo: item.titulo,
+            data: item.data,
+            link: item.link
+        });
+
+        recolherAnexos(
+            item.materiais,
+            anexos
+        );
+    });
+
+    const anexosUnicos = Array.from(
+        new Map(
+            anexos.map(function (anexo) {
+                return [anexo.id, anexo];
+            })
+        ).values()
+    );
+
+    for (const anexo of anexosUnicos.slice(0, 15)) {
+        try {
+            const textoArquivo =
+                await lerArquivoDoDrive(anexo.id);
+
+            conteudo += `
+
+ARQUIVO: ${anexo.nome}
+CONTEÚDO DO ARQUIVO:
+${textoArquivo}
+`;
+        } catch (erro) {
+            console.warn(
+                "Não foi possível ler o arquivo:",
+                anexo.nome,
+                erro
+            );
+        }
+    }
+
+    return {
+        conteudo: conteudo.slice(0, 60000),
+        fontes: fontes
+    };
+}
+
+function obterDataDoItem(item) {
+    if (item.dueDate) {
+        return new Date(
+            item.dueDate.year,
+            item.dueDate.month - 1,
+            item.dueDate.day
+        );
+    }
+
+    const dataTexto =
+        item.updateTime ||
+        item.creationTime ||
+        item.scheduledTime;
+
+    if (!dataTexto) {
+        return null;
+    }
+
+    return new Date(dataTexto);
+}
+
+function dataEstaNoPeriodo(data, inicio, fim) {
+    if (!data || Number.isNaN(data.getTime())) {
+        return false;
+    }
+
+    return data >= inicio && data <= fim;
+}
+
+function identificarTipoAtividade(
+    titulo,
+    descricao
+) {
+    const texto = (
+        (titulo || "") +
+        " " +
+        (descricao || "")
+    ).toLowerCase();
+
+    if (
+        texto.includes("prova") ||
+        texto.includes("avaliação") ||
+        texto.includes("avaliacao") ||
+        texto.includes("teste")
+    ) {
+        return "Prova";
+    }
+
+    if (
+        texto.includes("dever") ||
+        texto.includes("casa")
+    ) {
+        return "Dever de casa";
+    }
+
+    if (
+        texto.includes("exercício") ||
+        texto.includes("exercicio") ||
+        texto.includes("lista")
+    ) {
+        return "Exercício";
+    }
+
+    if (
+        texto.includes("trabalho") ||
+        texto.includes("projeto")
+    ) {
+        return "Trabalho";
+    }
+
+    return "Atividade";
+}
+
+function desenharResultadoPesquisa(
+    dados,
+    fontes,
+    materia,
+    dataInicial,
+    dataFinal
+) {
+    const area = document.querySelector(
+        "#resposta-pesquisa"
+    );
+
+    const listaFontes = fontes
+        .map(function (fonte) {
+            return `
+                <article class="arquivo">
+                    <strong>
+                        ${protegerTexto(fonte.tipo)}:
+                        ${protegerTexto(fonte.titulo)}
+                    </strong>
+
+                    <p>
+                        ${formatarDataPesquisa(fonte.data)}
+                    </p>
+                </article>
+            `;
+        })
+        .join("");
+
+    area.innerHTML = `
+        <div class="cabecalho-resultado">
+            <span>✨ Resposta da Maltéria</span>
+
+            <h2>
+                ${protegerTexto(materia)}
+            </h2>
+
+            <p>
+                Período de
+                ${formatarDataCampo(dataInicial)}
+                até
+                ${formatarDataCampo(dataFinal)}
+            </p>
+        </div>
+
+        <article class="resposta-ia">
+            ${formatarTexto(dados.resposta)}
+        </article>
+
+        <details class="fontes-pesquisa">
+            <summary>
+                Ver ${fontes.length}
+                ${
+                    fontes.length === 1
+                        ? "material utilizado"
+                        : "materiais utilizados"
+                }
+            </summary>
+
+            ${listaFontes}
+        </details>
+    `;
+
+    area.classList.remove("escondido");
+
+    area.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+}
+
+function formatarDataPesquisa(data) {
+    return data.toLocaleDateString(
+        "pt-BR",
+        {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+        }
+    );
+}
+
+function formatarDataCampo(data) {
+    const partes = data.split("-");
+
+    return (
+        partes[2] +
+        "/" +
+        partes[1] +
+        "/" +
+        partes[0]
+    );
+}
 
 /* GOOGLE CLASSROOM */
 
