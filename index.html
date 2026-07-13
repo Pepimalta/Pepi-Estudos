@@ -14,8 +14,35 @@
 </head>
 
 <body>
+    <!-- BOAS-VINDAS ANTES DA APRESENTAÇÃO -->
+    <main id="boas-vindas" class="boas-vindas">
+        <div class="boas-vindas-forma" aria-hidden="true">
+            <span>📚</span>
+            <span>✦</span>
+            <span>🧠</span>
+        </div>
+
+        <section class="boas-vindas-conteudo">
+            <div class="logo boas-vindas-logo">
+                <span>M</span>
+                <strong>MALTÉRIA</strong>
+            </div>
+
+            <span class="entrada-etiqueta">SEU NOVO JEITO DE ESTUDAR</span>
+            <h1>Olá!</h1>
+            <p>
+                Bem-vindo à Maltéria. Aqui, o conteúdo da escola vira
+                explicação, organização e prática para você aprender de verdade.
+            </p>
+
+            <button id="avancar-apresentacao" class="botao-principal">
+                Próximo <span aria-hidden="true">→</span>
+            </button>
+        </section>
+    </main>
+
     <!-- APRESENTAÇÃO E ESCOLHA INICIAL -->
-    <main id="escolha" class="pagina-inicial">
+    <main id="escolha" class="pagina-inicial escondido">
         <header class="entrada-cabecalho">
             <div class="logo">
                 <span>M</span>
@@ -89,6 +116,21 @@
                 <span>✨</span>
                 <h2>Estudo personalizado</h2>
                 <p>Crie explicações, cópias, slides, revisões e simulados.</p>
+            </article>
+            <article>
+                <span>🗓️</span>
+                <h2>Agenda escolar</h2>
+                <p>Consulte o que precisa ser feito em cada dia e não perca prazos.</p>
+            </article>
+            <article>
+                <span>📎</span>
+                <h2>Materiais de verdade</h2>
+                <p>A inteligência procura tarefas, publicações e anexos da disciplina antes de explicar.</p>
+            </article>
+            <article>
+                <span>👨‍👩‍👧</span>
+                <h2>Acompanhamento familiar</h2>
+                <p>Responsáveis podem acompanhar a organização escolar dos filhos em um só lugar.</p>
             </article>
         </section>
     </main>
@@ -320,7 +362,13 @@
 
         <!-- BARRA LATERAL INTELIGENTE -->
         <aside id="barra-lateral" class="barra-lateral" aria-label="Ferramentas">
-            <div class="barra-lateral-marca">M</div>
+            <button
+                id="inicio-lateral"
+                class="barra-lateral-marca"
+                type="button"
+                aria-label="Voltar à página principal"
+                title="Voltar ao início"
+            >M</button>
 
             <button id="abrir-pesquisa" class="ferramenta-lateral" type="button">
                 <span class="ferramenta-icone">＋</span>
@@ -378,14 +426,6 @@
                     </button>
                 </section>
 
-                <!-- A pesquisa fica no painel lateral -->
-                <!-- MATÉRIAS -->
-                <section>
-                    <h2>Matérias</h2>
-
-                    <div id="lista-materias" class="materias"></div>
-                </section>
-
                 <!-- ATIVIDADES POR DATA -->
                 <section class="caixa prazos-data">
                     <div class="cabecalho-prazos">
@@ -402,10 +442,18 @@
 
                     <div id="atividades-amanha">
                         <p>
-                            Conecte o Classroom para ver
-                            os próximos prazos.
+                            Conecte sua conta Google para consultar
+                            a agenda escolar.
                         </p>
                     </div>
+                </section>
+
+                <!-- A pesquisa fica no painel lateral -->
+                <!-- MATÉRIAS -->
+                <section>
+                    <h2>Matérias</h2>
+
+                    <div id="lista-materias" class="materias"></div>
                 </section>
             </section>
 
@@ -497,14 +545,14 @@
                 </div>
 
                 <div class="grade-ajuda">
-                    <article class="cartao-ajuda"><span>🚀</span><h2>Primeiros passos</h2><p>Cadastre sua conta, entre na Maltéria e conecte a conta escolar do Google.</p></article>
-                    <article class="cartao-ajuda"><span>🎓</span><h2>Google Classroom</h2><p>Use “Conectar ao Classroom” no cabeçalho para carregar turmas, materiais e atividades.</p><button class="botao-secundario acao-ajuda" data-ajuda-acao="classroom" type="button">Conectar ou atualizar</button></article>
+                    <article class="cartao-ajuda"><span>❤️</span><h2>Primeiros passos</h2><p>Cadastre sua conta, entre na Maltéria e conecte a conta escolar do Google.</p></article>
+                    <article class="cartao-ajuda"><span>👨‍🏫</span><h2>Google Classroom</h2><p>Use “Conectar ao Classroom” no cabeçalho para carregar turmas, materiais e atividades.</p><button class="botao-secundario acao-ajuda" data-ajuda-acao="classroom" type="button">Conectar ou atualizar</button></article>
                     <article class="cartao-ajuda"><span>🔎</span><h2>Pesquisa inteligente</h2><p>Escolha a matéria e o período. A resposta será criada com o conteúdo encontrado.</p><button class="botao-secundario acao-ajuda" data-ajuda-acao="pesquisa" type="button">Abrir pesquisa</button></article>
                     <article class="cartao-ajuda"><span>🧠</span><h2>Explicações e slides</h2><p>Entre em uma matéria e escolha Explicações para criar resumo, cópia, revisão e slides.</p></article>
                     <article class="cartao-ajuda"><span>📝</span><h2>Atividades e simulados</h2><p>Confira tarefas reais do Classroom e pratique com simulados produzidos a partir do material.</p></article>
                     <article class="cartao-ajuda"><span>👨‍👩‍👧‍👦</span><h2>Conta de responsável</h2><p>Adicione filhos, selecione quem deseja acompanhar e veja matérias e próximos prazos.</p></article>
                     <article class="cartao-ajuda"><span>📎</span><h2>Uploads</h2><p>Adicione fotos, textos, exercícios e provas antigas dentro da matéria correta.</p></article>
-                    <article class="cartao-ajuda"><span>🛠️</span><h2>Algo não funcionou?</h2><p>Atualize a página, reconecte o Classroom e confira se selecionou a conta escolar correta.</p></article>
+                    <article class="cartao-ajuda"><span>😭</span><h2>Algo não deu certo?</h2><p>Atualize a página, reconecte o Classroom e confira se selecionou a conta escolar correta.</p></article>
                 </div>
             </section>
 
