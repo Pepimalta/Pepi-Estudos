@@ -786,6 +786,253 @@ textarea:focus {
     }
 }
 
+/* TEMA VIVO DA MALTÉRIA */
+
+:root {
+    --roxo: #6d3cff;
+    --roxo-escuro: #4020b8;
+    --fundo: #f5f0ff;
+    --borda: #ded2ff;
+    --sombra: 0 20px 55px rgba(79, 42, 178, 0.18);
+    --azul-vivo: #20bde2;
+    --rosa-vivo: #ff5ca8;
+    --amarelo-vivo: #ffcb3d;
+}
+
+body {
+    overflow-x: hidden;
+    background:
+        radial-gradient(circle at 8% 12%, rgba(255, 92, 168, 0.14), transparent 24%),
+        radial-gradient(circle at 88% 18%, rgba(32, 189, 226, 0.18), transparent 26%),
+        radial-gradient(circle at 50% 95%, rgba(109, 60, 255, 0.17), transparent 30%),
+        linear-gradient(135deg, #fff8fd 0%, #f3efff 47%, #effcff 100%);
+    background-attachment: fixed;
+}
+
+#aplicativo {
+    position: relative;
+    min-height: 100vh;
+    isolation: isolate;
+}
+
+#aplicativo::before,
+#aplicativo::after {
+    position: fixed;
+    z-index: -1;
+    border-radius: 42% 58% 62% 38% / 44% 38% 62% 56%;
+    content: "";
+    pointer-events: none;
+    filter: blur(2px);
+    animation: passear-forma 12s ease-in-out infinite alternate;
+}
+
+#aplicativo::before {
+    top: 13%;
+    left: -90px;
+    width: 240px;
+    height: 240px;
+    background: linear-gradient(135deg, rgba(255, 92, 168, 0.2), rgba(255, 203, 61, 0.18));
+}
+
+#aplicativo::after {
+    right: -110px;
+    bottom: 5%;
+    width: 310px;
+    height: 310px;
+    background: linear-gradient(135deg, rgba(32, 189, 226, 0.22), rgba(109, 60, 255, 0.2));
+    animation-delay: -4s;
+}
+
+.pagina-autenticacao {
+    background:
+        radial-gradient(circle at 12% 15%, rgba(255, 92, 168, 0.28), transparent 28%),
+        radial-gradient(circle at 88% 18%, rgba(32, 189, 226, 0.3), transparent 29%),
+        radial-gradient(circle at 50% 95%, rgba(109, 60, 255, 0.25), transparent 34%),
+        linear-gradient(135deg, #fff7fc, #f0ebff 52%, #eaffff);
+    background-size: 130% 130%;
+    animation: mover-fundo 10s ease-in-out infinite alternate;
+}
+
+.cartao,
+.caixa,
+.cartao-materia,
+.cartao-ajuda {
+    border: 1px solid rgba(255, 255, 255, 0.86);
+    box-shadow:
+        0 22px 55px rgba(72, 35, 165, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.cabecalho {
+    position: sticky;
+    top: 0;
+    z-index: 9;
+    border-bottom: 2px solid transparent;
+    background:
+        linear-gradient(#ffffffee, #ffffffee) padding-box,
+        linear-gradient(90deg, var(--rosa-vivo), var(--roxo), var(--azul-vivo)) border-box;
+    backdrop-filter: blur(14px);
+}
+
+.logo span,
+.barra-lateral-marca {
+    background: linear-gradient(135deg, var(--rosa-vivo), var(--roxo) 50%, var(--azul-vivo));
+    background-size: 180% 180%;
+    box-shadow: 0 10px 24px rgba(109, 60, 255, 0.27);
+    animation: logo-vivo 5s ease-in-out infinite;
+}
+
+.botao-principal,
+.menu-materia button {
+    position: relative;
+    overflow: hidden;
+    border: 0;
+    background: linear-gradient(110deg, var(--roxo-escuro), var(--roxo) 48%, #8d5cff);
+    box-shadow: 0 10px 24px rgba(88, 48, 208, 0.25);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.botao-principal:hover,
+.menu-materia button:hover {
+    background: linear-gradient(110deg, #31148f, var(--roxo), var(--rosa-vivo));
+    box-shadow: 0 14px 30px rgba(88, 48, 208, 0.34);
+    transform: translateY(-3px) scale(1.01);
+}
+
+.apresentacao,
+.cabecalho-ferramenta {
+    background:
+        radial-gradient(circle at 88% 14%, rgba(255, 255, 255, 0.25), transparent 22%),
+        linear-gradient(115deg, #4a20d4, var(--roxo), #9b5cff, var(--rosa-vivo));
+    background-size: 220% 220%;
+    box-shadow: 0 25px 60px rgba(77, 36, 178, 0.28);
+    animation: mover-gradiente 8s ease-in-out infinite alternate;
+}
+
+.apresentacao::after {
+    animation: piscar-estrelas 2.4s ease-in-out infinite;
+}
+
+.decoracao-estudos span:nth-child(1) { background: rgba(255, 203, 61, 0.26); }
+.decoracao-estudos span:nth-child(2) { background: rgba(255, 92, 168, 0.24); }
+.decoracao-estudos span:nth-child(3) { background: rgba(32, 189, 226, 0.25); }
+.decoracao-estudos span:nth-child(4) { background: rgba(255, 255, 255, 0.2); }
+
+.cartao-materia {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(145deg, #ffffff 25%, #f3edff);
+    transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
+}
+
+.cartao-materia:nth-child(3n + 1) {
+    background: linear-gradient(145deg, #fff 28%, #f0eaff 100%);
+    border-bottom: 5px solid var(--roxo);
+}
+
+.cartao-materia:nth-child(3n + 2) {
+    background: linear-gradient(145deg, #fff 28%, #e8fbff 100%);
+    border-bottom: 5px solid var(--azul-vivo);
+}
+
+.cartao-materia:nth-child(3n) {
+    background: linear-gradient(145deg, #fff 28%, #fff0f8 100%);
+    border-bottom: 5px solid var(--rosa-vivo);
+}
+
+.cartao-materia::after {
+    position: absolute;
+    top: -34px;
+    right: -34px;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: rgba(109, 60, 255, 0.08);
+    content: "";
+    transition: transform 0.3s ease;
+}
+
+.cartao-materia:hover {
+    border-color: transparent;
+    box-shadow: 0 24px 50px rgba(72, 35, 165, 0.23);
+    transform: translateY(-9px) rotate(-0.5deg);
+}
+
+.cartao-materia:hover::after {
+    transform: scale(1.5);
+}
+
+.cartao-materia:hover > span {
+    animation: pular-icone 0.65s ease;
+}
+
+.caixa {
+    border-top: 4px solid transparent;
+    background:
+        linear-gradient(#fffffff2, #fffffff2) padding-box,
+        linear-gradient(90deg, var(--rosa-vivo), var(--roxo), var(--azul-vivo)) border-box;
+    backdrop-filter: blur(10px);
+}
+
+.barra-lateral {
+    border-color: #d5c7ff;
+    background: linear-gradient(180deg, #fffffffa, #f3edfffa);
+    box-shadow: 14px 18px 44px rgba(72, 35, 165, 0.2);
+}
+
+.ferramenta-lateral:hover {
+    background: linear-gradient(100deg, #eee7ff, #ffeaf5);
+    transform: translateX(3px);
+}
+
+.ferramenta-icone {
+    background: linear-gradient(135deg, #eee8ff, #e3faff);
+    box-shadow: inset 0 0 0 1px rgba(109, 60, 255, 0.1);
+}
+
+.cartao-ajuda:nth-child(4n + 1) { border-top: 5px solid var(--roxo); }
+.cartao-ajuda:nth-child(4n + 2) { border-top: 5px solid var(--azul-vivo); }
+.cartao-ajuda:nth-child(4n + 3) { border-top: 5px solid var(--rosa-vivo); }
+.cartao-ajuda:nth-child(4n) { border-top: 5px solid var(--amarelo-vivo); }
+
+@keyframes mover-fundo {
+    from { background-position: 0% 20%; }
+    to { background-position: 100% 80%; }
+}
+
+@keyframes mover-gradiente {
+    from { background-position: 0% 50%; }
+    to { background-position: 100% 50%; }
+}
+
+@keyframes logo-vivo {
+    0%, 100% { background-position: 0% 50%; transform: rotate(0deg); }
+    50% { background-position: 100% 50%; transform: rotate(4deg) scale(1.06); }
+}
+
+@keyframes passear-forma {
+    from { transform: translate3d(0, 0, 0) rotate(0deg); }
+    to { transform: translate3d(45px, -30px, 0) rotate(18deg); }
+}
+
+@keyframes piscar-estrelas {
+    0%, 100% { opacity: 0.45; transform: rotate(-8deg) scale(1); }
+    50% { opacity: 1; transform: rotate(-4deg) scale(1.08); }
+}
+
+@keyframes pular-icone {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    45% { transform: translateY(-10px) rotate(-8deg) scale(1.15); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+
 /* CLASSROOM COMPACTO NO CANTO */
 
 .acoes-cabecalho {
