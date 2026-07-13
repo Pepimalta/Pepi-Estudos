@@ -1017,18 +1017,44 @@ async function criarEstudoDaData(
     } catch (erro) {
         console.error(erro);
 
+        const mensagem =
+            traduzirErroDaInteligencia(
+                erro.message
+            );
+
         areaMateria.innerHTML = `
             <h2>Não foi possível criar a explicação</h2>
 
-            <p>${protegerTexto(erro.message)}</p>
+            <p>${protegerTexto(mensagem)}</p>
 
-            <button
-                id="voltar-escolha-data"
-                class="botao-principal"
-            >
-                Escolher outra data
-            </button>
+            <div class="acoes-erro-ia">
+                <button
+                    id="tentar-novamente-estudo"
+                    class="botao-principal"
+                >
+                    Tentar novamente
+                </button>
+
+                <button
+                    id="voltar-escolha-data"
+                    class="botao-secundario"
+                >
+                    Escolher outra data
+                </button>
+            </div>
         `;
+
+        document.querySelector(
+            "#tentar-novamente-estudo"
+        ).addEventListener(
+            "click",
+            function () {
+                criarEstudoDaData(
+                    data,
+                    nomePeriodo
+                );
+            }
+        );
 
         document.querySelector(
             "#voltar-escolha-data"
@@ -1468,15 +1494,34 @@ async function mostrarSimulado() {
             estudoGerado =
                 await gerarEstudoDaMateria();
         } catch (erro) {
+            const mensagem =
+                traduzirErroDaInteligencia(
+                    erro.message
+                );
+
             areaMateria.innerHTML = `
                 <h2>
                     Não foi possível criar o simulado
                 </h2>
 
                 <p>
-                    ${protegerTexto(erro.message)}
+                    ${protegerTexto(mensagem)}
                 </p>
+
+                <button
+                    id="tentar-novamente-simulado"
+                    class="botao-principal"
+                >
+                    Tentar novamente
+                </button>
             `;
+
+            document.querySelector(
+                "#tentar-novamente-simulado"
+            ).addEventListener(
+                "click",
+                mostrarSimulado
+            );
 
             return;
         }
@@ -1647,6 +1692,42 @@ async function mostrarSimulado() {
     }
 
     desenharQuestao();
+}
+
+function traduzirErroDaInteligencia(mensagemOriginal) {
+    const mensagem =
+        String(mensagemOriginal || "");
+
+    if (
+        /high demand|spikes in demand|try again later|overloaded|unavailable/i
+            .test(mensagem)
+    ) {
+        return (
+            "A inteligência está recebendo muitas solicitações " +
+            "neste momento. A Maltéria tentará outro modelo; " +
+            "se ainda não funcionar, espere um minuto e tente novamente."
+        );
+    }
+
+    if (
+        /quota|resource exhausted|too many requests|429/i
+            .test(mensagem)
+    ) {
+        return (
+            "O limite de solicitações da inteligência foi atingido. " +
+            "Espere um minuto e tente novamente."
+        );
+    }
+
+    if (/api key|chave do gemini/i.test(mensagem)) {
+        return (
+            "A chave da inteligência precisa ser conferida " +
+            "nas configurações do aplicativo."
+        );
+    }
+
+    return mensagem ||
+        "Ocorreu um problema temporário. Tente novamente.";
 }
 /* PESQUISA INTELIGENTE */
 
@@ -1864,7 +1945,10 @@ async function pesquisarMateriais() {
             );
     } catch (erro) {
         console.error(erro);
-        status.textContent = erro.message;
+        status.textContent =
+            traduzirErroDaInteligencia(
+                erro.message
+            );
     } finally {
         botao.disabled = false;
         botao.textContent =
@@ -1959,8 +2043,7 @@ async function obterMateriaisDoPeriodo(
 
         const tipo =
             identificarTipoAtividade(
-                atividade.title,
-                atividade.description
+                atividade
             );
 
         if (
@@ -2005,19 +2088,33 @@ async function obterMateriaisDoPeriodo(
         }
     });
 
-    if (
-        filtro === "todos" ||
-        filtro === "material"
-    ) {
-        materiais.forEach(function (material) {
+    materiais.forEach(function (material) {
             const data =
                 obterDataDoItem(material);
+
+            const tipoDetectado =
+                identificarTipoAtividade(
+                    material
+                );
+
+            const tipo =
+                tipoDetectado === "Atividade"
+                    ? "Material"
+                    : tipoDetectado;
 
             if (
                 dataEstaNoPeriodo(
                     data,
                     inicio,
                     fim
+                ) &&
+                (
+                    filtro === "todos" ||
+                    filtro === "material" ||
+                    tipoCombinaComFiltro(
+                        tipo,
+                        filtro
+                    )
                 )
             ) {
                 itens.push({
@@ -2030,7 +2127,7 @@ async function obterMateriaisDoPeriodo(
                     origem: "classroom",
                     pendente: false,
 
-                    tipo: "Material",
+                    tipo: tipo,
                     materia: turma.name,
 
                     titulo:
@@ -2051,7 +2148,6 @@ async function obterMateriaisDoPeriodo(
                 });
             }
         });
-    }
 
     itens.sort(function (a, b) {
         return a.data - b.data;
@@ -2130,8 +2226,7 @@ function tipoCombinaComFiltro(
         return true;
     }
 
-    const valor =
-        tipo.toLowerCase();
+    const valor = normalizarPesquisa(tipo);
 
     if (filtro === "dever") {
         return valor.includes("dever");
@@ -2140,16 +2235,32 @@ function tipoCombinaComFiltro(
     if (filtro === "prova") {
         return (
             valor.includes("prova") ||
-            valor.includes("avalia")
+            valor.includes("avalia") ||
+            valor.includes("teste") ||
+            valor.includes("quiz") ||
+            valor.includes("exame") ||
+            valor.includes("verificacao") ||
+            valor.includes("simulado") ||
+            valor.includes("recuperacao")
         );
     }
 
     if (filtro === "trabalho") {
-        return valor.includes("trabalho");
+        return (
+            valor.includes("trabalho") ||
+            valor.includes("projeto") ||
+            valor.includes("seminario") ||
+            valor.includes("apresentacao")
+        );
     }
 
     if (filtro === "exercicio") {
-        return valor.includes("exercício");
+        return (
+            valor.includes("exercicio") ||
+            valor.includes("lista") ||
+            valor.includes("questionario") ||
+            valor.includes("pratica")
+        );
     }
 
     return false;
@@ -2335,21 +2446,39 @@ function dataEstaNoPeriodo(
     );
 }
 
-function identificarTipoAtividade(
-    titulo,
-    descricao
-) {
-    const texto = (
-        (titulo || "") +
-        " " +
-        (descricao || "")
-    ).toLowerCase();
+function identificarTipoAtividade(item) {
+    const nomesAnexos = (item.materials || [])
+        .map(function (material) {
+            return (
+                material.form?.title ||
+                material.driveFile?.driveFile?.title ||
+                material.link?.title ||
+                material.youtubeVideo?.title ||
+                ""
+            );
+        })
+        .join(" ");
+
+    const texto = normalizarPesquisa(
+        (item.title || "") + " " +
+        (item.description || "") + " " +
+        (item.gradeCategory?.name || "") + " " +
+        nomesAnexos
+    );
 
     if (
         texto.includes("prova") ||
-        texto.includes("avaliação") ||
         texto.includes("avaliacao") ||
-        texto.includes("teste")
+        texto.includes("teste") ||
+        texto.includes("quiz") ||
+        texto.includes("exame") ||
+        texto.includes("verificacao") ||
+        texto.includes("simulado") ||
+        texto.includes("recuperacao") ||
+        texto.includes("segunda chamada") ||
+        texto.includes("trimestral") ||
+        texto.includes("bimestral") ||
+        /(^|\s)(av|ap|p)\s*[-_.]?\s*[1-9](\s|$)/.test(texto)
     ) {
         return "Prova e avaliação";
     }
@@ -2363,21 +2492,32 @@ function identificarTipoAtividade(
     }
 
     if (
-        texto.includes("exercício") ||
         texto.includes("exercicio") ||
-        texto.includes("lista")
+        texto.includes("lista") ||
+        texto.includes("questionario") ||
+        texto.includes("pratica")
     ) {
         return "Exercício";
     }
 
     if (
         texto.includes("trabalho") ||
-        texto.includes("projeto")
+        texto.includes("projeto") ||
+        texto.includes("seminario") ||
+        texto.includes("apresentacao") ||
+        texto.includes("pesquisa")
     ) {
         return "Trabalho";
     }
 
     return "Atividade";
+}
+
+function normalizarPesquisa(texto) {
+    return String(texto || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
 }
 
 function envioEstaPendente(envio) {
@@ -2644,6 +2784,14 @@ const statusClassroom = document.querySelector(
     "#status-classroom"
 );
 
+const cartaoClassroom = document.querySelector(
+    "#cartao-classroom"
+);
+
+const textoClassroom = document.querySelector(
+    "#texto-classroom"
+);
+
 botaoClassroom.addEventListener(
     "click",
     conectarClassroom
@@ -2662,6 +2810,11 @@ function conectarClassroom() {
         return;
     }
 
+    textoClassroom.textContent =
+        "Abrindo o Google...";
+
+    cartaoClassroom.classList.add("carregando");
+
     if (!clienteClassroom) {
         clienteClassroom =
             google.accounts.oauth2.initTokenClient({
@@ -2678,6 +2831,13 @@ function conectarClassroom() {
                     function () {
                         statusClassroom.textContent =
                             "A autorização foi cancelada.";
+
+                        textoClassroom.textContent =
+                            "Conectar ao Classroom";
+
+                        cartaoClassroom.classList.remove(
+                            "carregando"
+                        );
                     }
             });
     }
@@ -2692,10 +2852,23 @@ async function receberTokenClassroom(resposta) {
         statusClassroom.textContent =
             "O Google não autorizou o acesso.";
 
+        textoClassroom.textContent =
+            "Conectar ao Classroom";
+
+        cartaoClassroom.classList.remove(
+            "carregando"
+        );
+
         return;
     }
 
     tokenClassroom = resposta.access_token;
+
+    textoClassroom.textContent =
+        "Classroom conectado";
+
+    cartaoClassroom.classList.remove("carregando");
+    cartaoClassroom.classList.add("conectado");
 
     statusClassroom.textContent =
         "Classroom conectado. Carregando turmas...";
@@ -2744,6 +2917,9 @@ async function carregarTurmas() {
                 "A conta foi conectada, mas nenhuma " +
                 "turma ativa foi encontrada.";
 
+            textoClassroom.textContent =
+                "Nenhuma turma encontrada";
+
             return;
         }
 
@@ -2768,6 +2944,14 @@ async function carregarTurmas() {
                 turmasClassroom.length === 1
                     ? " turma carregada."
                     : " turmas carregadas."
+            );
+
+        textoClassroom.textContent =
+            turmasClassroom.length +
+            (
+                turmasClassroom.length === 1
+                    ? " turma conectada"
+                    : " turmas conectadas"
             );
 
         await carregarAtividadesDeAmanha();
@@ -3282,5 +3466,3 @@ function protegerTexto(texto) {
 
     return elemento.innerHTML;
 }
-
-
