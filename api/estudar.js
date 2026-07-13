@@ -99,11 +99,15 @@ export default async function handler(req, res) {
             }
         );
     } catch (erro) {
-        console.error(erro);
+        console.error("Erro em /api/estudar:", erro);
+
+        const mensagem =
+            erro instanceof Error && erro.message
+                ? erro.message
+                : "Não foi possível concluir a solicitação.";
 
         return res.status(500).json({
-            erro:
-                "Não foi possível concluir a solicitação."
+            erro: mensagem
         });
     }
 }
@@ -408,3 +412,4 @@ async function chamarGemini(
         );
     }
 }
+
