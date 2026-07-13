@@ -64,12 +64,91 @@ document
     });
 
 document
+    .querySelector("#ir-login-hero")
+    .addEventListener("click", function () {
+        mostrarTela(telaLogin);
+    });
+
+document
+    .querySelector("#ir-cadastro-hero")
+    .addEventListener("click", function () {
+        mostrarTela(telaCadastro);
+    });
+
+document
     .querySelectorAll(".voltar")
     .forEach(function (botao) {
         botao.addEventListener("click", function () {
             mostrarTela(telaEscolha);
         });
     });
+
+/* BARRA LATERAL, PESQUISA E AJUDA */
+
+const fundoPesquisa =
+    document.querySelector("#fundo-pesquisa");
+
+const fundoAjuda =
+    document.querySelector("#fundo-ajuda");
+
+function abrirPainelPesquisa() {
+    fundoPesquisa.classList.remove("escondido");
+
+    window.setTimeout(function () {
+        document
+            .querySelector("#campo-pesquisa")
+            .focus();
+    }, 120);
+}
+
+function fecharPainelPesquisa() {
+    fundoPesquisa.classList.add("escondido");
+}
+
+function abrirPainelAjuda() {
+    fundoAjuda.classList.remove("escondido");
+}
+
+function fecharPainelAjuda() {
+    fundoAjuda.classList.add("escondido");
+}
+
+document
+    .querySelector("#abrir-pesquisa")
+    .addEventListener("click", abrirPainelPesquisa);
+
+document
+    .querySelector("#fechar-pesquisa")
+    .addEventListener("click", fecharPainelPesquisa);
+
+document
+    .querySelector("#abrir-ajuda")
+    .addEventListener("click", abrirPainelAjuda);
+
+document
+    .querySelector("#fechar-ajuda")
+    .addEventListener("click", fecharPainelAjuda);
+
+fundoPesquisa.addEventListener("click", function (evento) {
+    if (evento.target === fundoPesquisa) {
+        fecharPainelPesquisa();
+    }
+});
+
+fundoAjuda.addEventListener("click", function (evento) {
+    if (evento.target === fundoAjuda) {
+        fecharPainelAjuda();
+    }
+});
+
+document.addEventListener("keydown", function (evento) {
+    if (evento.key !== "Escape") {
+        return;
+    }
+
+    fecharPainelPesquisa();
+    fecharPainelAjuda();
+});
 
 /* ALUNO OU RESPONSÁVEL */
 
@@ -3203,6 +3282,5 @@ function protegerTexto(texto) {
 
     return elemento.innerHTML;
 }
-
 
 
