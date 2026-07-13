@@ -510,6 +510,150 @@ select:focus {
         font-size: 28px;
     }
 }
+
+/* PÁGINAS INTERNAS: PESQUISA, AJUDA E ADMINISTRAÇÃO */
+
+.pagina-ferramenta {
+    width: 100%;
+    min-height: 70vh;
+    text-align: left;
+}
+
+.voltar-ferramenta {
+    margin-bottom: 18px;
+}
+
+.cabecalho-ferramenta {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    margin-bottom: 24px;
+    border-radius: 28px;
+    padding: 34px 38px;
+    background:
+        radial-gradient(circle at 92% 16%, rgba(255, 255, 255, 0.2), transparent 25%),
+        linear-gradient(125deg, var(--roxo), #9274ff);
+    color: var(--branco);
+    box-shadow: var(--sombra);
+}
+
+.cabecalho-ferramenta > span {
+    display: grid;
+    width: 76px;
+    min-width: 76px;
+    height: 76px;
+    place-items: center;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.17);
+    font-size: 38px;
+}
+
+.cabecalho-ferramenta small {
+    font-weight: 900;
+    letter-spacing: 1.5px;
+}
+
+.cabecalho-ferramenta h1 {
+    margin: 5px 0 7px;
+    font-size: clamp(30px, 4vw, 44px);
+}
+
+.cabecalho-ferramenta p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.88);
+    line-height: 1.5;
+}
+
+.pagina-pesquisa-conteudo {
+    width: min(900px, 100%);
+    margin: 0 auto;
+    padding: 30px;
+}
+
+.pagina-pesquisa-conteudo > p {
+    display: none;
+}
+
+.grade-ajuda {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.cartao-ajuda {
+    display: flex;
+    min-height: 220px;
+    flex-direction: column;
+    align-items: flex-start;
+    border: 2px solid transparent;
+    border-radius: 22px;
+    padding: 25px;
+    background: var(--branco);
+    box-shadow: 0 14px 38px rgba(64, 43, 150, 0.1);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.cartao-ajuda:hover {
+    border-color: #cfc3ff;
+    transform: translateY(-4px);
+}
+
+.cartao-ajuda > span {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    border-radius: 16px;
+    background: #eee9ff;
+    font-size: 27px;
+}
+
+.cartao-ajuda h2 {
+    margin: 17px 0 8px;
+    font-size: 20px;
+}
+
+.cartao-ajuda p {
+    margin: 0 0 18px;
+    color: var(--cinza);
+    line-height: 1.6;
+}
+
+.cartao-ajuda .acao-ajuda {
+    width: 100%;
+    margin-top: auto;
+}
+
+.administracao-pagina-conteudo {
+    padding: 28px;
+}
+
+.administracao-cabecalho {
+    background: linear-gradient(125deg, #21184f, var(--roxo));
+}
+
+@media (max-width: 700px) {
+    .cabecalho-ferramenta {
+        align-items: flex-start;
+        padding: 26px 22px;
+    }
+
+    .cabecalho-ferramenta > span {
+        width: 58px;
+        min-width: 58px;
+        height: 58px;
+        font-size: 29px;
+    }
+
+    .grade-ajuda {
+        grid-template-columns: 1fr;
+    }
+
+    .pagina-pesquisa-conteudo,
+    .administracao-pagina-conteudo {
+        padding: 21px;
+    }
+}
 /* PESQUISA INTELIGENTE */
 
 .pesquisa-inteligente {
