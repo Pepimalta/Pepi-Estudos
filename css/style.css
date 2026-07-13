@@ -657,3 +657,342 @@ textarea:focus {
     color: var(--cinza);
     font-style: italic;
 }
+
+/* RESULTADOS, AVISOS E TAREFAS */
+
+.avisos-urgentes {
+    margin: 22px;
+    border: 2px solid #ff8797;
+    border-radius: 18px;
+    padding: 20px;
+    background:
+        linear-gradient(
+            135deg,
+            #fff0f3,
+            #ffe2e8
+        );
+    color: #9f233a;
+    text-align: left;
+}
+
+.avisos-urgentes h3 {
+    margin: 0 0 14px;
+    font-size: 21px;
+}
+
+.aviso-urgente {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    margin-top: 10px;
+    border-radius: 13px;
+    padding: 13px 15px;
+    background: var(--branco);
+    box-shadow:
+        0 8px 22px rgba(216, 77, 102, 0.12);
+}
+
+.aviso-urgente span {
+    color: var(--cinza);
+    font-size: 14px;
+}
+
+.lista-resultados {
+    padding: 0 25px 25px;
+    text-align: left;
+}
+
+.lista-resultados h3 {
+    margin: 0 0 15px;
+    text-align: center;
+}
+
+.resultado-item {
+    position: relative;
+    margin: 12px 0;
+    border: 2px solid var(--borda);
+    border-radius: 16px;
+    padding: 17px;
+    background: var(--branco);
+    transition:
+        transform 0.2s,
+        border-color 0.2s,
+        opacity 0.2s;
+}
+
+.resultado-item:hover {
+    transform: translateY(-2px);
+    border-color: var(--roxo);
+}
+
+.resultado-item > strong {
+    display: block;
+    margin: 13px 0 7px;
+    font-size: 17px;
+}
+
+.resultado-item p {
+    margin: 7px 0;
+    color: var(--cinza);
+}
+
+.resultado-item a {
+    display: inline-block;
+    margin-top: 8px;
+    color: var(--roxo);
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.resultado-item a:hover {
+    text-decoration: underline;
+}
+
+.marcar-concluido {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 8px;
+    margin: 0 !important;
+    color: var(--cinza);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.marcar-concluido input {
+    width: 19px;
+    height: 19px;
+    margin: 0;
+    accent-color: var(--verde);
+}
+
+.resultado-item.concluido {
+    border-color: #a9e4cb;
+    background: #f0fff8;
+    opacity: 0.72;
+}
+
+.resultado-item.concluido > strong {
+    text-decoration: line-through;
+}
+
+/* APRESENTAÇÃO DE SLIDES */
+
+.apresentacao-slides {
+    width: min(900px, 100%);
+    margin: 24px auto 0;
+    border-radius: 22px;
+    padding: 18px;
+    background: #20194b;
+    box-shadow:
+        0 22px 55px rgba(37, 26, 91, 0.25);
+}
+
+.topo-slides {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 15px;
+    padding: 4px 5px 14px;
+    color: var(--branco);
+}
+
+.topo-slides span {
+    color: #c9c1ff;
+    font-size: 14px;
+}
+
+.barra-slides {
+    height: 6px;
+    margin-bottom: 15px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+#progresso-slides {
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background:
+        linear-gradient(
+            90deg,
+            #8a6cff,
+            #43d4df
+        );
+    transition: width 0.3s ease;
+}
+
+.slide-visual {
+    position: relative;
+    display: grid;
+    min-height: 440px;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 18px;
+    padding: 55px;
+    background:
+        radial-gradient(
+            circle at 90% 10%,
+            rgba(255, 255, 255, 0.22),
+            transparent 24%
+        ),
+        radial-gradient(
+            circle at 5% 95%,
+            rgba(71, 221, 220, 0.25),
+            transparent 27%
+        ),
+        linear-gradient(
+            135deg,
+            var(--roxo),
+            #8d6cff
+        );
+    color: var(--branco);
+    text-align: left;
+}
+
+.slide-visual::before,
+.slide-visual::after {
+    content: "";
+    position: absolute;
+    border: 2px solid rgba(255, 255, 255, 0.16);
+    border-radius: 50%;
+}
+
+.slide-visual::before {
+    top: -90px;
+    right: -70px;
+    width: 240px;
+    height: 240px;
+}
+
+.slide-visual::after {
+    bottom: -120px;
+    left: -80px;
+    width: 280px;
+    height: 280px;
+}
+
+.numero-slide {
+    position: absolute;
+    right: 28px;
+    bottom: 12px;
+    color: rgba(255, 255, 255, 0.13);
+    font-size: 110px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.conteudo-slide {
+    position: relative;
+    z-index: 1;
+    width: min(680px, 100%);
+}
+
+.conteudo-slide small {
+    display: inline-block;
+    margin-bottom: 12px;
+    border-radius: 999px;
+    padding: 7px 11px;
+    background: rgba(255, 255, 255, 0.16);
+    font-weight: bold;
+    letter-spacing: 1.5px;
+}
+
+.conteudo-slide h2 {
+    margin: 0 0 25px;
+    color: var(--branco);
+    font-size: clamp(28px, 4vw, 44px);
+    line-height: 1.1;
+}
+
+.conteudo-slide ul {
+    margin: 0;
+    padding-left: 24px;
+}
+
+.conteudo-slide li {
+    margin: 13px 0;
+    font-size: clamp(16px, 2vw, 20px);
+    line-height: 1.45;
+}
+
+.controles-slides {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 15px;
+}
+
+.controles-slides button {
+    min-width: 135px;
+}
+
+.controles-slides .botao-secundario {
+    border-color: #8f7aff;
+    background: transparent;
+    color: var(--branco);
+}
+
+.controles-slides button:disabled {
+    cursor: not-allowed;
+    opacity: 0.35;
+}
+
+/* DETALHES VISUAIS DA MALTÉRIA */
+
+.apresentacao {
+    position: relative;
+    overflow: hidden;
+}
+
+.apresentacao::before {
+    content: "M";
+    position: absolute;
+    top: -35px;
+    right: 25px;
+    color: rgba(255, 255, 255, 0.09);
+    font-size: 170px;
+    font-weight: 900;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.apresentacao > * {
+    position: relative;
+    z-index: 1;
+}
+
+@media (max-width: 650px) {
+    .aviso-urgente {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .slide-visual {
+        min-height: 430px;
+        padding: 35px 25px;
+    }
+
+    .numero-slide {
+        right: 12px;
+        font-size: 80px;
+    }
+
+    .controles-slides {
+        flex-direction: column-reverse;
+    }
+
+    .controles-slides button {
+        width: 100%;
+    }
+
+    .lista-resultados {
+        padding: 0 16px 18px;
+    }
+
+    .avisos-urgentes {
+        margin: 16px;
+    }
+}
+
