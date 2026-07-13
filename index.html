@@ -439,95 +439,84 @@
                     <h2>Escolha uma opção acima</h2>
                 </section>
             </section>
-        </main>
-    </div>
 
-    <!-- PAINEL DE PESQUISA -->
-    <div id="fundo-pesquisa" class="fundo-painel escondido">
-        <aside id="painel-pesquisa" class="painel-pesquisa" aria-labelledby="titulo-pesquisa">
-            <button id="fechar-pesquisa" class="fechar" type="button" aria-label="Fechar pesquisa">×</button>
+            <!-- PÁGINA DE PESQUISA -->
+            <section id="pagina-pesquisa" class="pagina-ferramenta escondido">
+                <button id="fechar-pesquisa" class="botao-link voltar-ferramenta" type="button">← Voltar</button>
 
-            <div class="painel-cabecalho">
-                <span>🔎</span>
-                <div>
-                    <small>ASSISTENTE DE ESTUDOS</small>
-                    <h2 id="titulo-pesquisa">Pesquisa inteligente</h2>
-                </div>
-            </div>
-
-            <section class="pesquisa-inteligente">
-                <p>
-                    Pergunte qualquer coisa sobre uma matéria. A resposta usará
-                    os materiais do seu Google Classroom.
-                </p>
-
-                <label for="materia-pesquisa">Matéria</label>
-                <select id="materia-pesquisa">
-                    <option value="">Escolha uma matéria</option>
-                </select>
-
-                <div class="periodo-pesquisa">
+                <div class="cabecalho-ferramenta">
+                    <span>🔎</span>
                     <div>
-                        <label for="data-inicial">Data inicial</label>
-                        <input id="data-inicial" type="date">
-                    </div>
-                    <div>
-                        <label for="data-final">Data final</label>
-                        <input id="data-final" type="date">
+                        <small>ASSISTENTE DE ESTUDOS</small>
+                        <h1 id="titulo-pesquisa">Pesquisa inteligente</h1>
+                        <p>Pesquise atividades e tire dúvidas usando os materiais do seu Google Classroom.</p>
                     </div>
                 </div>
 
-                <label for="campo-pesquisa">O que você quer saber?</label>
-                <textarea
-                    id="campo-pesquisa"
-                    rows="5"
-                    placeholder="Exemplo: explique a matéria de frações dada nesta semana."
-                ></textarea>
+                <section class="caixa pesquisa-inteligente pagina-pesquisa-conteudo">
+                    <label for="materia-pesquisa">Matéria</label>
+                    <select id="materia-pesquisa">
+                        <option value="">Escolha uma matéria</option>
+                    </select>
 
-                <button id="pesquisar" class="botao-principal" type="button">
-                    ✨ Pesquisar nos materiais
-                </button>
+                    <div class="periodo-pesquisa">
+                        <div><label for="data-inicial">Data inicial</label><input id="data-inicial" type="date"></div>
+                        <div><label for="data-final">Data final</label><input id="data-final" type="date"></div>
+                    </div>
 
-                <div id="status-pesquisa" class="status-pesquisa"></div>
-                <section id="resposta-pesquisa" class="resultado-pesquisa escondido"></section>
+                    <label for="campo-pesquisa">O que você quer saber?</label>
+                    <textarea id="campo-pesquisa" rows="6" placeholder="Exemplo: explique a matéria de frações dada nesta semana."></textarea>
+
+                    <button id="pesquisar" class="botao-principal" type="button">✨ Pesquisar nos materiais</button>
+                    <div id="status-pesquisa" class="status-pesquisa"></div>
+                    <section id="resposta-pesquisa" class="resultado-pesquisa escondido"></section>
+                </section>
             </section>
-        </aside>
-    </div>
 
-    <!-- AJUDA -->
-    <div id="fundo-ajuda" class="fundo-modal escondido">
-        <section class="cartao modal ajuda-modal">
-            <button id="fechar-ajuda" class="fechar" type="button" aria-label="Fechar ajuda">×</button>
-            <span class="ajuda-icone">💡</span>
-            <h2>Como a Maltéria pode ajudar?</h2>
-            <ol>
-                <li><strong>Conecte o Classroom</strong> para trazer suas turmas e materiais.</li>
-                <li><strong>Escolha uma matéria</strong> para ver atividades e criar estudos.</li>
-                <li><strong>Use o botão +</strong> sempre que quiser pesquisar uma dúvida.</li>
-            </ol>
-        </section>
-    </div>
+            <!-- PÁGINA DE AJUDA -->
+            <section id="pagina-ajuda" class="pagina-ferramenta escondido">
+                <button id="fechar-ajuda" class="botao-link voltar-ferramenta" type="button">← Voltar</button>
 
-    <!-- SUPER ADMINISTRAÇÃO -->
-    <div id="fundo-administracao" class="fundo-modal escondido">
-        <section class="cartao modal administracao-modal">
-            <button id="fechar-administracao" class="fechar" type="button" aria-label="Fechar administração">×</button>
-
-            <div class="administracao-titulo">
-                <span>♛</span>
-                <div>
-                    <small>ÁREA EXCLUSIVA DO DONO</small>
-                    <h2>Super administração</h2>
+                <div class="cabecalho-ferramenta ajuda-cabecalho">
+                    <span>💡</span>
+                    <div>
+                        <small>CENTRAL DE AJUDA</small>
+                        <h1>Como podemos ajudar?</h1>
+                        <p>Escolha um assunto para entender cada parte da Maltéria.</p>
+                    </div>
                 </div>
-            </div>
 
-            <p class="administracao-aviso">
-                Por enquanto, aparecem aqui as contas cadastradas neste navegador.
-                Quando o banco de dados for conectado, esta tela mostrará todos os usuários da Maltéria.
-            </p>
+                <div class="grade-ajuda">
+                    <article class="cartao-ajuda"><span>🚀</span><h2>Primeiros passos</h2><p>Cadastre sua conta, entre na Maltéria e conecte a conta escolar do Google.</p></article>
+                    <article class="cartao-ajuda"><span>🎓</span><h2>Google Classroom</h2><p>Use “Conectar ao Classroom” no cabeçalho para carregar turmas, materiais e atividades.</p><button class="botao-secundario acao-ajuda" data-ajuda-acao="classroom" type="button">Conectar ou atualizar</button></article>
+                    <article class="cartao-ajuda"><span>🔎</span><h2>Pesquisa inteligente</h2><p>Escolha a matéria e o período. A resposta será criada com o conteúdo encontrado.</p><button class="botao-secundario acao-ajuda" data-ajuda-acao="pesquisa" type="button">Abrir pesquisa</button></article>
+                    <article class="cartao-ajuda"><span>🧠</span><h2>Explicações e slides</h2><p>Entre em uma matéria e escolha Explicações para criar resumo, cópia, revisão e slides.</p></article>
+                    <article class="cartao-ajuda"><span>📝</span><h2>Atividades e simulados</h2><p>Confira tarefas reais do Classroom e pratique com simulados produzidos a partir do material.</p></article>
+                    <article class="cartao-ajuda"><span>👨‍👩‍👧‍👦</span><h2>Conta de responsável</h2><p>Adicione filhos, selecione quem deseja acompanhar e veja matérias e próximos prazos.</p></article>
+                    <article class="cartao-ajuda"><span>📎</span><h2>Uploads</h2><p>Adicione fotos, textos, exercícios e provas antigas dentro da matéria correta.</p></article>
+                    <article class="cartao-ajuda"><span>🛠️</span><h2>Algo não funcionou?</h2><p>Atualize a página, reconecte o Classroom e confira se selecionou a conta escolar correta.</p></article>
+                </div>
+            </section>
 
-            <div id="lista-usuarios-administracao" class="lista-usuarios-administracao"></div>
-        </section>
+            <!-- PÁGINA DE SUPER ADMINISTRAÇÃO -->
+            <section id="pagina-administracao" class="pagina-ferramenta escondido">
+                <button id="fechar-administracao" class="botao-link voltar-ferramenta" type="button">← Voltar</button>
+
+                <div class="cabecalho-ferramenta administracao-cabecalho">
+                    <span>♛</span>
+                    <div>
+                        <small>ÁREA EXCLUSIVA DO DONO</small>
+                        <h1>Super administração</h1>
+                        <p>Consulte as contas cadastradas e as contas escolares vinculadas.</p>
+                    </div>
+                </div>
+
+                <section class="caixa administracao-pagina-conteudo">
+                    <p class="administracao-aviso">Por enquanto, aparecem aqui as contas cadastradas neste navegador. Quando o banco de dados for conectado, esta página mostrará todos os usuários da Maltéria.</p>
+                    <div id="lista-usuarios-administracao" class="lista-usuarios-administracao"></div>
+                </section>
+            </section>
+        </main>
     </div>
 
     <!-- MINHA CONTA -->
