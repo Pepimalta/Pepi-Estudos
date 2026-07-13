@@ -5,7 +5,9 @@ const ESCOPOS_CLASSROOM = [
     "https://www.googleapis.com/auth/classroom.courses.readonly",
     "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
     "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly",
-    "https://www.googleapis.com/auth/drive.readonly"
+    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/calendar.events.readonly",
+    "https://www.googleapis.com/auth/calendar.calendarlist.readonly"
 ].join(" ");
 
 const ENDERECO_IA =
@@ -426,6 +428,10 @@ function desenharMaterias(materias) {
         <option value="">
             Escolha uma matéria
         </option>
+
+        <option value="__todas__">
+            Todas as matérias
+        </option>
     `;
 
     materias.forEach(function (materia) {
@@ -470,6 +476,143 @@ function desenharMaterias(materias) {
 }
 
 desenharMaterias(materiasDemonstracao);
+
+prepararFiltrosPesquisa();
+
+function prepararFiltrosPesquisa() {
+    const caixa =
+        document.querySelector(".pesquisa-inteligente");
+
+    const seletorMateria =
+        document.querySelector("#materia-pesquisa");
+
+    if (
+        !caixa ||
+        !seletorMateria ||
+        document.querySelector("#tipo-pesquisa")
+    ) {
+        return;
+    }
+
+    const labelMateria =
+        document.querySelector(
+            'label[for="materia-pesquisa"]'
+        );
+
+    const labelTipo =
+        document.createElement("label");
+
+    labelTipo.setAttribute(
+        "for",
+        "tipo-pesquisa"
+    );
+
+    labelTipo.textContent =
+        "O que deseja encontrar?";
+
+    const seletorTipo =
+        document.createElement("select");
+
+    seletorTipo.id = "tipo-pesquisa";
+
+    seletorTipo.innerHTML = `
+        <option value="todos">
+            Tudo do período
+        </option>
+
+        <option value="dever">
+            Deveres de casa
+        </option>
+
+        <option value="prova">
+            Provas e avaliações
+        </option>
+
+        <option value="trabalho">
+            Trabalhos e projetos
+        </option>
+
+        <option value="exercicio">
+            Exercícios e listas
+        </option>
+
+        <option value="material">
+            Materiais e aulas
+        </option>
+
+        <option value="agenda">
+            Eventos do Google Agenda
+        </option>
+    `;
+
+    caixa.insertBefore(
+        labelTipo,
+        labelMateria
+    );
+
+    caixa.insertBefore(
+        seletorTipo,
+        labelMateria
+    );
+
+    preencherDatasDaSemana();
+}
+
+function preencherDatasDaSemana() {
+    const inicial =
+        document.querySelector("#data-inicial");
+
+    const final =
+        document.querySelector("#data-final");
+
+    if (!inicial || !final) {
+        return;
+    }
+
+    const hoje = new Date();
+
+    const segunda = new Date(hoje);
+
+    const diaSemana =
+        hoje.getDay() === 0
+            ? 7
+            : hoje.getDay();
+
+    segunda.setDate(
+        hoje.getDate() - diaSemana + 1
+    );
+
+    const domingo = new Date(segunda);
+
+    domingo.setDate(
+        segunda.getDate() + 6
+    );
+
+    if (!inicial.value) {
+        inicial.value =
+            dataParaCampo(segunda);
+    }
+
+    if (!final.value) {
+        final.value =
+            dataParaCampo(domingo);
+    }
+}
+
+function dataParaCampo(data) {
+    const ano = data.getFullYear();
+
+    const mes = String(
+        data.getMonth() + 1
+    ).padStart(2, "0");
+
+    const dia = String(
+        data.getDate()
+    ).padStart(2, "0");
+
+    return ano + "-" + mes + "-" + dia;
+}
+
 
 /* ABRIR MATÉRIA */
 
@@ -799,14 +942,9 @@ function abrirFormatoDeEstudo(formato) {
             area.innerHTML = `
                 <div class="arquivo">
                     <h3>Nenhum slide foi criado</h3>
-
-                    <p>
-                        Não encontrei conteúdo suficiente
-                        para preparar a apresentação.
-                    </p>
+                    <p>Não encontrei conteúdo suficiente para a apresentação.</p>
                 </div>
             `;
-
             return;
         }
 
@@ -815,11 +953,7 @@ function abrirFormatoDeEstudo(formato) {
         area.innerHTML = `
             <section class="apresentacao-slides">
                 <div class="topo-slides">
-                    <strong>
-                        Apresentação de
-                        ${protegerTexto(materiaAtual.name)}
-                    </strong>
-
+                    <strong>Apresentação de ${protegerTexto(materiaAtual.name)}</strong>
                     <span id="contador-slide"></span>
                 </div>
 
@@ -827,23 +961,14 @@ function abrirFormatoDeEstudo(formato) {
                     <div id="progresso-slides"></div>
                 </div>
 
-                <article
-                    id="slide-atual"
-                    class="slide-visual"
-                ></article>
+                <article id="slide-atual" class="slide-visual"></article>
 
                 <div class="controles-slides">
-                    <button
-                        id="slide-anterior"
-                        class="botao-secundario pequeno"
-                    >
+                    <button id="slide-anterior" class="botao-secundario pequeno">
                         ← Anterior
                     </button>
 
-                    <button
-                        id="slide-proximo"
-                        class="botao-principal pequeno"
-                    >
+                    <button id="slide-proximo" class="botao-principal pequeno">
                         Próximo →
                     </button>
                 </div>
@@ -851,81 +976,42 @@ function abrirFormatoDeEstudo(formato) {
         `;
 
         function desenharSlideAtual() {
-            const slide =
-                slides[slideAtual];
+            const slide = slides[slideAtual];
 
-            const pontos = (
-                slide.pontos || []
-            )
+            const pontos = (slide.pontos || [])
                 .map(function (ponto) {
-                    return `
-                        <li>
-                            ${protegerTexto(ponto)}
-                        </li>
-                    `;
+                    return `<li>${protegerTexto(ponto)}</li>`;
                 })
                 .join("");
 
-            document.querySelector(
-                "#slide-atual"
-            ).innerHTML = `
+            document.querySelector("#slide-atual").innerHTML = `
                 <div class="numero-slide">
                     ${String(slideAtual + 1).padStart(2, "0")}
                 </div>
 
                 <div class="conteudo-slide">
                     <small>MALTÉRIA</small>
-
-                    <h2>
-                        ${protegerTexto(slide.titulo)}
-                    </h2>
-
-                    <ul>
-                        ${pontos}
-                    </ul>
+                    <h2>${protegerTexto(slide.titulo)}</h2>
+                    <ul>${pontos}</ul>
                 </div>
             `;
 
-            document.querySelector(
-                "#contador-slide"
-            ).textContent =
-                "Slide " +
-                (slideAtual + 1) +
-                " de " +
-                slides.length;
+            document.querySelector("#contador-slide").textContent =
+                "Slide " + (slideAtual + 1) + " de " + slides.length;
 
-            document.querySelector(
-                "#progresso-slides"
-            ).style.width =
-                (
-                    (
-                        (slideAtual + 1) /
-                        slides.length
-                    ) * 100
-                ) + "%";
+            document.querySelector("#progresso-slides").style.width =
+                (((slideAtual + 1) / slides.length) * 100) + "%";
 
-            const anterior =
-                document.querySelector(
-                    "#slide-anterior"
-                );
-
-            const proximo =
-                document.querySelector(
-                    "#slide-proximo"
-                );
-
-            anterior.disabled =
+            document.querySelector("#slide-anterior").disabled =
                 slideAtual === 0;
 
-            proximo.textContent =
+            document.querySelector("#slide-proximo").textContent =
                 slideAtual === slides.length - 1
                     ? "Recomeçar ↻"
                     : "Próximo →";
         }
 
-        document.querySelector(
-            "#slide-anterior"
-        ).addEventListener(
+        document.querySelector("#slide-anterior").addEventListener(
             "click",
             function () {
                 if (slideAtual > 0) {
@@ -935,26 +1021,19 @@ function abrirFormatoDeEstudo(formato) {
             }
         );
 
-        document.querySelector(
-            "#slide-proximo"
-        ).addEventListener(
+        document.querySelector("#slide-proximo").addEventListener(
             "click",
             function () {
-                if (
-                    slideAtual <
-                    slides.length - 1
-                ) {
-                    slideAtual++;
-                } else {
-                    slideAtual = 0;
-                }
+                slideAtual =
+                    slideAtual < slides.length - 1
+                        ? slideAtual + 1
+                        : 0;
 
                 desenharSlideAtual();
             }
         );
 
         desenharSlideAtual();
-
         return;
     }
 
@@ -1287,90 +1366,99 @@ async function mostrarSimulado() {
 
     desenharQuestao();
 }
-/* PESQUISA ORGANIZADA POR MATÉRIA */
-
 /* PESQUISA INTELIGENTE */
 
 document
     .querySelector("#pesquisar")
-    .addEventListener("click", pesquisarMateriais);
+    .addEventListener(
+        "click",
+        pesquisarMateriais
+    );
 
 async function pesquisarMateriais() {
-    const nomeMateria = document
-        .querySelector("#materia-pesquisa")
-        .value;
+    const materiaEscolhida =
+        document.querySelector(
+            "#materia-pesquisa"
+        ).value;
 
-    const dataInicial = document
-        .querySelector("#data-inicial")
-        .value;
+    const tipoPesquisa =
+        document.querySelector(
+            "#tipo-pesquisa"
+        )?.value || "todos";
 
-    const dataFinal = document
-        .querySelector("#data-final")
-        .value;
+    const dataInicial =
+        document.querySelector(
+            "#data-inicial"
+        ).value;
 
-    const pergunta = document
-        .querySelector("#campo-pesquisa")
-        .value
-        .trim();
+    const dataFinal =
+        document.querySelector(
+            "#data-final"
+        ).value;
 
-    const botao = document.querySelector("#pesquisar");
+    let pergunta =
+        document.querySelector(
+            "#campo-pesquisa"
+        ).value.trim();
 
-    const status = document.querySelector(
-        "#status-pesquisa"
-    );
+    const botao =
+        document.querySelector("#pesquisar");
 
-    const areaResposta = document.querySelector(
-        "#resposta-pesquisa"
-    );
+    const status =
+        document.querySelector(
+            "#status-pesquisa"
+        );
+
+    const areaResposta =
+        document.querySelector(
+            "#resposta-pesquisa"
+        );
 
     areaResposta.classList.add("escondido");
     areaResposta.innerHTML = "";
 
     if (!tokenClassroom) {
         status.textContent =
-            "Conecte o Google Classroom antes de pesquisar.";
-
+            "Conecte sua conta Google antes de pesquisar.";
         return;
     }
 
-    if (!nomeMateria) {
+    if (!materiaEscolhida) {
         status.textContent =
-            "Escolha uma matéria.";
-
+            "Escolha uma matéria ou Todas as matérias.";
         return;
     }
 
     if (!dataInicial || !dataFinal) {
         status.textContent =
             "Escolha a data inicial e a data final.";
-
         return;
     }
 
     if (dataInicial > dataFinal) {
         status.textContent =
-            "A data inicial não pode ser depois da data final.";
-
+            "A data inicial não pode ser posterior à data final.";
         return;
     }
 
     if (!pergunta) {
-        status.textContent =
-            "Digite o que você quer pesquisar.";
-
-        return;
+        pergunta =
+            criarPerguntaAutomatica(tipoPesquisa);
     }
 
-    const turma = turmasClassroom.find(
-        function (item) {
-            return item.name === nomeMateria;
-        }
-    );
+    const turmas =
+        materiaEscolhida === "__todas__"
+            ? turmasClassroom
+            : turmasClassroom.filter(
+                function (turma) {
+                    return turma.name ===
+                        materiaEscolhida;
+                }
+            );
 
-    if (!turma) {
+    if (turmas.length === 0) {
         status.textContent =
-            "Não encontrei essa matéria no Classroom.";
-
+            "Nenhuma matéria foi encontrada.";
         return;
     }
 
@@ -1378,25 +1466,64 @@ async function pesquisarMateriais() {
     botao.textContent = "Pesquisando...";
 
     status.textContent =
-        "Procurando atividades, provas, deveres e materiais...";
+        "Lendo o Classroom e o Google Agenda...";
 
     try {
-        const resultado =
-            await obterMateriaisDoPeriodo(
-                turma,
-                dataInicial,
-                dataFinal
+        const resultados = [];
+
+        for (const turma of turmas) {
+            const resultado =
+                await obterMateriaisDoPeriodo(
+                    turma,
+                    dataInicial,
+                    dataFinal,
+                    tipoPesquisa
+                );
+
+            resultados.push(resultado);
+        }
+
+        let fontes = resultados.flatMap(
+            function (resultado) {
+                return resultado.fontes;
+            }
+        );
+
+        let conteudo = resultados
+            .map(function (resultado) {
+                return resultado.conteudo;
+            })
+            .join("\n\n");
+
+        if (
+            tipoPesquisa === "todos" ||
+            tipoPesquisa === "agenda"
+        ) {
+            const agenda =
+                await obterEventosAgenda(
+                    dataInicial,
+                    dataFinal
+                );
+
+            fontes = fontes.concat(
+                agenda.fontes
             );
 
-        if (resultado.conteudo.trim().length < 40) {
+            conteudo +=
+                "\n\n" + agenda.conteudo;
+        }
+
+        if (fontes.length === 0) {
             throw new Error(
-                "Não encontrei materiais dessa matéria " +
-                "dentro do período escolhido."
+                "Não encontrei itens nesse período."
             );
         }
 
+        const urgentes =
+            encontrarAvisosUrgentes(fontes);
+
         status.textContent =
-            "A inteligência da Maltéria está estudando os materiais...";
+            "A inteligência da MALTÉRIA está analisando os resultados...";
 
         const respostaServidor = await fetch(
             ENDERECO_IA,
@@ -1404,21 +1531,23 @@ async function pesquisarMateriais() {
                 method: "POST",
 
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type":
+                        "application/json"
                 },
 
                 body: JSON.stringify({
                     tipo: "pesquisa",
 
-                    materia: turma.name,
+                    materia:
+                        materiaEscolhida === "__todas__"
+                            ? "Todas as matérias"
+                            : materiaEscolhida,
 
                     pergunta: pergunta,
-
                     dataInicial: dataInicial,
-
                     dataFinal: dataFinal,
-
-                    conteudo: resultado.conteudo
+                    conteudo:
+                        conteudo.slice(0, 60000)
                 })
             }
         );
@@ -1435,35 +1564,64 @@ async function pesquisarMateriais() {
 
         desenharResultadoPesquisa(
             dados,
-            resultado.fontes,
-            turma.name,
+            fontes,
+            urgentes,
+            materiaEscolhida === "__todas__"
+                ? "Todas as matérias"
+                : materiaEscolhida,
             dataInicial,
             dataFinal
         );
 
         status.textContent =
-            resultado.fontes.length +
+            fontes.length +
             (
-                resultado.fontes.length === 1
-                    ? " item encontrado e analisado."
-                    : " itens encontrados e analisados."
+                fontes.length === 1
+                    ? " item encontrado."
+                    : " itens encontrados."
             );
     } catch (erro) {
         console.error(erro);
-
         status.textContent = erro.message;
     } finally {
         botao.disabled = false;
-
         botao.textContent =
             "🔎 Pesquisar nos materiais";
     }
 }
 
+function criarPerguntaAutomatica(tipo) {
+    const perguntas = {
+        todos:
+            "Mostre e explique tudo o que aconteceu nesse período.",
+
+        dever:
+            "Mostre todos os deveres de casa desse período.",
+
+        prova:
+            "Mostre todas as provas e avaliações desse período.",
+
+        trabalho:
+            "Mostre todos os trabalhos e projetos desse período.",
+
+        exercicio:
+            "Mostre todos os exercícios e listas desse período.",
+
+        material:
+            "Resuma os materiais e aulas publicados nesse período.",
+
+        agenda:
+            "Mostre os compromissos e eventos do Google Agenda nesse período."
+    };
+
+    return perguntas[tipo] || perguntas.todos;
+}
+
 async function obterMateriaisDoPeriodo(
     turma,
     dataInicial,
-    dataFinal
+    dataFinal,
+    filtro
 ) {
     const inicio =
         new Date(dataInicial + "T00:00:00");
@@ -1471,10 +1629,7 @@ async function obterMateriaisDoPeriodo(
     const fim =
         new Date(dataFinal + "T23:59:59");
 
-    const [
-        dadosAtividades,
-        dadosMateriais
-    ] = await Promise.all([
+    const respostas = await Promise.all([
         chamarClassroom(
             "courses/" +
             turma.id +
@@ -1489,23 +1644,36 @@ async function obterMateriaisDoPeriodo(
     ]);
 
     const atividades =
-        dadosAtividades.courseWork || [];
+        respostas[0].courseWork || [];
 
     const materiais =
-        dadosMateriais.courseWorkMaterial || [];
+        respostas[1].courseWorkMaterial || [];
 
-    const itensEncontrados = [];
+    const itens = [];
 
     atividades.forEach(function (atividade) {
         const data =
             obterDataDoItem(atividade);
 
-        if (dataEstaNoPeriodo(data, inicio, fim)) {
-            itensEncontrados.push({
-                tipo: identificarTipoAtividade(
-                    atividade.title,
-                    atividade.description
-                ),
+        const tipo =
+            identificarTipoAtividade(
+                atividade.title,
+                atividade.description
+            );
+
+        if (
+            dataEstaNoPeriodo(data, inicio, fim) &&
+            tipoCombinaComFiltro(tipo, filtro)
+        ) {
+            itens.push({
+                chave:
+                    "classroom-" +
+                    turma.id +
+                    "-" +
+                    atividade.id,
+
+                tipo: tipo,
+                materia: turma.name,
 
                 titulo:
                     atividade.title ||
@@ -1515,6 +1683,7 @@ async function obterMateriaisDoPeriodo(
                     atividade.description || "",
 
                 data: data,
+                prazo: data,
 
                 materiais:
                     atividade.materials || [],
@@ -1525,62 +1694,75 @@ async function obterMateriaisDoPeriodo(
         }
     });
 
-    materiais.forEach(function (material) {
-        const data =
-            obterDataDoItem(material);
+    if (
+        filtro === "todos" ||
+        filtro === "material"
+    ) {
+        materiais.forEach(function (material) {
+            const data =
+                obterDataDoItem(material);
 
-        if (dataEstaNoPeriodo(data, inicio, fim)) {
-            itensEncontrados.push({
-                tipo: "Material",
+            if (
+                dataEstaNoPeriodo(
+                    data,
+                    inicio,
+                    fim
+                )
+            ) {
+                itens.push({
+                    chave:
+                        "material-" +
+                        turma.id +
+                        "-" +
+                        material.id,
 
-                titulo:
-                    material.title ||
-                    "Material sem título",
+                    tipo: "Material",
+                    materia: turma.name,
 
-                descricao:
-                    material.description || "",
+                    titulo:
+                        material.title ||
+                        "Material sem título",
 
-                data: data,
+                    descricao:
+                        material.description || "",
 
-                materiais:
-                    material.materials || [],
+                    data: data,
+                    prazo: null,
 
-                link:
-                    material.alternateLink || ""
-            });
-        }
+                    materiais:
+                        material.materials || [],
+
+                    link:
+                        material.alternateLink || ""
+                });
+            }
+        });
+    }
+
+    itens.sort(function (a, b) {
+        return a.data - b.data;
     });
 
-    itensEncontrados.sort(
-        function (a, b) {
-            return b.data - a.data;
-        }
-    );
+    let conteudo =
+        "MATÉRIA: " +
+        turma.name +
+        "\nPERÍODO: " +
+        dataInicial +
+        " até " +
+        dataFinal +
+        "\n";
 
-    let conteudo = `
-MATÉRIA: ${turma.name}
-PERÍODO: ${dataInicial} até ${dataFinal}
-`;
-
-    const fontes = [];
     const anexos = [];
 
-    itensEncontrados.forEach(function (item) {
-        conteudo += `
-
-TIPO: ${item.tipo}
-TÍTULO: ${item.titulo}
-DATA: ${formatarDataPesquisa(item.data)}
-DESCRIÇÃO:
-${item.descricao}
-`;
-
-        fontes.push({
-            tipo: item.tipo,
-            titulo: item.titulo,
-            data: item.data,
-            link: item.link
-        });
+    itens.forEach(function (item) {
+        conteudo +=
+            "\nTIPO: " + item.tipo +
+            "\nTÍTULO: " + item.titulo +
+            "\nDATA: " +
+            formatarDataPesquisa(item.data) +
+            "\nDESCRIÇÃO: " +
+            item.descricao +
+            "\n";
 
         recolherAnexos(
             item.materiais,
@@ -1596,20 +1778,24 @@ ${item.descricao}
         ).values()
     );
 
-    for (const anexo of anexosUnicos.slice(0, 15)) {
+    for (
+        const anexo of anexosUnicos.slice(0, 15)
+    ) {
         try {
             const textoArquivo =
-                await lerArquivoDoDrive(anexo.id);
+                await lerArquivoDoDrive(
+                    anexo.id
+                );
 
-            conteudo += `
-
-ARQUIVO: ${anexo.nome}
-CONTEÚDO DO ARQUIVO:
-${textoArquivo}
-`;
+            conteudo +=
+                "\nARQUIVO: " +
+                anexo.nome +
+                "\nCONTEÚDO:\n" +
+                textoArquivo +
+                "\n";
         } catch (erro) {
             console.warn(
-                "Não foi possível ler o arquivo:",
+                "Não foi possível ler:",
                 anexo.nome,
                 erro
             );
@@ -1617,7 +1803,185 @@ ${textoArquivo}
     }
 
     return {
-        conteudo: conteudo.slice(0, 60000),
+        conteudo: conteudo,
+        fontes: itens
+    };
+}
+
+function tipoCombinaComFiltro(
+    tipo,
+    filtro
+) {
+    if (filtro === "todos") {
+        return true;
+    }
+
+    const valor =
+        tipo.toLowerCase();
+
+    if (filtro === "dever") {
+        return valor.includes("dever");
+    }
+
+    if (filtro === "prova") {
+        return (
+            valor.includes("prova") ||
+            valor.includes("avalia")
+        );
+    }
+
+    if (filtro === "trabalho") {
+        return valor.includes("trabalho");
+    }
+
+    if (filtro === "exercicio") {
+        return valor.includes("exercício");
+    }
+
+    return false;
+}
+
+async function obterEventosAgenda(
+    dataInicial,
+    dataFinal
+) {
+    const inicio =
+        new Date(
+            dataInicial + "T00:00:00"
+        ).toISOString();
+
+    const fim =
+        new Date(
+            dataFinal + "T23:59:59"
+        ).toISOString();
+
+    const listaResposta = await fetch(
+        "https://www.googleapis.com/" +
+        "calendar/v3/users/me/calendarList" +
+        "?minAccessRole=reader",
+        {
+            headers: {
+                Authorization:
+                    "Bearer " + tokenClassroom
+            }
+        }
+    );
+
+    const listaDados =
+        await listaResposta.json();
+
+    if (!listaResposta.ok) {
+        throw new Error(
+            listaDados.error?.message ||
+            "Não foi possível abrir o Google Agenda."
+        );
+    }
+
+    const calendarios =
+        listaDados.items || [];
+
+    const fontes = [];
+
+    for (
+        const calendario of calendarios.slice(0, 20)
+    ) {
+        const endereco =
+            "https://www.googleapis.com/calendar/v3/calendars/" +
+            encodeURIComponent(calendario.id) +
+            "/events" +
+            "?singleEvents=true" +
+            "&orderBy=startTime" +
+            "&maxResults=100" +
+            "&timeMin=" +
+            encodeURIComponent(inicio) +
+            "&timeMax=" +
+            encodeURIComponent(fim);
+
+        const resposta = await fetch(
+            endereco,
+            {
+                headers: {
+                    Authorization:
+                        "Bearer " +
+                        tokenClassroom
+                }
+            }
+        );
+
+        const dados =
+            await resposta.json();
+
+        if (!resposta.ok) {
+            console.warn(
+                "Agenda não carregada:",
+                calendario.summary
+            );
+            continue;
+        }
+
+        (dados.items || []).forEach(
+            function (evento) {
+                const inicioEvento =
+                    evento.start?.dateTime ||
+                    evento.start?.date;
+
+                if (!inicioEvento) {
+                    return;
+                }
+
+                fontes.push({
+                    chave:
+                        "agenda-" +
+                        calendario.id +
+                        "-" +
+                        evento.id,
+
+                    tipo:
+                        "Evento da agenda",
+
+                    materia:
+                        calendario.summary ||
+                        "Google Agenda",
+
+                    titulo:
+                        evento.summary ||
+                        "Evento sem título",
+
+                    descricao:
+                        evento.description || "",
+
+                    data:
+                        new Date(inicioEvento),
+
+                    prazo:
+                        new Date(inicioEvento),
+
+                    link:
+                        evento.htmlLink || ""
+                });
+            }
+        );
+    }
+
+    const conteudo = fontes
+        .map(function (item) {
+            return (
+                "AGENDA: " +
+                item.materia +
+                "\nEVENTO: " +
+                item.titulo +
+                "\nDATA: " +
+                formatarDataPesquisa(
+                    item.data
+                ) +
+                "\nDESCRIÇÃO: " +
+                item.descricao
+            );
+        })
+        .join("\n\n");
+
+    return {
+        conteudo: conteudo,
         fontes: fontes
     };
 }
@@ -1631,24 +1995,27 @@ function obterDataDoItem(item) {
         );
     }
 
-    const dataTexto =
+    const texto =
         item.updateTime ||
         item.creationTime ||
         item.scheduledTime;
 
-    if (!dataTexto) {
-        return null;
-    }
-
-    return new Date(dataTexto);
+    return texto
+        ? new Date(texto)
+        : null;
 }
 
-function dataEstaNoPeriodo(data, inicio, fim) {
-    if (!data || Number.isNaN(data.getTime())) {
-        return false;
-    }
-
-    return data >= inicio && data <= fim;
+function dataEstaNoPeriodo(
+    data,
+    inicio,
+    fim
+) {
+    return Boolean(
+        data &&
+        !Number.isNaN(data.getTime()) &&
+        data >= inicio &&
+        data <= fim
+    );
 }
 
 function identificarTipoAtividade(
@@ -1667,12 +2034,13 @@ function identificarTipoAtividade(
         texto.includes("avaliacao") ||
         texto.includes("teste")
     ) {
-        return "Prova";
+        return "Prova e avaliação";
     }
 
     if (
         texto.includes("dever") ||
-        texto.includes("casa")
+        texto.includes("para casa") ||
+        texto.includes("tarefa de casa")
     ) {
         return "Dever de casa";
     }
@@ -1695,29 +2063,135 @@ function identificarTipoAtividade(
     return "Atividade";
 }
 
+function encontrarAvisosUrgentes(fontes) {
+    const agora = new Date();
+
+    const hoje = new Date(
+        agora.getFullYear(),
+        agora.getMonth(),
+        agora.getDate()
+    );
+
+    const amanha = new Date(hoje);
+
+    amanha.setDate(
+        amanha.getDate() + 1
+    );
+
+    const depoisDeAmanha =
+        new Date(amanha);
+
+    depoisDeAmanha.setDate(
+        depoisDeAmanha.getDate() + 1
+    );
+
+    return fontes.filter(
+        function (fonte) {
+            if (!fonte.prazo) {
+                return false;
+            }
+
+            return (
+                fonte.prazo < hoje ||
+                (
+                    fonte.prazo >= amanha &&
+                    fonte.prazo <
+                    depoisDeAmanha
+                )
+            );
+        }
+    );
+}
+
 function desenharResultadoPesquisa(
     dados,
     fontes,
+    urgentes,
     materia,
     dataInicial,
     dataFinal
 ) {
-    const area = document.querySelector(
-        "#resposta-pesquisa"
-    );
+    const area =
+        document.querySelector(
+            "#resposta-pesquisa"
+        );
 
-    const listaFontes = fontes
+    const concluidos =
+        carregarItensConcluidos();
+
+    const avisos = urgentes.length
+        ? `
+            <section class="avisos-urgentes">
+                <h3>🚨 Avisos urgentes</h3>
+
+                ${urgentes.map(function (item) {
+                    const atrasado =
+                        item.prazo <
+                        new Date(
+                            new Date().setHours(
+                                0, 0, 0, 0
+                            )
+                        );
+
+                    return `
+                        <div class="aviso-urgente">
+                            <strong>
+                                ${atrasado
+                                    ? "ATRASADO"
+                                    : "PARA AMANHÃ"}:
+                                ${protegerTexto(item.titulo)}
+                            </strong>
+
+                            <span>
+                                ${protegerTexto(item.materia)}
+                            </span>
+                        </div>
+                    `;
+                }).join("")}
+            </section>
+        `
+        : "";
+
+    const lista = fontes
         .map(function (fonte) {
+            const marcado =
+                Boolean(concluidos[fonte.chave]);
+
             return `
-                <article class="arquivo">
+                <article class="resultado-item ${marcado ? "concluido" : ""}">
+                    <label class="marcar-concluido">
+                        <input
+                            type="checkbox"
+                            data-concluir="${protegerTexto(fonte.chave)}"
+                            ${marcado ? "checked" : ""}
+                        >
+
+                        <span>
+                            Marcar como concluído
+                        </span>
+                    </label>
+
                     <strong>
                         ${protegerTexto(fonte.tipo)}:
                         ${protegerTexto(fonte.titulo)}
                     </strong>
 
                     <p>
-                        ${formatarDataPesquisa(fonte.data)}
+                        ${protegerTexto(fonte.materia)}
+                        — ${formatarDataPesquisa(fonte.data)}
                     </p>
+
+                    ${fonte.link
+                        ? `
+                            <a
+                                href="${fonte.link}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                Abrir no Google
+                            </a>
+                        `
+                        : ""}
                 </article>
             `;
         })
@@ -1725,37 +2199,51 @@ function desenharResultadoPesquisa(
 
     area.innerHTML = `
         <div class="cabecalho-resultado">
-            <span>✨ Resposta da Maltéria</span>
+            <span>✨ Resultado da MALTÉRIA</span>
 
-            <h2>
-                ${protegerTexto(materia)}
-            </h2>
+            <h2>${protegerTexto(materia)}</h2>
 
             <p>
-                Período de
                 ${formatarDataCampo(dataInicial)}
                 até
                 ${formatarDataCampo(dataFinal)}
             </p>
         </div>
 
+        ${avisos}
+
         <article class="resposta-ia">
             ${formatarTexto(dados.resposta)}
         </article>
 
-        <details class="fontes-pesquisa">
-            <summary>
-                Ver ${fontes.length}
-                ${
-                    fontes.length === 1
-                        ? "material utilizado"
-                        : "materiais utilizados"
-                }
-            </summary>
-
-            ${listaFontes}
-        </details>
+        <section class="lista-resultados">
+            <h3>Itens encontrados</h3>
+            ${lista}
+        </section>
     `;
+
+    area
+        .querySelectorAll(
+            "[data-concluir]"
+        )
+        .forEach(function (campo) {
+            campo.addEventListener(
+                "change",
+                function () {
+                    salvarItemConcluido(
+                        campo.dataset.concluir,
+                        campo.checked
+                    );
+
+                    campo
+                        .closest(".resultado-item")
+                        .classList.toggle(
+                            "concluido",
+                            campo.checked
+                        );
+                }
+            );
+        });
 
     area.classList.remove("escondido");
 
@@ -1763,6 +2251,37 @@ function desenharResultadoPesquisa(
         behavior: "smooth",
         block: "start"
     });
+}
+
+function carregarItensConcluidos() {
+    try {
+        return JSON.parse(
+            localStorage.getItem(
+                "malteriaItensConcluidos"
+            )
+        ) || {};
+    } catch (erro) {
+        return {};
+    }
+}
+
+function salvarItemConcluido(
+    chave,
+    concluido
+) {
+    const itens =
+        carregarItensConcluidos();
+
+    if (concluido) {
+        itens[chave] = true;
+    } else {
+        delete itens[chave];
+    }
+
+    localStorage.setItem(
+        "malteriaItensConcluidos",
+        JSON.stringify(itens)
+    );
 }
 
 function formatarDataPesquisa(data) {
@@ -2335,4 +2854,5 @@ function protegerTexto(texto) {
 
     return elemento.innerHTML;
 }
+
 
