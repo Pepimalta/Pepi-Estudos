@@ -48,8 +48,11 @@ function normalizarEmail(email) {
 }
 
 function usuarioEhDono(usuario) {
-    return normalizarEmail(usuario?.email) ===
-        EMAIL_DONO_MALTERIA;
+    return Boolean(
+        usuario?.identidadeGoogleVerificada === true &&
+        normalizarEmail(usuario?.email) ===
+            EMAIL_DONO_MALTERIA
+    );
 }
 
 function lerUsuariosLocais() {
