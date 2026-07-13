@@ -36,6 +36,7 @@ let tokenClassroom = "";
 let clienteClassroom = null;
 let turmasClassroom = [];
 let atividadesPorTurma = {};
+let tentativaSilenciosaClassroom = false;
 
 /* NAVEGAÇÃO DA AUTENTICAÇÃO */
 
@@ -51,29 +52,66 @@ function mostrarTela(tela) {
     tela.classList.remove("escondido");
 }
 
+function limparCamposDeAcesso(formulario) {
+    formulario.reset();
+
+    formulario
+        .querySelectorAll("input")
+        .forEach(function (campo) {
+            if (
+                campo.type !== "radio" &&
+                campo.type !== "checkbox"
+            ) {
+                campo.value = "";
+            }
+        });
+}
+
+function abrirLoginLimpo() {
+    const formulario =
+        document.querySelector("#form-login");
+
+    limparCamposDeAcesso(formulario);
+    document.querySelector("#erro-login").textContent = "";
+    mostrarTela(telaLogin);
+
+    window.setTimeout(function () {
+        limparCamposDeAcesso(formulario);
+        document.querySelector("#login-email").focus();
+    }, 80);
+}
+
+function abrirCadastroLimpo() {
+    const formulario =
+        document.querySelector("#form-cadastro");
+
+    limparCamposDeAcesso(formulario);
+    document.querySelector("#erro-cadastro").textContent = "";
+    dadosFilho?.classList.add("escondido");
+    mostrarTela(telaCadastro);
+
+    window.setTimeout(function () {
+        limparCamposDeAcesso(formulario);
+        dadosFilho?.classList.add("escondido");
+        document.querySelector("#cadastro-nome").focus();
+    }, 80);
+}
+
 document
     .querySelector("#ir-login")
-    .addEventListener("click", function () {
-        mostrarTela(telaLogin);
-    });
+    .addEventListener("click", abrirLoginLimpo);
 
 document
     .querySelector("#ir-cadastro")
-    .addEventListener("click", function () {
-        mostrarTela(telaCadastro);
-    });
+    .addEventListener("click", abrirCadastroLimpo);
 
 document
     .querySelector("#ir-login-hero")
-    .addEventListener("click", function () {
-        mostrarTela(telaLogin);
-    });
+    .addEventListener("click", abrirLoginLimpo);
 
 document
     .querySelector("#ir-cadastro-hero")
-    .addEventListener("click", function () {
-        mostrarTela(telaCadastro);
-    });
+    .addEventListener("click", abrirCadastroLimpo);
 
 document
     .querySelectorAll(".voltar")
@@ -368,6 +406,7 @@ function entrarNoAplicativo() {
     }
 
     mostrarPaginaPrincipal();
+    restaurarConexaoClassroom();
 }
 
 function prepararPainelAluno() {
@@ -2797,12 +2836,182 @@ botaoClassroom.addEventListener(
     conectarClassroom
 );
 
-function conectarClassroom() {
+function chaveConexaoClassroom() {
+    const email = normalizarPesquisa(
+        usuarioAtual?.email || "sem-conta"
+    );
+
+    return "malteriaClassroom:" + email;
+}
+
+function salvarConexaoClassroom() {
+    if (!usuarioAtual) {
+        return;
+    }
+
+    localStorage.setItem(
+        chaveConexaoClassroom(),
+        JSON.stringify({
+            conectado: true,
+            turmas: turmasClassroom,
+            atualizadoEm: new Date().toISOString()
+        })
+    );
+}
+
+function lerConexaoClassroom() {
+    try {
+        return JSON.parse(
+            localStorage.getItem(
+                chaveConexaoClassroom()
+            )
+        );
+    } catch (erro) {
+        return null;
+    }
+}
+
+function desenharTurmasClassroom(turmas) {
+    const materiasReais = turmas.map(
+        function (turma) {
+            return {
+                id: turma.id,
+                name: turma.name,
+                icon: "🎓",
+
+                descricao:
+                    turma.section ||
+                    "Google Classroom"
+            };
+        }
+    );
+
+    desenharMaterias(materiasReais);
+}
+
+function prepararClienteClassroom() {
+    if (clienteClassroom) {
+        return true;
+    }
+
     if (
         typeof google === "undefined" ||
         !google.accounts ||
         !google.accounts.oauth2
     ) {
+        return false;
+    }
+
+    clienteClassroom =
+        google.accounts.oauth2.initTokenClient({
+            client_id:
+                CLIENT_ID_CLASSROOM,
+
+            scope:
+                ESCOPOS_CLASSROOM,
+
+            callback:
+                receberTokenClassroom,
+
+            error_callback:
+                function () {
+                    if (tentativaSilenciosaClassroom) {
+                        statusClassroom.textContent =
+                            "Sua conta foi lembrada, mas o Google " +
+                            "pediu uma nova autorização.";
+
+                        textoClassroom.textContent =
+                            "Reconectar ao Classroom";
+                    } else {
+                        statusClassroom.textContent =
+                            "A autorização foi cancelada.";
+
+                        textoClassroom.textContent =
+                            "Conectar ao Classroom";
+                    }
+
+                    tentativaSilenciosaClassroom = false;
+
+                    cartaoClassroom.classList.remove(
+                        "carregando"
+                    );
+                }
+        });
+
+    return true;
+}
+
+async function restaurarConexaoClassroom() {
+    tokenClassroom = "";
+    clienteClassroom = null;
+    atividadesPorTurma = {};
+
+    cartaoClassroom.classList.remove(
+        "conectado",
+        "carregando"
+    );
+
+    textoClassroom.textContent =
+        "Conectar ao Classroom";
+
+    statusClassroom.textContent = "";
+
+    const conexaoSalva =
+        lerConexaoClassroom();
+
+    if (!conexaoSalva?.conectado) {
+        turmasClassroom = [];
+        desenharMaterias(materiasDemonstracao);
+        return;
+    }
+
+    turmasClassroom =
+        conexaoSalva.turmas || [];
+
+    if (turmasClassroom.length > 0) {
+        desenharTurmasClassroom(
+            turmasClassroom
+        );
+    }
+
+    cartaoClassroom.classList.add(
+        "conectado",
+        "carregando"
+    );
+
+    textoClassroom.textContent =
+        "Reconectando Classroom...";
+
+    statusClassroom.textContent =
+        "Restaurando a conta escolar conectada anteriormente.";
+
+    for (let tentativa = 0; tentativa < 20; tentativa++) {
+        if (prepararClienteClassroom()) {
+            tentativaSilenciosaClassroom = true;
+
+            clienteClassroom.requestAccessToken({
+                prompt: ""
+            });
+
+            return;
+        }
+
+        await new Promise(function (resolver) {
+            setTimeout(resolver, 200);
+        });
+    }
+
+    cartaoClassroom.classList.remove("carregando");
+    textoClassroom.textContent =
+        "Reconectar ao Classroom";
+    statusClassroom.textContent =
+        "O Google não carregou automaticamente. Clique para reconectar.";
+}
+
+function conectarClassroom() {
+    tentativaSilenciosaClassroom = false;
+
+    if (!prepararClienteClassroom()) {
         statusClassroom.textContent =
             "O Google ainda está carregando. " +
             "Aguarde e tente novamente.";
@@ -2815,39 +3024,14 @@ function conectarClassroom() {
 
     cartaoClassroom.classList.add("carregando");
 
-    if (!clienteClassroom) {
-        clienteClassroom =
-            google.accounts.oauth2.initTokenClient({
-                client_id:
-                    CLIENT_ID_CLASSROOM,
-
-                scope:
-                    ESCOPOS_CLASSROOM,
-
-                callback:
-                    receberTokenClassroom,
-
-                error_callback:
-                    function () {
-                        statusClassroom.textContent =
-                            "A autorização foi cancelada.";
-
-                        textoClassroom.textContent =
-                            "Conectar ao Classroom";
-
-                        cartaoClassroom.classList.remove(
-                            "carregando"
-                        );
-                    }
-            });
-    }
-
     clienteClassroom.requestAccessToken({
         prompt: "consent"
     });
 }
 
 async function receberTokenClassroom(resposta) {
+    tentativaSilenciosaClassroom = false;
+
     if (resposta.error) {
         statusClassroom.textContent =
             "O Google não autorizou o acesso.";
@@ -2920,23 +3104,16 @@ async function carregarTurmas() {
             textoClassroom.textContent =
                 "Nenhuma turma encontrada";
 
+            salvarConexaoClassroom();
+
             return;
         }
 
-        const materiasReais =
-            turmasClassroom.map(function (turma) {
-                return {
-                    id: turma.id,
-                    name: turma.name,
-                    icon: "🎓",
+        desenharTurmasClassroom(
+            turmasClassroom
+        );
 
-                    descricao:
-                        turma.section ||
-                        "Google Classroom"
-                };
-            });
-
-        desenharMaterias(materiasReais);
+        salvarConexaoClassroom();
 
         statusClassroom.textContent =
             turmasClassroom.length +
@@ -2957,8 +3134,15 @@ async function carregarTurmas() {
         await carregarAtividadesDeAmanha();
     } catch (erro) {
         statusClassroom.textContent =
-            "Não foi possível carregar: " +
-            erro.message;
+            "A conta foi lembrada, mas é preciso " +
+            "reconectar para atualizar os materiais.";
+
+        textoClassroom.textContent =
+            "Reconectar ao Classroom";
+
+        cartaoClassroom.classList.remove(
+            "carregando"
+        );
     }
 }
 
@@ -3435,6 +3619,11 @@ document
     .querySelector("#sair")
     .addEventListener("click", function () {
         usuarioAtual = null;
+        tokenClassroom = "";
+        clienteClassroom = null;
+        turmasClassroom = [];
+        atividadesPorTurma = {};
+        tentativaSilenciosaClassroom = false;
 
         modalConta.classList.add("escondido");
 
