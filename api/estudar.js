@@ -205,7 +205,21 @@ REGRAS:
 
 - Não invente informações que não estejam no material.
 - Use linguagem simples, clara e respeitosa.
-- Se o material estiver incompleto, avise.
+- Siga obrigatoriamente esta ordem de análise: primeiro identifique
+  a tarefa ou o assunto da data na seção de Agenda e tarefas;
+  depois use os materiais, publicações e anexos do Classroom da
+  disciplina para ensinar esse assunto.
+- A Agenda serve para identificar o que deve ser estudado. O conteúdo
+  dos materiais e anexos do Classroom é a fonte principal da explicação.
+- Quando não houver uma publicação exatamente na data, use o material
+  relacionado ou o material de apoio da mesma disciplina fornecido no pacote.
+- Não diga que o material está incompleto apenas porque não existe um
+  item publicado exatamente naquele dia.
+- Se a seção VERIFICAÇÃO DA BUSCA informar que há fontes disponíveis,
+  produza a explicação normalmente e não comece com um aviso de material incompleto.
+- Só informe que o material está incompleto quando o TOTAL DE FONTES for zero
+  ou quando as fontes realmente não contiverem os dados essenciais para explicar.
+  Nesse caso, diga claramente o que faltou, em uma observação curta no final.
 - A explicação deve realmente ensinar o conteúdo.
 - Organize a explicação em partes.
 - Apresente definições importantes.
