@@ -1168,6 +1168,111 @@ body {
 
 /* NOVA APRESENTAÇÃO DA MALTÉRIA */
 
+.boas-vindas {
+    position: relative;
+    display: grid;
+    min-height: 100vh;
+    place-items: center;
+    overflow: hidden;
+    padding: 32px;
+    background:
+        radial-gradient(circle at 14% 18%, rgba(255, 211, 72, 0.34), transparent 24%),
+        radial-gradient(circle at 88% 22%, rgba(52, 209, 225, 0.32), transparent 27%),
+        linear-gradient(145deg, #5a37ee 0%, #7655ff 54%, #a88aff 100%);
+}
+
+.boas-vindas::before,
+.boas-vindas::after {
+    position: absolute;
+    width: 360px;
+    height: 360px;
+    border: 2px solid rgba(255, 255, 255, 0.18);
+    border-radius: 42% 58% 68% 32%;
+    content: "";
+    animation: girar-boas-vindas 18s linear infinite;
+}
+
+.boas-vindas::before {
+    top: -170px;
+    left: -130px;
+}
+
+.boas-vindas::after {
+    right: -150px;
+    bottom: -180px;
+    animation-direction: reverse;
+}
+
+.boas-vindas-conteudo {
+    position: relative;
+    z-index: 2;
+    width: min(720px, 100%);
+    border: 1px solid rgba(255, 255, 255, 0.52);
+    border-radius: 38px;
+    padding: clamp(38px, 7vw, 72px);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 35px 90px rgba(37, 21, 117, 0.35);
+    text-align: center;
+    backdrop-filter: blur(18px);
+    animation: entrar-boas-vindas 0.7s ease both;
+}
+
+.boas-vindas-logo {
+    margin-bottom: 30px;
+}
+
+.boas-vindas-conteudo h1 {
+    margin: 18px 0 10px;
+    font-size: clamp(56px, 10vw, 96px);
+    line-height: 0.95;
+    letter-spacing: -5px;
+    background: linear-gradient(135deg, #4930bc, #7955ff, #24acc8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.boas-vindas-conteudo > p {
+    max-width: 590px;
+    margin: 24px auto 32px;
+    color: var(--cinza);
+    font-size: clamp(17px, 2.4vw, 21px);
+    line-height: 1.65;
+}
+
+.boas-vindas-conteudo > button {
+    width: min(290px, 100%);
+    padding: 16px 24px;
+    font-size: 17px;
+    box-shadow: 0 16px 35px rgba(92, 57, 224, 0.28);
+}
+
+.boas-vindas-forma span {
+    position: absolute;
+    z-index: 1;
+    font-size: 38px;
+    filter: drop-shadow(0 10px 15px rgba(41, 24, 120, 0.26));
+    animation: flutuar-boas-vindas 5s ease-in-out infinite;
+}
+
+.boas-vindas-forma span:nth-child(1) { top: 18%; left: 10%; }
+.boas-vindas-forma span:nth-child(2) { top: 13%; right: 13%; animation-delay: -1.5s; }
+.boas-vindas-forma span:nth-child(3) { right: 10%; bottom: 16%; animation-delay: -3s; }
+
+@keyframes entrar-boas-vindas {
+    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes girar-boas-vindas {
+    to { transform: rotate(360deg); }
+}
+
+@keyframes flutuar-boas-vindas {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-18px) rotate(7deg); }
+}
+
 .pagina-inicial {
     min-height: 100vh;
     overflow: hidden;
@@ -2182,6 +2287,20 @@ body {
     background: linear-gradient(135deg, #fff, #f2edff);
     border-color: #c7b8ff;
     cursor: pointer;
+}
+
+.barra-lateral-marca {
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+}
+
+.barra-lateral-marca:hover,
+.barra-lateral-marca:focus-visible {
+    transform: translateY(-2px) scale(1.08) rotate(-4deg);
+    box-shadow: 0 10px 24px rgba(92, 65, 220, 0.34);
+    outline: 3px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 3px;
 }
 
 @media (max-width: 620px) {
