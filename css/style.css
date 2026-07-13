@@ -642,6 +642,139 @@ textarea:focus {
     }
 }
 
+/* CLASSROOM COMPACTO NO CANTO */
+
+.acoes-cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+}
+
+.classroom-canto {
+    position: relative;
+}
+
+.classroom-canto > button {
+    display: flex;
+    min-width: 218px;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--borda);
+    border-radius: 15px;
+    padding: 8px 12px;
+    background: var(--branco);
+    color: var(--texto);
+    box-shadow: 0 7px 22px rgba(64, 43, 150, 0.09);
+    text-align: left;
+    transition: transform 0.18s ease, border-color 0.18s ease;
+}
+
+.classroom-canto > button:hover {
+    border-color: var(--roxo);
+    transform: translateY(-2px);
+}
+
+.classroom-icone {
+    display: grid;
+    width: 39px;
+    min-width: 39px;
+    height: 39px;
+    place-items: center;
+    border-radius: 12px;
+    background: #eee9ff;
+    font-size: 20px;
+}
+
+.classroom-textos {
+    display: grid;
+    gap: 2px;
+}
+
+.classroom-textos small {
+    color: var(--cinza);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.classroom-textos strong {
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.classroom-canto.conectado > button {
+    border-color: #a9e8ce;
+    background: #f2fff9;
+}
+
+.classroom-canto.conectado .classroom-icone {
+    background: #d9f8ea;
+}
+
+.classroom-canto.carregando > button {
+    cursor: wait;
+    opacity: 0.72;
+}
+
+.status-classroom {
+    position: absolute;
+    top: calc(100% + 9px);
+    right: 0;
+    z-index: 12;
+    display: none;
+    width: 280px;
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: var(--branco);
+    box-shadow: var(--sombra);
+    color: var(--cinza);
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.classroom-canto:hover .status-classroom:not(:empty),
+.classroom-canto:focus-within .status-classroom:not(:empty) {
+    display: block;
+}
+
+@media (max-width: 760px) {
+    .cabecalho {
+        align-items: flex-start;
+    }
+
+    .acoes-cabecalho {
+        align-items: flex-end;
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+
+    .perfil > #saudacao {
+        display: none;
+    }
+
+    .classroom-canto > button {
+        min-width: 0;
+        padding: 7px;
+    }
+
+    .classroom-textos small {
+        display: none;
+    }
+
+    .classroom-textos strong {
+        max-width: 120px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .status-classroom {
+        right: 0;
+        width: min(280px, 80vw);
+    }
+}
+
 /* NOVA APRESENTAÇÃO DA MALTÉRIA */
 
 .pagina-inicial {
@@ -1446,6 +1579,19 @@ textarea:focus {
     margin-top: 18px;
     color: var(--cinza);
     text-align: center;
+}
+
+.acoes-erro-ia {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+@media (max-width: 600px) {
+    .acoes-erro-ia {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 600px) {
