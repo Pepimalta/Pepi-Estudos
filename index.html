@@ -14,39 +14,80 @@
 </head>
 
 <body>
-    <!-- ESCOLHA INICIAL -->
-    <main id="escolha" class="pagina-autenticacao">
-        <section class="cartao">
+    <!-- APRESENTAÇÃO E ESCOLHA INICIAL -->
+    <main id="escolha" class="pagina-inicial">
+        <header class="entrada-cabecalho">
             <div class="logo">
                 <span>M</span>
-                <strong>Maltéria</strong>
+                <strong>MALTÉRIA</strong>
             </div>
 
-            <div class="assinatura-malteria">
+            <nav class="entrada-acoes" aria-label="Acesso à conta">
+                <span>Já usa a Maltéria?</span>
+                <button id="ir-login" class="botao-link entrada-login">
+                    Entrar
+                </button>
+                <button id="ir-cadastro" class="botao-principal entrada-cadastro">
+                    Cadastrar
+                </button>
+            </nav>
+        </header>
+
+        <section class="entrada-hero">
+            <div class="entrada-texto">
+                <span class="entrada-etiqueta">ESTUDAR PODE SER MAIS SIMPLES</span>
+                <h1>Transforme o material da escola em conhecimento de verdade.</h1>
                 <p>
-                    Suas matérias transformadas em conhecimento.
+                    A Maltéria organiza o Google Classroom, encontra atividades
+                    e usa os materiais das aulas para criar explicações,
+                    revisões, slides e simulados.
                 </p>
 
-                <small>
-                    Uma criação de Pepi Malta.
-                </small>
+                <div class="entrada-botoes">
+                    <button id="ir-cadastro-hero" class="botao-principal">
+                        Começar agora
+                    </button>
+                    <button id="ir-login-hero" class="botao-secundario">
+                        Já tenho uma conta
+                    </button>
+                </div>
+
+                <small>Uma criação de Pepi Malta.</small>
             </div>
 
-            <h1>Autenticação</h1>
+            <div class="entrada-demonstracao" aria-label="Como a Maltéria ajuda">
+                <div class="orbita orbita-um">📚</div>
+                <div class="orbita orbita-dois">🔎</div>
+                <div class="orbita orbita-tres">🧠</div>
+                <article class="demonstracao-cartao">
+                    <span class="demonstracao-data">HOJE NA MALTÉRIA</span>
+                    <h2>Matemática</h2>
+                    <p>Frações e números decimais</p>
+                    <div class="demonstracao-opcoes">
+                        <span>✨ Explicação pronta</span>
+                        <span>📝 Revisão em 5 minutos</span>
+                        <span>🎯 Simulado da matéria</span>
+                    </div>
+                </article>
+            </div>
+        </section>
 
-            <p>
-                Entre na sua conta ou faça seu cadastro.
-            </p>
-
-            <button id="ir-login" class="botao-principal">
-                Login
-            </button>
-
-            <div class="ou">ou</div>
-
-            <button id="ir-cadastro" class="botao-secundario">
-                Cadastro
-            </button>
+        <section class="entrada-recursos" aria-label="Recursos da Maltéria">
+            <article>
+                <span>🎓</span>
+                <h2>Classroom organizado</h2>
+                <p>Turmas, atividades, prazos e materiais reunidos por matéria.</p>
+            </article>
+            <article>
+                <span>🔎</span>
+                <h2>Pesquisa inteligente</h2>
+                <p>Faça perguntas usando o conteúdo que realmente foi dado na escola.</p>
+            </article>
+            <article>
+                <span>✨</span>
+                <h2>Estudo personalizado</h2>
+                <p>Crie explicações, cópias, slides, revisões e simulados.</p>
+            </article>
         </section>
     </main>
 
@@ -226,6 +267,21 @@
             </div>
         </header>
 
+        <!-- BARRA LATERAL INTELIGENTE -->
+        <aside id="barra-lateral" class="barra-lateral" aria-label="Ferramentas">
+            <div class="barra-lateral-marca">M</div>
+
+            <button id="abrir-pesquisa" class="ferramenta-lateral" type="button">
+                <span class="ferramenta-icone">＋</span>
+                <span class="ferramenta-texto">Nova pesquisa</span>
+            </button>
+
+            <button id="abrir-ajuda" class="ferramenta-lateral" type="button">
+                <span class="ferramenta-icone">?</span>
+                <span class="ferramenta-texto">Ajuda</span>
+            </button>
+        </aside>
+
         <main class="conteudo">
             <!-- PÁGINA PRINCIPAL -->
             <section id="pagina-principal">
@@ -286,77 +342,7 @@
                 </section>
 
                 
-                <!-- PESQUISA INTELIGENTE -->
-<section class="caixa pesquisa-inteligente">
-    <h2>🔎 Pesquisa inteligente</h2>
-
-    <p>
-        Pesquise atividades, provas, deveres e materiais
-        usando os conteúdos do seu Classroom.
-    </p>
-
-    <label for="materia-pesquisa">
-        Matéria
-    </label>
-
-    <select id="materia-pesquisa">
-        <option value="">
-            Escolha uma matéria
-        </option>
-    </select>
-
-    <div class="periodo-pesquisa">
-        <div>
-            <label for="data-inicial">
-                Data inicial
-            </label>
-
-            <input
-                id="data-inicial"
-                type="date"
-            >
-        </div>
-
-        <div>
-            <label for="data-final">
-                Data final
-            </label>
-
-            <input
-                id="data-final"
-                type="date"
-            >
-        </div>
-    </div>
-
-    <label for="campo-pesquisa">
-        O que você quer pesquisar?
-    </label>
-
-    <textarea
-        id="campo-pesquisa"
-        rows="4"
-        placeholder="Exemplo: explique o que estudamos sobre frações e mostre as provas e os deveres desse período."
-    ></textarea>
-
-    <button
-        id="pesquisar"
-        class="botao-principal"
-        type="button"
-    >
-        🔎 Pesquisar nos materiais
-    </button>
-
-    <div
-        id="status-pesquisa"
-        class="status-pesquisa"
-    ></div>
-
-    <section
-        id="resposta-pesquisa"
-        class="resultado-pesquisa escondido"
-    ></section>
-</section>
+                <!-- A pesquisa fica no painel lateral -->
                 <!-- MATÉRIAS -->
                 <section>
                     <h2>Matérias</h2>
@@ -420,6 +406,72 @@
         </main>
     </div>
 
+    <!-- PAINEL DE PESQUISA -->
+    <div id="fundo-pesquisa" class="fundo-painel escondido">
+        <aside id="painel-pesquisa" class="painel-pesquisa" aria-labelledby="titulo-pesquisa">
+            <button id="fechar-pesquisa" class="fechar" type="button" aria-label="Fechar pesquisa">×</button>
+
+            <div class="painel-cabecalho">
+                <span>🔎</span>
+                <div>
+                    <small>ASSISTENTE DE ESTUDOS</small>
+                    <h2 id="titulo-pesquisa">Pesquisa inteligente</h2>
+                </div>
+            </div>
+
+            <section class="pesquisa-inteligente">
+                <p>
+                    Pergunte qualquer coisa sobre uma matéria. A resposta usará
+                    os materiais do seu Google Classroom.
+                </p>
+
+                <label for="materia-pesquisa">Matéria</label>
+                <select id="materia-pesquisa">
+                    <option value="">Escolha uma matéria</option>
+                </select>
+
+                <div class="periodo-pesquisa">
+                    <div>
+                        <label for="data-inicial">Data inicial</label>
+                        <input id="data-inicial" type="date">
+                    </div>
+                    <div>
+                        <label for="data-final">Data final</label>
+                        <input id="data-final" type="date">
+                    </div>
+                </div>
+
+                <label for="campo-pesquisa">O que você quer saber?</label>
+                <textarea
+                    id="campo-pesquisa"
+                    rows="5"
+                    placeholder="Exemplo: explique a matéria de frações dada nesta semana."
+                ></textarea>
+
+                <button id="pesquisar" class="botao-principal" type="button">
+                    ✨ Pesquisar nos materiais
+                </button>
+
+                <div id="status-pesquisa" class="status-pesquisa"></div>
+                <section id="resposta-pesquisa" class="resultado-pesquisa escondido"></section>
+            </section>
+        </aside>
+    </div>
+
+    <!-- AJUDA -->
+    <div id="fundo-ajuda" class="fundo-modal escondido">
+        <section class="cartao modal ajuda-modal">
+            <button id="fechar-ajuda" class="fechar" type="button" aria-label="Fechar ajuda">×</button>
+            <span class="ajuda-icone">💡</span>
+            <h2>Como a Maltéria pode ajudar?</h2>
+            <ol>
+                <li><strong>Conecte o Classroom</strong> para trazer suas turmas e materiais.</li>
+                <li><strong>Escolha uma matéria</strong> para ver atividades e criar estudos.</li>
+                <li><strong>Use o botão +</strong> sempre que quiser pesquisar uma dúvida.</li>
+            </ol>
+        </section>
+    </div>
+
     <!-- MINHA CONTA -->
     <div id="modal-conta" class="fundo-modal escondido">
         <section class="cartao modal">
@@ -452,5 +504,3 @@
     <script src="js/app.js"></script>
 </body>
 </html>
-
-
