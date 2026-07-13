@@ -792,40 +792,170 @@ function abrirFormatoDeEstudo(formato) {
     }
 
     if (formato === "slides") {
-        const slides = estudoGerado.slides
-            .map(function (slide, indice) {
-                const pontos = slide.pontos
-                    .map(function (ponto) {
-                        return `
-                            <li>
-                                ${protegerTexto(ponto)}
-                            </li>
-                        `;
-                    })
-                    .join("");
+        const slides =
+            estudoGerado.slides || [];
 
-                return `
-                    <article class="arquivo">
-                        <small>
-                            Slide ${indice + 1}
-                        </small>
+        if (slides.length === 0) {
+            area.innerHTML = `
+                <div class="arquivo">
+                    <h3>Nenhum slide foi criado</h3>
 
-                        <h3>
-                            ${protegerTexto(
-                                slide.titulo
-                            )}
-                        </h3>
+                    <p>
+                        Não encontrei conteúdo suficiente
+                        para preparar a apresentação.
+                    </p>
+                </div>
+            `;
 
-                        <ul>${pontos}</ul>
-                    </article>
-                `;
-            })
-            .join("");
+            return;
+        }
+
+        let slideAtual = 0;
 
         area.innerHTML = `
-            <h3>Slides</h3>
-            ${slides}
+            <section class="apresentacao-slides">
+                <div class="topo-slides">
+                    <strong>
+                        Apresentação de
+                        ${protegerTexto(materiaAtual.name)}
+                    </strong>
+
+                    <span id="contador-slide"></span>
+                </div>
+
+                <div class="barra-slides">
+                    <div id="progresso-slides"></div>
+                </div>
+
+                <article
+                    id="slide-atual"
+                    class="slide-visual"
+                ></article>
+
+                <div class="controles-slides">
+                    <button
+                        id="slide-anterior"
+                        class="botao-secundario pequeno"
+                    >
+                        ← Anterior
+                    </button>
+
+                    <button
+                        id="slide-proximo"
+                        class="botao-principal pequeno"
+                    >
+                        Próximo →
+                    </button>
+                </div>
+            </section>
         `;
+
+        function desenharSlideAtual() {
+            const slide =
+                slides[slideAtual];
+
+            const pontos = (
+                slide.pontos || []
+            )
+                .map(function (ponto) {
+                    return `
+                        <li>
+                            ${protegerTexto(ponto)}
+                        </li>
+                    `;
+                })
+                .join("");
+
+            document.querySelector(
+                "#slide-atual"
+            ).innerHTML = `
+                <div class="numero-slide">
+                    ${String(slideAtual + 1).padStart(2, "0")}
+                </div>
+
+                <div class="conteudo-slide">
+                    <small>MALTÉRIA</small>
+
+                    <h2>
+                        ${protegerTexto(slide.titulo)}
+                    </h2>
+
+                    <ul>
+                        ${pontos}
+                    </ul>
+                </div>
+            `;
+
+            document.querySelector(
+                "#contador-slide"
+            ).textContent =
+                "Slide " +
+                (slideAtual + 1) +
+                " de " +
+                slides.length;
+
+            document.querySelector(
+                "#progresso-slides"
+            ).style.width =
+                (
+                    (
+                        (slideAtual + 1) /
+                        slides.length
+                    ) * 100
+                ) + "%";
+
+            const anterior =
+                document.querySelector(
+                    "#slide-anterior"
+                );
+
+            const proximo =
+                document.querySelector(
+                    "#slide-proximo"
+                );
+
+            anterior.disabled =
+                slideAtual === 0;
+
+            proximo.textContent =
+                slideAtual === slides.length - 1
+                    ? "Recomeçar ↻"
+                    : "Próximo →";
+        }
+
+        document.querySelector(
+            "#slide-anterior"
+        ).addEventListener(
+            "click",
+            function () {
+                if (slideAtual > 0) {
+                    slideAtual--;
+                    desenharSlideAtual();
+                }
+            }
+        );
+
+        document.querySelector(
+            "#slide-proximo"
+        ).addEventListener(
+            "click",
+            function () {
+                if (
+                    slideAtual <
+                    slides.length - 1
+                ) {
+                    slideAtual++;
+                } else {
+                    slideAtual = 0;
+                }
+
+                desenharSlideAtual();
+            }
+        );
+
+        desenharSlideAtual();
+
+        return;
     }
 
     if (formato === "revisao") {
@@ -2205,3 +2335,4 @@ function protegerTexto(texto) {
 
     return elemento.innerHTML;
 }
+
