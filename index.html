@@ -109,10 +109,13 @@
 
                 <input
                     id="login-email"
-                    name="malteria-login-email"
-                    type="email"
-                    autocomplete="off"
+                    name="acesso-vazio-email"
+                    type="text"
+                    inputmode="email"
+                    autocomplete="one-time-code"
+                    readonly
                     data-lpignore="true"
+                    data-form-type="other"
                     required
                 >
 
@@ -123,7 +126,9 @@
                     name="malteria-login-senha"
                     type="password"
                     autocomplete="new-password"
+                    readonly
                     data-lpignore="true"
+                    data-form-type="other"
                     required
                 >
 
@@ -158,10 +163,12 @@
 
                 <input
                     id="cadastro-nome"
-                    name="malteria-novo-nome"
+                    name="cadastro-vazio-nome"
                     type="text"
-                    autocomplete="off"
+                    autocomplete="one-time-code"
+                    readonly
                     data-lpignore="true"
+                    data-form-type="other"
                     required
                 >
 
@@ -169,10 +176,13 @@
 
                 <input
                     id="cadastro-email"
-                    name="malteria-novo-email"
-                    type="email"
-                    autocomplete="off"
+                    name="cadastro-vazio-email"
+                    type="text"
+                    inputmode="email"
+                    autocomplete="one-time-code"
+                    readonly
                     data-lpignore="true"
+                    data-form-type="other"
                     required
                 >
 
@@ -183,7 +193,9 @@
                     name="malteria-nova-senha"
                     type="password"
                     autocomplete="new-password"
+                    readonly
                     data-lpignore="true"
+                    data-form-type="other"
                     minlength="6"
                     required
                 >
@@ -316,6 +328,11 @@
             <button id="abrir-ajuda" class="ferramenta-lateral" type="button">
                 <span class="ferramenta-icone">?</span>
                 <span class="ferramenta-texto">Ajuda</span>
+            </button>
+
+            <button id="abrir-administracao" class="ferramenta-lateral escondido" type="button">
+                <span class="ferramenta-icone">♛</span>
+                <span class="ferramenta-texto">Super administração</span>
             </button>
         </aside>
 
@@ -486,6 +503,28 @@
                 <li><strong>Escolha uma matéria</strong> para ver atividades e criar estudos.</li>
                 <li><strong>Use o botão +</strong> sempre que quiser pesquisar uma dúvida.</li>
             </ol>
+        </section>
+    </div>
+
+    <!-- SUPER ADMINISTRAÇÃO -->
+    <div id="fundo-administracao" class="fundo-modal escondido">
+        <section class="cartao modal administracao-modal">
+            <button id="fechar-administracao" class="fechar" type="button" aria-label="Fechar administração">×</button>
+
+            <div class="administracao-titulo">
+                <span>♛</span>
+                <div>
+                    <small>ÁREA EXCLUSIVA DO DONO</small>
+                    <h2>Super administração</h2>
+                </div>
+            </div>
+
+            <p class="administracao-aviso">
+                Por enquanto, aparecem aqui as contas cadastradas neste navegador.
+                Quando o banco de dados for conectado, esta tela mostrará todos os usuários da Maltéria.
+            </p>
+
+            <div id="lista-usuarios-administracao" class="lista-usuarios-administracao"></div>
         </section>
     </div>
 
