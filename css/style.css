@@ -2155,3 +2155,42 @@ body {
         margin: 15px;
     }
 }
+/* AGENDA POR DATA */
+.cabecalho-prazos {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 18px;
+}
+
+.cabecalho-prazos h2 {
+    margin: 4px 0 0;
+}
+
+.seletor-prazo {
+    display: grid;
+    gap: 7px;
+    min-width: 190px;
+    color: var(--texto-claro);
+    font-size: 0.86rem;
+    font-weight: 800;
+}
+
+.seletor-prazo input {
+    margin: 0;
+    background: linear-gradient(135deg, #fff, #f2edff);
+    border-color: #c7b8ff;
+    cursor: pointer;
+}
+
+@media (max-width: 620px) {
+    .cabecalho-prazos {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .seletor-prazo {
+        min-width: 0;
+    }
+}
