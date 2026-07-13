@@ -268,42 +268,78 @@
                     <p id="status-classroom"></p>
                 </section>
 
-                <!-- PESQUISA POR MATÉRIA -->
-                <section class="caixa">
-                    <h2>Pesquisa por matéria</h2>
+                
+                <!-- PESQUISA INTELIGENTE -->
+<section class="caixa pesquisa-inteligente">
+    <h2>🔎 Pesquisa inteligente</h2>
 
-                    <label for="materia-pesquisa">
-                        Escolha a matéria
-                    </label>
+    <p>
+        Pesquise atividades, provas, deveres e materiais
+        usando os conteúdos do seu Classroom.
+    </p>
 
-                    <select id="materia-pesquisa">
-                        <option value="">
-                            Escolha uma matéria
-                        </option>
-                    </select>
+    <label for="materia-pesquisa">
+        Matéria
+    </label>
 
-                    <label for="campo-pesquisa">
-                        Digite sua dúvida
-                    </label>
+    <select id="materia-pesquisa">
+        <option value="">
+            Escolha uma matéria
+        </option>
+    </select>
 
-                    <div class="linha">
-                        <input
-                            id="campo-pesquisa"
-                            type="text"
-                            placeholder="O que você não entendeu?"
-                        >
+    <div class="periodo-pesquisa">
+        <div>
+            <label for="data-inicial">
+                Data inicial
+            </label>
 
-                        <button
-                            id="pesquisar"
-                            class="botao-principal pequeno"
-                        >
-                            Pesquisar
-                        </button>
-                    </div>
+            <input
+                id="data-inicial"
+                type="date"
+            >
+        </div>
 
-                    <p id="resposta-pesquisa"></p>
-                </section>
+        <div>
+            <label for="data-final">
+                Data final
+            </label>
 
+            <input
+                id="data-final"
+                type="date"
+            >
+        </div>
+    </div>
+
+    <label for="campo-pesquisa">
+        O que você quer pesquisar?
+    </label>
+
+    <textarea
+        id="campo-pesquisa"
+        rows="4"
+        placeholder="Exemplo: explique o que estudamos sobre frações e mostre as provas e os deveres desse período."
+    ></textarea>
+
+    <button
+        id="pesquisar"
+        class="botao-principal"
+        type="button"
+    >
+        🔎 Pesquisar nos materiais
+    </button>
+
+    <div
+        id="status-pesquisa"
+        class="status-pesquisa"
+    ></div>
+
+    <section
+        id="resposta-pesquisa"
+        class="resultado-pesquisa escondido"
+    ></section>
+</section>=
                 <!-- MATÉRIAS -->
                 <section>
                     <h2>Matérias</h2>
