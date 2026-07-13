@@ -13,6 +13,9 @@ const ESCOPOS_CLASSROOM = [
 const ENDERECO_IA =
     "https://pepi-estudos.vercel.app/api/estudar";
 
+const EMAIL_DONO_MALTERIA =
+    "pepimalti@gmail.com";
+
 let estudoGerado = null;
 let periodoEstudoAtual = null;
 let uploadsDaSessao = [];
@@ -37,6 +40,75 @@ let clienteClassroom = null;
 let turmasClassroom = [];
 let atividadesPorTurma = {};
 let tentativaSilenciosaClassroom = false;
+
+function normalizarEmail(email) {
+    return String(email || "")
+        .trim()
+        .toLowerCase();
+}
+
+function usuarioEhDono(usuario) {
+    return normalizarEmail(usuario?.email) ===
+        EMAIL_DONO_MALTERIA;
+}
+
+function lerUsuariosLocais() {
+    let usuarios = [];
+
+    try {
+        usuarios = JSON.parse(
+            localStorage.getItem("malteriaUsuariosLocais")
+        ) || [];
+    } catch (erro) {
+        usuarios = [];
+    }
+
+    try {
+        const usuarioAntigo = JSON.parse(
+            localStorage.getItem("usuarioPepiEstudos")
+        );
+
+        if (
+            usuarioAntigo &&
+            !usuarios.some(function (usuario) {
+                return normalizarEmail(usuario.email) ===
+                    normalizarEmail(usuarioAntigo.email);
+            })
+        ) {
+            usuarios.push(usuarioAntigo);
+        }
+    } catch (erro) {
+        // Mantém somente as contas válidas encontradas.
+    }
+
+    return usuarios;
+}
+
+function salvarUsuarioLocal(usuario) {
+    const usuarios = lerUsuariosLocais();
+    const email = normalizarEmail(usuario.email);
+    const indice = usuarios.findIndex(function (item) {
+        return normalizarEmail(item.email) === email;
+    });
+
+    usuario.administrador = usuarioEhDono(usuario);
+
+    if (indice >= 0) {
+        usuarios[indice] = usuario;
+    } else {
+        usuarios.push(usuario);
+    }
+
+    localStorage.setItem(
+        "malteriaUsuariosLocais",
+        JSON.stringify(usuarios)
+    );
+
+    localStorage.setItem(
+        "usuarioPepiEstudos",
+        JSON.stringify(usuario)
+    );
+}
 
 /* NAVEGAÇÃO DA AUTENTICAÇÃO */
 
@@ -67,18 +139,51 @@ function limparCamposDeAcesso(formulario) {
         });
 }
 
+function protegerCamposContraPreenchimento(formulario) {
+    formulario
+        .querySelectorAll("input:not([type='radio']):not([type='checkbox'])")
+        .forEach(function (campo, indice) {
+            campo.value = "";
+            campo.readOnly = true;
+            campo.name =
+                "campo-vazio-" + Date.now() + "-" + indice;
+
+            function liberarCampo() {
+                campo.readOnly = false;
+                campo.value = "";
+
+                if (campo.id.includes("email")) {
+                    campo.type = "email";
+                }
+            }
+
+            campo.addEventListener(
+                "pointerdown",
+                liberarCampo,
+                { once: true }
+            );
+
+            campo.addEventListener(
+                "keydown",
+                liberarCampo,
+                { once: true }
+            );
+        });
+}
+
 function abrirLoginLimpo() {
     const formulario =
         document.querySelector("#form-login");
 
     limparCamposDeAcesso(formulario);
+    protegerCamposContraPreenchimento(formulario);
     document.querySelector("#erro-login").textContent = "";
     mostrarTela(telaLogin);
 
     window.setTimeout(function () {
         limparCamposDeAcesso(formulario);
-        document.querySelector("#login-email").focus();
-    }, 80);
+        protegerCamposContraPreenchimento(formulario);
+    }, 250);
 }
 
 function abrirCadastroLimpo() {
@@ -86,15 +191,16 @@ function abrirCadastroLimpo() {
         document.querySelector("#form-cadastro");
 
     limparCamposDeAcesso(formulario);
+    protegerCamposContraPreenchimento(formulario);
     document.querySelector("#erro-cadastro").textContent = "";
     dadosFilho?.classList.add("escondido");
     mostrarTela(telaCadastro);
 
     window.setTimeout(function () {
         limparCamposDeAcesso(formulario);
+        protegerCamposContraPreenchimento(formulario);
         dadosFilho?.classList.add("escondido");
-        document.querySelector("#cadastro-nome").focus();
-    }, 80);
+    }, 250);
 }
 
 document
@@ -290,10 +396,7 @@ document
                 gerarCodigo();
         }
 
-        localStorage.setItem(
-            "usuarioPepiEstudos",
-            JSON.stringify(usuarioAtual)
-        );
+        salvarUsuarioLocal(usuarioAtual);
 
         entrarNoAplicativo();
     });
@@ -327,10 +430,11 @@ document
             .querySelector("#login-senha")
             .value;
 
-        const usuarioSalvo = JSON.parse(
-            localStorage.getItem(
-                "usuarioPepiEstudos"
-            )
+        const usuarioSalvo = lerUsuariosLocais().find(
+            function (usuario) {
+                return normalizarEmail(usuario.email) ===
+                    normalizarEmail(email);
+            }
         );
 
         if (!usuarioSalvo) {
@@ -342,7 +446,8 @@ document
         }
 
         if (
-            usuarioSalvo.email !== email ||
+            normalizarEmail(usuarioSalvo.email) !==
+                normalizarEmail(email) ||
             usuarioSalvo.senha !== senha
         ) {
             mostrarErroLogin(
@@ -353,6 +458,10 @@ document
         }
 
         usuarioAtual = usuarioSalvo;
+        usuarioAtual.administrador =
+            usuarioEhDono(usuarioAtual);
+
+        salvarUsuarioLocal(usuarioAtual);
 
         entrarNoAplicativo();
     });
@@ -367,6 +476,11 @@ function mostrarErroLogin(mensagem) {
 
 function entrarNoAplicativo() {
     mostrarTela(aplicativo);
+
+    usuarioAtual.administrador =
+        usuarioEhDono(usuarioAtual);
+
+    salvarUsuarioLocal(usuarioAtual);
 
     document.querySelector(
         "#saudacao"
@@ -386,7 +500,16 @@ function entrarNoAplicativo() {
     document.querySelector(
         "#conta-tipo"
     ).textContent =
-        usuarioAtual.tipo;
+        usuarioAtual.administrador
+            ? "Administrador da Maltéria"
+            : usuarioAtual.tipo;
+
+    document.querySelector(
+        "#abrir-administracao"
+    ).classList.toggle(
+        "escondido",
+        !usuarioAtual.administrador
+    );
 
     const codigo =
         usuarioAtual.codigoFamilia ||
@@ -486,10 +609,7 @@ document
 
         usuarioAtual.filhos.push(novoFilho);
 
-        localStorage.setItem(
-            "usuarioPepiEstudos",
-            JSON.stringify(usuarioAtual)
-        );
+        salvarUsuarioLocal(usuarioAtual);
 
         atualizarListaDeFilhos();
     });
@@ -2974,38 +3094,16 @@ async function restaurarConexaoClassroom() {
         );
     }
 
-    cartaoClassroom.classList.add(
-        "conectado",
-        "carregando"
-    );
-
+    cartaoClassroom.classList.add("conectado");
     textoClassroom.textContent =
-        "Reconectando Classroom...";
-
+        "Atualizar Classroom";
     statusClassroom.textContent =
-        "Restaurando a conta escolar conectada anteriormente.";
-
-    for (let tentativa = 0; tentativa < 20; tentativa++) {
-        if (prepararClienteClassroom()) {
-            tentativaSilenciosaClassroom = true;
-
-            clienteClassroom.requestAccessToken({
-                prompt: ""
-            });
-
-            return;
-        }
-
-        await new Promise(function (resolver) {
-            setTimeout(resolver, 200);
-        });
-    }
-
-    cartaoClassroom.classList.remove("carregando");
-    textoClassroom.textContent =
-        "Reconectar ao Classroom";
-    statusClassroom.textContent =
-        "O Google não carregou automaticamente. Clique para reconectar.";
+        turmasClassroom.length > 0
+            ? turmasClassroom.length +
+              (turmasClassroom.length === 1
+                  ? " turma lembrada. Clique para atualizar."
+                  : " turmas lembradas. Clique para atualizar.")
+            : "Conta escolar lembrada. Clique para atualizar.";
 }
 
 function conectarClassroom() {
@@ -3024,9 +3122,17 @@ function conectarClassroom() {
 
     cartaoClassroom.classList.add("carregando");
 
-    clienteClassroom.requestAccessToken({
-        prompt: "consent"
-    });
+    try {
+        clienteClassroom.requestAccessToken({
+            prompt: "select_account"
+        });
+    } catch (erro) {
+        cartaoClassroom.classList.remove("carregando");
+        textoClassroom.textContent =
+            "Tentar conectar novamente";
+        statusClassroom.textContent =
+            "Não foi possível abrir o Google. Clique novamente.";
+    }
 }
 
 async function receberTokenClassroom(resposta) {
@@ -3598,7 +3704,110 @@ async function lerArquivoDoDrive(id) {
 function formatarTexto(texto) {
     return protegerTexto(texto)
         .replace(/\n/g, "<br>");
-}/* MINHA CONTA */
+}
+
+/* SUPER ADMINISTRAÇÃO */
+
+const fundoAdministracao =
+    document.querySelector("#fundo-administracao");
+
+const listaUsuariosAdministracao =
+    document.querySelector("#lista-usuarios-administracao");
+
+function contasEscolaresDoUsuario(usuario) {
+    if (
+        usuario.tipo === "Responsável" &&
+        Array.isArray(usuario.filhos)
+    ) {
+        return usuario.filhos
+            .map(function (filho) {
+                return filho.email;
+            })
+            .filter(Boolean);
+    }
+
+    return usuario.email ? [usuario.email] : [];
+}
+
+function desenharUsuariosAdministracao() {
+    listaUsuariosAdministracao.innerHTML = "";
+
+    const usuarios = lerUsuariosLocais();
+
+    if (usuarios.length === 0) {
+        const vazio = document.createElement("p");
+        vazio.textContent = "Nenhuma conta encontrada neste navegador.";
+        listaUsuariosAdministracao.appendChild(vazio);
+        return;
+    }
+
+    usuarios.forEach(function (usuario) {
+        const cartao = document.createElement("article");
+        const cabecalho = document.createElement("div");
+        const nome = document.createElement("strong");
+        const tipo = document.createElement("span");
+        const email = document.createElement("p");
+        const tituloEscolar = document.createElement("small");
+        const listaEscolar = document.createElement("ul");
+
+        cartao.className = "usuario-administracao";
+        cabecalho.className = "usuario-administracao-cabecalho";
+        nome.textContent = usuario.nome || "Usuário sem nome";
+        tipo.textContent = usuarioEhDono(usuario)
+            ? "Dono"
+            : usuario.tipo || "Conta";
+        email.textContent = usuario.email || "E-mail não informado";
+        tituloEscolar.textContent = "CONTAS ESCOLARES";
+
+        contasEscolaresDoUsuario(usuario).forEach(
+            function (contaEscolar) {
+                const item = document.createElement("li");
+                item.textContent = contaEscolar;
+                listaEscolar.appendChild(item);
+            }
+        );
+
+        if (listaEscolar.children.length === 0) {
+            const item = document.createElement("li");
+            item.textContent = "Nenhuma conta escolar informada";
+            listaEscolar.appendChild(item);
+        }
+
+        cabecalho.append(nome, tipo);
+        cartao.append(
+            cabecalho,
+            email,
+            tituloEscolar,
+            listaEscolar
+        );
+        listaUsuariosAdministracao.appendChild(cartao);
+    });
+}
+
+document
+    .querySelector("#abrir-administracao")
+    .addEventListener("click", function () {
+        if (!usuarioEhDono(usuarioAtual)) {
+            return;
+        }
+
+        desenharUsuariosAdministracao();
+        fundoAdministracao.classList.remove("escondido");
+    });
+
+document
+    .querySelector("#fechar-administracao")
+    .addEventListener("click", function () {
+        fundoAdministracao.classList.add("escondido");
+    });
+
+fundoAdministracao.addEventListener("click", function (evento) {
+    if (evento.target === fundoAdministracao) {
+        fundoAdministracao.classList.add("escondido");
+    }
+});
+
+/* MINHA CONTA */
 
 const modalConta =
     document.querySelector("#modal-conta");
