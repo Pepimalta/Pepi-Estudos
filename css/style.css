@@ -1080,6 +1080,102 @@ textarea:focus {
 .ajuda-modal ol { padding-left: 24px; line-height: 1.65; }
 .ajuda-modal li { margin: 12px 0; }
 
+/* SUPER ADMINISTRAÇÃO */
+
+.administracao-modal {
+    width: min(850px, 100%);
+    max-height: min(760px, 90vh);
+    overflow-y: auto;
+    text-align: left;
+}
+
+.administracao-titulo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 18px;
+}
+
+.administracao-titulo > span {
+    display: grid;
+    width: 55px;
+    height: 55px;
+    place-items: center;
+    border-radius: 17px;
+    background: linear-gradient(135deg, var(--roxo), #8d70ff);
+    color: white;
+    font-size: 28px;
+}
+
+.administracao-titulo small {
+    color: var(--roxo);
+    font-weight: 900;
+    letter-spacing: 1px;
+}
+
+.administracao-titulo h2 {
+    margin: 3px 0 0;
+}
+
+.administracao-aviso {
+    border: 1px solid #e1dafd;
+    border-radius: 15px;
+    padding: 14px 16px;
+    background: #f7f4ff;
+    color: var(--cinza);
+    line-height: 1.5;
+}
+
+.lista-usuarios-administracao {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+}
+
+.usuario-administracao {
+    border: 1px solid var(--borda);
+    border-radius: 18px;
+    padding: 18px;
+    background: white;
+    box-shadow: 0 10px 26px rgba(64, 43, 150, 0.08);
+}
+
+.usuario-administracao-cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.usuario-administracao-cabecalho span {
+    border-radius: 999px;
+    padding: 5px 9px;
+    background: #eee9ff;
+    color: var(--roxo);
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.usuario-administracao p {
+    margin: 10px 0 17px;
+    color: var(--cinza);
+    overflow-wrap: anywhere;
+}
+
+.usuario-administracao small {
+    color: var(--roxo);
+    font-weight: 900;
+    letter-spacing: 0.7px;
+}
+
+.usuario-administracao ul {
+    margin: 8px 0 0;
+    padding-left: 20px;
+    color: var(--texto);
+    line-height: 1.55;
+}
+
 @media (max-width: 850px) {
     .entrada-acoes > span { display: none; }
     .entrada-hero { grid-template-columns: 1fr; gap: 20px; padding-top: 35px; }
@@ -1105,10 +1201,11 @@ textarea:focus {
     .barra-lateral { top: auto; right: 14px; bottom: 14px; left: 14px; width: auto; height: 64px; flex-direction: row; border-left: 1px solid var(--borda); border-radius: 20px; }
     .barra-lateral:hover, .barra-lateral:focus-within { width: auto; }
     .barra-lateral-marca { display: none; }
-    .ferramenta-lateral { width: 50%; justify-content: center; }
+    .ferramenta-lateral { width: auto; flex: 1; justify-content: center; }
     .ferramenta-texto { display: inline; }
     .painel-pesquisa { padding: 24px 18px 100px; }
     .periodo-pesquisa { grid-template-columns: 1fr; }
+    .lista-usuarios-administracao { grid-template-columns: 1fr; }
     .conteudo { margin-bottom: 110px; }
 }
 .assinatura-malteria {
