@@ -868,18 +868,39 @@ textarea:focus {
 .entrada-demonstracao {
     position: relative;
     display: grid;
-    min-height: 470px;
+    min-height: 500px;
     place-items: center;
+    isolation: isolate;
 }
 
 .entrada-demonstracao::before {
     position: absolute;
-    width: 390px;
-    height: 390px;
-    border-radius: 50%;
-    background: linear-gradient(145deg, var(--roxo), #9276ff 65%, #53cfdd);
+    width: 410px;
+    height: 410px;
+    border-radius: 42% 58% 55% 45% / 46% 43% 57% 54%;
+    background:
+        radial-gradient(circle at 28% 25%, rgba(255, 255, 255, 0.38) 0 5%, transparent 6%),
+        radial-gradient(circle at 76% 30%, rgba(255, 215, 90, 0.55) 0 3%, transparent 4%),
+        linear-gradient(145deg, var(--roxo), #9276ff 65%, #53cfdd);
     box-shadow: 0 35px 80px rgba(76, 47, 190, 0.28);
     content: "";
+    animation: respirar-forma 7s ease-in-out infinite;
+}
+
+.entrada-demonstracao::after {
+    content: "✦  ·  ✧  ·  ✦";
+    position: absolute;
+    top: 55px;
+    z-index: 0;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 25px;
+    letter-spacing: 20px;
+    transform: rotate(-8deg);
+}
+
+@keyframes respirar-forma {
+    0%, 100% { transform: rotate(-2deg) scale(1); }
+    50% { transform: rotate(2deg) scale(1.035); }
 }
 
 .demonstracao-cartao {
@@ -941,6 +962,8 @@ textarea:focus {
 .orbita-um { top: 38px; left: 6px; }
 .orbita-dois { right: 4px; bottom: 62px; animation-delay: 0.45s; }
 .orbita-tres { left: 28px; bottom: 32px; animation-delay: 0.9s; }
+.orbita-quatro { top: 45px; right: 20px; animation-delay: 1.2s; }
+.orbita-cinco { top: 205px; right: -28px; animation-delay: 1.55s; }
 
 .entrada-recursos {
     display: grid;
@@ -959,6 +982,15 @@ textarea:focus {
 }
 
 .entrada-recursos article > span { font-size: 28px; }
+.entrada-recursos article > span {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    border-radius: 16px;
+    background: linear-gradient(145deg, #eee9ff, #dcf8fb);
+    box-shadow: 0 9px 22px rgba(79, 54, 180, 0.11);
+}
 .entrada-recursos h2 { margin: 14px 0 8px; font-size: 19px; }
 .entrada-recursos p { margin: 0; color: var(--cinza); line-height: 1.55; }
 
@@ -1194,10 +1226,15 @@ textarea:focus {
     .entrada-texto h1 { font-size: 40px; letter-spacing: -1.4px; }
     .entrada-texto > p { font-size: 17px; }
     .entrada-botoes { flex-direction: column; }
-    .entrada-demonstracao::before { width: 290px; height: 290px; }
-    .entrada-demonstracao { min-height: 390px; }
+    .entrada-demonstracao::before { width: 310px; height: 310px; }
+    .entrada-demonstracao { min-height: 420px; margin-bottom: 10px; }
+    .demonstracao-cartao { width: 88%; padding: 20px; }
+    .demonstracao-opcoes { gap: 7px; margin-top: 14px; }
+    .demonstracao-opcoes span { padding: 9px; font-size: 13px; }
     .orbita-um { left: -4px; }
     .orbita-dois { right: -3px; }
+    .orbita-quatro { right: 4px; }
+    .orbita-cinco { display: none; }
     .barra-lateral { top: auto; right: 14px; bottom: 14px; left: 14px; width: auto; height: 64px; flex-direction: row; border-left: 1px solid var(--borda); border-radius: 20px; }
     .barra-lateral:hover, .barra-lateral:focus-within { width: auto; }
     .barra-lateral-marca { display: none; }
@@ -1206,6 +1243,7 @@ textarea:focus {
     .painel-pesquisa { padding: 24px 18px 100px; }
     .periodo-pesquisa { grid-template-columns: 1fr; }
     .lista-usuarios-administracao { grid-template-columns: 1fr; }
+    .apresentacao::after { display: none; }
     .conteudo { margin-bottom: 110px; }
 }
 .assinatura-malteria {
@@ -1523,6 +1561,18 @@ textarea:focus {
     font-weight: 900;
     line-height: 1;
     pointer-events: none;
+}
+
+.apresentacao::after {
+    content: "✦  ◌  ✧";
+    position: absolute;
+    top: 25px;
+    right: 105px;
+    color: rgba(255, 255, 255, 0.26);
+    font-size: 40px;
+    letter-spacing: 16px;
+    pointer-events: none;
+    transform: rotate(-8deg);
 }
 
 .apresentacao > * {
