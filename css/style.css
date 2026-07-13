@@ -996,3 +996,142 @@ textarea:focus {
     }
 }
 
+/* CORREÇÕES E NOVOS DETALHES DA MALTÉRIA */
+
+.decoracao-estudos {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 24px;
+}
+
+.decoracao-estudos span {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 17px;
+    background: rgba(255, 255, 255, 0.14);
+    font-size: 25px;
+    box-shadow: 0 8px 22px rgba(38, 24, 98, 0.16);
+    animation: flutuar-estudo 3s ease-in-out infinite;
+}
+
+.decoracao-estudos span:nth-child(2) {
+    animation-delay: 0.25s;
+}
+
+.decoracao-estudos span:nth-child(3) {
+    animation-delay: 0.5s;
+}
+
+.decoracao-estudos span:nth-child(4) {
+    animation-delay: 0.75s;
+}
+
+@keyframes flutuar-estudo {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-7px);
+    }
+}
+
+.detalhes-finais {
+    margin: 18px 24px 24px;
+    border: 2px solid var(--borda);
+    border-radius: 16px;
+    background: var(--fundo);
+    text-align: left;
+}
+
+.detalhes-finais > summary {
+    padding: 17px;
+    color: var(--roxo);
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.detalhes-finais[open] > summary {
+    border-bottom: 1px solid var(--borda);
+}
+
+.conteudo-detalhes {
+    padding: 4px 16px 16px;
+}
+
+.avisos-urgentes.detalhes-finais {
+    border-color: #ff8797;
+    background: #fff0f3;
+}
+
+.avisos-urgentes.detalhes-finais > summary {
+    color: #a8243e;
+}
+
+.seletor-data-estudo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.escolher-data-estudo {
+    grid-column: 1 / -1;
+    border: 2px solid var(--borda);
+    border-radius: 16px;
+    padding: 17px;
+    background: var(--fundo);
+    text-align: left;
+}
+
+.escolher-data-estudo label {
+    display: block;
+    margin: 0 0 8px;
+    font-weight: bold;
+}
+
+.escolher-data-estudo button {
+    width: 100%;
+    margin-top: 10px;
+}
+
+#tipo-upload,
+#data-upload {
+    margin-bottom: 12px;
+}
+
+.mensagem-vazia {
+    margin-top: 18px;
+    color: var(--cinza);
+    text-align: center;
+}
+
+@media (max-width: 600px) {
+    .decoracao-estudos {
+        gap: 8px;
+    }
+
+    .decoracao-estudos span {
+        width: 43px;
+        height: 43px;
+        font-size: 21px;
+    }
+
+    .seletor-data-estudo {
+        grid-template-columns: 1fr;
+    }
+
+    .escolher-data-estudo {
+        grid-column: auto;
+    }
+
+    .detalhes-finais {
+        margin: 15px;
+    }
+}
+
