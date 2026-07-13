@@ -641,3 +641,19 @@ textarea:focus {
         margin: 0 19px 19px;
     }
 }
+.assinatura-malteria {
+    margin: -12px 0 25px;
+    text-align: center;
+}
+
+.assinatura-malteria p {
+    margin: 0 0 7px;
+    color: var(--texto);
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.assinatura-malteria small {
+    color: var(--cinza);
+    font-style: italic;
+}
