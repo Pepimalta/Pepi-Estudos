@@ -22,6 +22,7 @@ const EMAIL_DONO_MALTERIA =
 let estudoGerado = null;
 let periodoEstudoAtual = null;
 let uploadsDaSessao = [];
+const telaBoasVindas = document.querySelector("#boas-vindas");
 const telaEscolha = document.querySelector("#escolha");
 const telaLogin = document.querySelector("#login");
 const telaCadastro = document.querySelector("#cadastro");
@@ -129,11 +130,18 @@ function salvarUsuarioLocal(usuario) {
 /* NAVEGAÇÃO DA AUTENTICAÇÃO */
 
 function esconderTelasPrincipais() {
+    telaBoasVindas.classList.add("escondido");
     telaEscolha.classList.add("escondido");
     telaLogin.classList.add("escondido");
     telaCadastro.classList.add("escondido");
     aplicativo.classList.add("escondido");
 }
+
+document
+    .querySelector("#avancar-apresentacao")
+    .addEventListener("click", function () {
+        mostrarTela(telaEscolha);
+    });
 
 function mostrarTela(tela) {
     esconderTelasPrincipais();
@@ -955,6 +963,13 @@ function mostrarPaginaPrincipal() {
 
 document
     .querySelector("#inicio")
+    .addEventListener(
+        "click",
+        mostrarPaginaPrincipal
+    );
+
+document
+    .querySelector("#inicio-lateral")
     .addEventListener(
         "click",
         mostrarPaginaPrincipal
@@ -3345,6 +3360,8 @@ async function carregarTurmas() {
 
             salvarConexaoClassroom();
 
+            await carregarAtividadesDaData();
+
             return;
         }
 
@@ -3410,8 +3427,6 @@ async function carregarAtividadesDaData() {
         campoDataAtividades.value + "T12:00:00"
     );
 
-    const atividadesDaData = [];
-
     tituloAtividadesData.textContent =
         dataParaCampo(dataEscolhida) ===
         dataParaCampo(new Date(Date.now() + 86400000))
@@ -3419,62 +3434,31 @@ async function carregarAtividadesDaData() {
             : "Para " + dataEscolhida.toLocaleDateString("pt-BR");
 
     document.querySelector("#atividades-amanha").innerHTML =
-        "<p>Consultando as atividades do Classroom...</p>";
+        "<p>Consultando a Agenda Google...</p>";
 
-    for (const turma of turmasClassroom) {
-        try {
-            const dados = await chamarClassroom(
-                "courses/" +
-                turma.id +
-                "/courseWork?pageSize=100"
-            );
+    try {
+        const agenda = await obterEventosAgenda(
+            campoDataAtividades.value,
+            campoDataAtividades.value
+        );
 
-            const atividades =
-                dados.courseWork || [];
+        const eventosEscolares = agenda.fontes.filter(
+            eventoDaAgendaPareceEscolar
+        );
 
-            atividadesPorTurma[
-                turma.id
-            ] = atividades;
-
-            atividades.forEach(
-                function (atividade) {
-                    if (
-                        dataIgualAEscolhida(
-                            atividade.dueDate,
-                            dataEscolhida
-                        )
-                    ) {
-                        atividadesDaData.push({
-                            atividade:
-                                atividade,
-
-                            turma:
-                                turma.name
-                        });
-                    }
-                }
-            );
-        } catch (erro) {
-            console.error(erro);
-        }
+        desenharAtividadesDaData(
+            eventosEscolares,
+            dataEscolhida
+        );
+    } catch (erro) {
+        document.querySelector("#atividades-amanha").innerHTML = `
+            <p class="erro">
+                ${protegerTexto(
+                    erro.message || "Não foi possível consultar a Agenda."
+                )}
+            </p>
+        `;
     }
-
-    desenharAtividadesDaData(
-        atividadesDaData,
-        dataEscolhida
-    );
-}
-
-function dataIgualAEscolhida(data, escolhida) {
-    if (!data) {
-        return false;
-    }
-
-    return (
-        data.year === escolhida.getFullYear() &&
-        data.month === escolhida.getMonth() + 1 &&
-        data.day === escolhida.getDate()
-    );
 }
 
 function desenharAtividadesDaData(itens, dataEscolhida) {
@@ -3485,7 +3469,7 @@ function desenharAtividadesDaData(itens, dataEscolhida) {
     if (itens.length === 0) {
         area.innerHTML = `
             <p>
-                Nenhuma atividade do Classroom com entrega em
+                Nenhum compromisso escolar encontrado na Agenda em
                 ${protegerTexto(dataEscolhida.toLocaleDateString("pt-BR"))}.
             </p>
         `;
@@ -3500,15 +3484,26 @@ function desenharAtividadesDaData(itens, dataEscolhida) {
                     <div class="arquivo">
                         <strong>
                             ${protegerTexto(
-                                item.atividade.title
+                                item.titulo
                             )}
                         </strong>
 
                         <p>
                             ${protegerTexto(
-                                item.turma
+                                item.materia
                             )}
                         </p>
+
+                        ${item.descricao ? `
+                            <p>${protegerTexto(item.descricao)}</p>
+                        ` : ""}
+
+                        ${item.link ? `
+                            <a href="${protegerTexto(item.link)}"
+                               target="_blank" rel="noopener noreferrer">
+                                Abrir na Agenda
+                            </a>
+                        ` : ""}
                     </div>
                 `;
             })
@@ -3518,7 +3513,7 @@ function desenharAtividadesDaData(itens, dataEscolhida) {
 prepararDataInicialAtividades();
 
 campoDataAtividades.addEventListener("change", function () {
-    if (turmasClassroom.length > 0) {
+    if (tokenClassroom) {
         carregarAtividadesDaData();
     } else {
         tituloAtividadesData.textContent =
@@ -3527,6 +3522,29 @@ campoDataAtividades.addEventListener("change", function () {
             ).toLocaleDateString("pt-BR");
     }
 });
+
+function eventoDaAgendaPareceEscolar(evento) {
+    const texto = normalizarPesquisa(
+        evento.materia + " " + evento.titulo + " " + evento.descricao
+    );
+
+    const termosEscolares = [
+        "classroom", "escola", "colegio", "aula", "materia",
+        "atividade", "dever", "tarefa", "trabalho", "prova",
+        "avaliacao", "teste", "exercicio", "lista", "entrega",
+        "seminario", "projeto", "estudar", "estudo", "revisao"
+    ];
+
+    const correspondeATurma = turmasClassroom.some(function (turma) {
+        return palavrasImportantes(turma.name).some(function (palavra) {
+            return texto.includes(palavra);
+        });
+    });
+
+    return correspondeATurma || termosEscolares.some(function (termo) {
+        return texto.includes(termo);
+    });
+}
 
 async function gerarEstudoDaMateria() {
     const conteudo =
