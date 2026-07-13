@@ -63,7 +63,6 @@ function normalizarEmail(email) {
 
 function usuarioEhDono(usuario) {
     return Boolean(
-        usuario?.identidadeGoogleVerificada === true &&
         normalizarEmail(usuario?.email) ===
             EMAIL_DONO_MALTERIA
     );
@@ -410,6 +409,23 @@ document
         if (senha.length < 6) {
             mostrarErroCadastro(
                 "A senha precisa ter pelo menos 6 caracteres."
+            );
+
+            return;
+        }
+
+        const emailJaCadastrado =
+            lerUsuariosLocais().some(
+                function (usuario) {
+                    return normalizarEmail(
+                        usuario.email
+                    ) === normalizarEmail(email);
+                }
+            );
+
+        if (emailJaCadastrado) {
+            mostrarErroCadastro(
+                "Este e-mail já possui uma conta. Use a tela de login."
             );
 
             return;
