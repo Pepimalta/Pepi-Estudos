@@ -14,6 +14,8 @@ const ENDERECO_IA =
     "https://pepi-estudos.vercel.app/api/estudar";
 
 let estudoGerado = null;
+let periodoEstudoAtual = null;
+let uploadsDaSessao = [];
 const telaEscolha = document.querySelector("#escolha");
 const telaLogin = document.querySelector("#login");
 const telaCadastro = document.querySelector("#cadastro");
@@ -692,12 +694,8 @@ document
                     mostrarExplicacoes();
                 }
 
-                if (opcao === "dia") {
-                    mostrarUpload("dia");
-                }
-
-                if (opcao === "semestre") {
-                    mostrarUpload("semestre");
+                if (opcao === "uploads") {
+                    mostrarUpload();
                 }
 
                 if (opcao === "simulado") {
@@ -813,13 +811,122 @@ function desenharAtividades(atividades) {
 /* EXPLICAÇÕES */
 
 
-   async function mostrarExplicacoes() {
+async function mostrarExplicacoes() {
+    const hoje = new Date();
+    const ontem = new Date(hoje);
+
+    ontem.setDate(
+        ontem.getDate() - 1
+    );
+
     areaMateria.innerHTML = `
-        <h2>Preparando o material...</h2>
+        <h2>Explicações</h2>
 
         <p>
-            Lendo atividades, textos, Docs e Slides
-            desta matéria.
+            Escolha de qual dia você quer estudar
+            os materiais, explicações e slides.
+        </p>
+
+        <div class="seletor-data-estudo">
+            <button
+                id="estudar-hoje"
+                class="botao-principal pequeno"
+            >
+                Matéria de hoje
+            </button>
+
+            <button
+                id="estudar-ontem"
+                class="botao-secundario pequeno"
+            >
+                Matéria de ontem
+            </button>
+
+            <div class="escolher-data-estudo">
+                <label for="data-estudo">
+                    Escolher outra data
+                </label>
+
+                <input
+                    id="data-estudo"
+                    type="date"
+                    value="${dataParaCampo(hoje)}"
+                >
+
+                <button
+                    id="estudar-data"
+                    class="botao-principal pequeno"
+                >
+                    Criar explicação
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.querySelector(
+        "#estudar-hoje"
+    ).addEventListener(
+        "click",
+        function () {
+            criarEstudoDaData(
+                dataParaCampo(hoje),
+                "Hoje"
+            );
+        }
+    );
+
+    document.querySelector(
+        "#estudar-ontem"
+    ).addEventListener(
+        "click",
+        function () {
+            criarEstudoDaData(
+                dataParaCampo(ontem),
+                "Ontem"
+            );
+        }
+    );
+
+    document.querySelector(
+        "#estudar-data"
+    ).addEventListener(
+        "click",
+        function () {
+            const data =
+                document.querySelector(
+                    "#data-estudo"
+                ).value;
+
+            if (!data) {
+                return;
+            }
+
+            criarEstudoDaData(
+                data,
+                formatarDataCampo(data)
+            );
+        }
+    );
+}
+
+async function criarEstudoDaData(
+    data,
+    nomePeriodo
+) {
+    periodoEstudoAtual = {
+        inicio: data,
+        fim: data,
+        nome: nomePeriodo
+    };
+
+    estudoGerado = null;
+
+    areaMateria.innerHTML = `
+        <h2>Preparando a matéria de ${protegerTexto(nomePeriodo)}...</h2>
+
+        <p>
+            Lendo atividades, uploads, textos,
+            documentos e slides dessa data.
         </p>
     `;
 
@@ -837,15 +944,15 @@ function desenharAtividades(atividades) {
             <p>${protegerTexto(erro.message)}</p>
 
             <button
-                id="tentar-novamente"
+                id="voltar-escolha-data"
                 class="botao-principal"
             >
-                Tentar novamente
+                Escolher outra data
             </button>
         `;
 
         document.querySelector(
-            "#tentar-novamente"
+            "#voltar-escolha-data"
         ).addEventListener(
             "click",
             mostrarExplicacoes
@@ -1116,26 +1223,52 @@ function iniciarAudio() {
 
 /* UPLOADS */
 
-function mostrarUpload(periodo) {
-    const titulo =
-        periodo === "dia"
-            ? "Uploads do dia"
-            : "Uploads do semestre";
+function mostrarUpload() {
+    const hoje =
+        dataParaCampo(new Date());
 
     areaMateria.innerHTML = `
-        <h2>${titulo}</h2>
+        <h2>Uploads</h2>
+
+        <p>
+            Adicione fotos, PDFs, exercícios,
+            provas antigas ou anotações.
+        </p>
+
+        <label for="data-upload">
+            Data do material
+        </label>
+
+        <input
+            id="data-upload"
+            type="date"
+            value="${hoje}"
+        >
+
+        <label for="tipo-upload">
+            Tipo do material
+        </label>
+
+        <select id="tipo-upload">
+            <option value="Anotação">Anotação</option>
+            <option value="Exercício">Exercício</option>
+            <option value="Prova antiga">Prova antiga</option>
+            <option value="Resumo">Resumo</option>
+            <option value="Slide">Slide</option>
+            <option value="Outro">Outro</option>
+        </select>
 
         <label
             class="botao-upload"
             for="seletor-arquivos"
         >
-            📷 Escolher arquivos
+            📎 Escolher arquivos
         </label>
 
         <input
             id="seletor-arquivos"
             type="file"
-            accept="image/*,.pdf"
+            accept="image/*,.pdf,.txt,.md,.doc,.docx,.ppt,.pptx"
             multiple
             hidden
         >
@@ -1143,31 +1276,101 @@ function mostrarUpload(periodo) {
         <div id="lista-arquivos"></div>
     `;
 
-    document
-        .querySelector("#seletor-arquivos")
-        .addEventListener(
-            "change",
-            function (evento) {
-                const arquivos = Array.from(
+    document.querySelector(
+        "#seletor-arquivos"
+    ).addEventListener(
+        "change",
+        async function (evento) {
+            const arquivos =
+                Array.from(
                     evento.target.files
                 );
 
+            const data =
                 document.querySelector(
-                    "#lista-arquivos"
-                ).innerHTML =
-                    arquivos
-                        .map(function (arquivo) {
-                            return `
-                                <div class="arquivo">
-                                    📄 ${protegerTexto(
-                                        arquivo.name
-                                    )}
-                                </div>
-                            `;
-                        })
-                        .join("");
+                    "#data-upload"
+                ).value;
+
+            const tipo =
+                document.querySelector(
+                    "#tipo-upload"
+                ).value;
+
+            for (const arquivo of arquivos) {
+                let texto = "";
+
+                if (
+                    arquivo.type.startsWith("text/") ||
+                    arquivo.name.endsWith(".md")
+                ) {
+                    texto =
+                        await arquivo.text();
+                }
+
+                uploadsDaSessao.push({
+                    materiaId:
+                        String(materiaAtual.id),
+
+                    data: data,
+                    tipo: tipo,
+                    nome: arquivo.name,
+                    texto: texto
+                });
             }
+
+            desenharUploadsDaMateria();
+        }
+    );
+
+    desenharUploadsDaMateria();
+}
+
+function desenharUploadsDaMateria() {
+    const lista =
+        document.querySelector(
+            "#lista-arquivos"
         );
+
+    if (!lista) {
+        return;
+    }
+
+    const itens = uploadsDaSessao
+        .filter(function (upload) {
+            return (
+                upload.materiaId ===
+                String(materiaAtual.id)
+            );
+        })
+        .sort(function (a, b) {
+            return b.data.localeCompare(a.data);
+        });
+
+    if (itens.length === 0) {
+        lista.innerHTML = `
+            <p class="mensagem-vazia">
+                Nenhum upload adicionado nesta matéria.
+            </p>
+        `;
+        return;
+    }
+
+    lista.innerHTML = itens
+        .map(function (upload) {
+            return `
+                <div class="arquivo">
+                    <strong>
+                        📄 ${protegerTexto(upload.nome)}
+                    </strong>
+
+                    <p>
+                        ${protegerTexto(upload.tipo)}
+                        — ${formatarDataCampo(upload.data)}
+                    </p>
+                </div>
+            `;
+        })
+        .join("");
 }
 
 /* SIMULADO */
@@ -1640,6 +1843,13 @@ async function obterMateriaisDoPeriodo(
             "courses/" +
             turma.id +
             "/courseWorkMaterials?pageSize=100"
+        ),
+
+        chamarClassroom(
+            "courses/" +
+            turma.id +
+            "/courseWork/-/studentSubmissions" +
+            "?userId=me&pageSize=100"
         )
     ]);
 
@@ -1648,6 +1858,19 @@ async function obterMateriaisDoPeriodo(
 
     const materiais =
         respostas[1].courseWorkMaterial || [];
+
+    const envios =
+        respostas[2].studentSubmissions || [];
+
+    const enviosPorAtividade =
+        new Map(
+            envios.map(function (envio) {
+                return [
+                    envio.courseWorkId,
+                    envio
+                ];
+            })
+        );
 
     const itens = [];
 
@@ -1671,6 +1894,15 @@ async function obterMateriaisDoPeriodo(
                     turma.id +
                     "-" +
                     atividade.id,
+
+                origem: "classroom",
+
+                pendente:
+                    envioEstaPendente(
+                        enviosPorAtividade.get(
+                            atividade.id
+                        )
+                    ),
 
                 tipo: tipo,
                 materia: turma.name,
@@ -1715,6 +1947,9 @@ async function obterMateriaisDoPeriodo(
                         turma.id +
                         "-" +
                         material.id,
+
+                    origem: "classroom",
+                    pendente: false,
 
                     tipo: "Material",
                     materia: turma.name,
@@ -1936,6 +2171,9 @@ async function obterEventosAgenda(
                         "-" +
                         evento.id,
 
+                    origem: "agenda",
+                    pendente: false,
+
                     tipo:
                         "Evento da agenda",
 
@@ -2063,41 +2301,39 @@ function identificarTipoAtividade(
     return "Atividade";
 }
 
+function envioEstaPendente(envio) {
+    if (!envio) {
+        return false;
+    }
+
+    return [
+        "NEW",
+        "CREATED",
+        "RECLAIMED_BY_STUDENT",
+        "STUDENT_EDITED_AFTER_TURN_IN"
+    ].includes(envio.state);
+}
+
 function encontrarAvisosUrgentes(fontes) {
-    const agora = new Date();
+    const hoje = new Date();
 
-    const hoje = new Date(
-        agora.getFullYear(),
-        agora.getMonth(),
-        agora.getDate()
-    );
-
-    const amanha = new Date(hoje);
-
-    amanha.setDate(
-        amanha.getDate() + 1
-    );
+    hoje.setHours(0, 0, 0, 0);
 
     const depoisDeAmanha =
-        new Date(amanha);
+        new Date(hoje);
 
     depoisDeAmanha.setDate(
-        depoisDeAmanha.getDate() + 1
+        depoisDeAmanha.getDate() + 2
     );
 
     return fontes.filter(
         function (fonte) {
-            if (!fonte.prazo) {
-                return false;
-            }
-
-            return (
-                fonte.prazo < hoje ||
-                (
-                    fonte.prazo >= amanha &&
-                    fonte.prazo <
+            return Boolean(
+                fonte.origem === "classroom" &&
+                fonte.pendente === true &&
+                fonte.prazo &&
+                fonte.prazo <
                     depoisDeAmanha
-                )
             );
         }
     );
@@ -2121,41 +2357,49 @@ function desenharResultadoPesquisa(
 
     const avisos = urgentes.length
         ? `
-            <section class="avisos-urgentes">
-                <h3>🚨 Avisos urgentes</h3>
+            <details class="avisos-urgentes detalhes-finais">
+                <summary>
+                    🚨 ${urgentes.length}
+                    ${urgentes.length === 1
+                        ? "aviso urgente"
+                        : "avisos urgentes"}
+                </summary>
 
-                ${urgentes.map(function (item) {
-                    const atrasado =
-                        item.prazo <
-                        new Date(
-                            new Date().setHours(
-                                0, 0, 0, 0
-                            )
-                        );
+                <div class="conteudo-detalhes">
+                    ${urgentes.map(function (item) {
+                        const hoje = new Date();
+                        hoje.setHours(0, 0, 0, 0);
 
-                    return `
-                        <div class="aviso-urgente">
-                            <strong>
-                                ${atrasado
-                                    ? "ATRASADO"
-                                    : "PARA AMANHÃ"}:
-                                ${protegerTexto(item.titulo)}
-                            </strong>
+                        const atrasado =
+                            item.prazo < hoje;
 
-                            <span>
-                                ${protegerTexto(item.materia)}
-                            </span>
-                        </div>
-                    `;
-                }).join("")}
-            </section>
+                        return `
+                            <div class="aviso-urgente">
+                                <strong>
+                                    ${atrasado
+                                        ? "ATRASADO"
+                                        : "PRAZO PRÓXIMO"}:
+                                    ${protegerTexto(item.titulo)}
+                                </strong>
+
+                                <span>
+                                    ${protegerTexto(item.materia)}
+                                    — ${formatarDataPesquisa(item.prazo)}
+                                </span>
+                            </div>
+                        `;
+                    }).join("")}
+                </div>
+            </details>
         `
         : "";
 
     const lista = fontes
         .map(function (fonte) {
             const marcado =
-                Boolean(concluidos[fonte.chave]);
+                Boolean(
+                    concluidos[fonte.chave]
+                );
 
             return `
                 <article class="resultado-item ${marcado ? "concluido" : ""}">
@@ -2166,9 +2410,7 @@ function desenharResultadoPesquisa(
                             ${marcado ? "checked" : ""}
                         >
 
-                        <span>
-                            Marcar como concluído
-                        </span>
+                        <span>Marcar como concluído</span>
                     </label>
 
                     <strong>
@@ -2199,7 +2441,7 @@ function desenharResultadoPesquisa(
 
     area.innerHTML = `
         <div class="cabecalho-resultado">
-            <span>✨ Resultado da MALTÉRIA</span>
+            <span>✨ Resposta da MALTÉRIA</span>
 
             <h2>${protegerTexto(materia)}</h2>
 
@@ -2210,22 +2452,28 @@ function desenharResultadoPesquisa(
             </p>
         </div>
 
-        ${avisos}
-
         <article class="resposta-ia">
             ${formatarTexto(dados.resposta)}
         </article>
 
-        <section class="lista-resultados">
-            <h3>Itens encontrados</h3>
-            ${lista}
-        </section>
+        <details class="detalhes-finais">
+            <summary>
+                Ler mais: ver ${fontes.length}
+                ${fontes.length === 1
+                    ? "item encontrado"
+                    : "itens encontrados"}
+            </summary>
+
+            <section class="lista-resultados">
+                ${lista}
+            </section>
+        </details>
+
+        ${avisos}
     `;
 
     area
-        .querySelectorAll(
-            "[data-concluir]"
-        )
+        .querySelectorAll("[data-concluir]")
         .forEach(function (campo) {
             campo.addEventListener(
                 "change",
@@ -2555,12 +2803,14 @@ function desenharAtividadesDeAmanha(itens) {
 
 async function gerarEstudoDaMateria() {
     const conteudo =
-        await obterConteudoDaMateria();
+        await obterConteudoDaMateria(
+            periodoEstudoAtual
+        );
 
     if (conteudo.trim().length < 40) {
         throw new Error(
             "Não encontrei material suficiente " +
-            "nesta matéria."
+            "nessa matéria e nessa data."
         );
     }
 
@@ -2579,10 +2829,13 @@ async function gerarEstudoDaMateria() {
                     materiaAtual.name,
 
                 titulo:
-                    "Materiais do Classroom",
+                    "Materiais de " +
+                    (
+                        periodoEstudoAtual?.nome ||
+                        "todo o período"
+                    ),
 
-                conteudo:
-                    conteudo
+                conteudo: conteudo
             })
         }
     );
@@ -2599,17 +2852,26 @@ async function gerarEstudoDaMateria() {
     return dados;
 }
 
-async function obterConteudoDaMateria() {
-    let texto = `
-Matéria: ${materiaAtual.name}
-`;
+async function obterConteudoDaMateria(
+    periodo
+) {
+    let texto =
+        "Matéria: " +
+        materiaAtual.name +
+        "\n";
+
+    if (periodo) {
+        texto +=
+            "Data escolhida: " +
+            periodo.inicio +
+            "\n";
+    }
 
     if (
         !materiaAtual.id ||
         !String(materiaAtual.id).match(/^\d+$/)
     ) {
         throw new Error(
-            "Esta ainda é uma matéria de demonstração. " +
             "Conecte o Classroom primeiro."
         );
     }
@@ -2642,30 +2904,81 @@ Matéria: ${materiaAtual.name}
     const publicacoes =
         dadosMateriais.courseWorkMaterial || [];
 
+    const atividadesFiltradas =
+        atividades.filter(function (item) {
+            return itemEstaNoPeriodoDeEstudo(
+                item,
+                periodo
+            );
+        });
+
+    const publicacoesFiltradas =
+        publicacoes.filter(function (item) {
+            return itemEstaNoPeriodoDeEstudo(
+                item,
+                periodo
+            );
+        });
+
     const anexosDrive = [];
 
-    atividades.forEach(function (atividade) {
-        texto += `
-ATIVIDADE: ${atividade.title || ""}
-DESCRIÇÃO: ${atividade.description || ""}
-`;
+    atividadesFiltradas.forEach(
+        function (atividade) {
+            texto +=
+                "\nATIVIDADE: " +
+                (atividade.title || "") +
+                "\nDESCRIÇÃO: " +
+                (atividade.description || "") +
+                "\n";
 
-        recolherAnexos(
-            atividade.materials,
-            anexosDrive
-        );
-    });
+            recolherAnexos(
+                atividade.materials,
+                anexosDrive
+            );
+        }
+    );
 
-    publicacoes.forEach(function (publicacao) {
-        texto += `
-MATERIAL: ${publicacao.title || ""}
-DESCRIÇÃO: ${publicacao.description || ""}
-`;
+    publicacoesFiltradas.forEach(
+        function (publicacao) {
+            texto +=
+                "\nMATERIAL: " +
+                (publicacao.title || "") +
+                "\nDESCRIÇÃO: " +
+                (publicacao.description || "") +
+                "\n";
 
-        recolherAnexos(
-            publicacao.materials,
-            anexosDrive
-        );
+            recolherAnexos(
+                publicacao.materials,
+                anexosDrive
+            );
+        }
+    );
+
+    const uploads = uploadsDaSessao.filter(
+        function (upload) {
+            return (
+                upload.materiaId ===
+                    String(materiaAtual.id) &&
+                (
+                    !periodo ||
+                    upload.data === periodo.inicio
+                )
+            );
+        }
+    );
+
+    uploads.forEach(function (upload) {
+        texto +=
+            "\nUPLOAD: " +
+            upload.nome +
+            "\nTIPO: " +
+            upload.tipo +
+            "\nCONTEÚDO: " +
+            (
+                upload.texto ||
+                "Arquivo anexado sem texto extraído."
+            ) +
+            "\n";
     });
 
     const anexosUnicos = Array.from(
@@ -2679,13 +2992,16 @@ DESCRIÇÃO: ${publicacao.description || ""}
     for (const anexo of anexosUnicos) {
         try {
             const textoDoArquivo =
-                await lerArquivoDoDrive(anexo.id);
+                await lerArquivoDoDrive(
+                    anexo.id
+                );
 
-            texto += `
-ARQUIVO: ${anexo.nome}
-CONTEÚDO:
-${textoDoArquivo}
-`;
+            texto +=
+                "\nARQUIVO: " +
+                anexo.nome +
+                "\nCONTEÚDO:\n" +
+                textoDoArquivo +
+                "\n";
         } catch (erro) {
             console.warn(
                 "Não foi possível ler:",
@@ -2696,6 +3012,39 @@ ${textoDoArquivo}
     }
 
     return texto.slice(0, 60000);
+}
+
+function itemEstaNoPeriodoDeEstudo(
+    item,
+    periodo
+) {
+    if (!periodo) {
+        return true;
+    }
+
+    const textoData =
+        item.creationTime ||
+        item.updateTime ||
+        item.scheduledTime;
+
+    let data;
+
+    if (textoData) {
+        data = new Date(textoData);
+    } else if (item.dueDate) {
+        data = new Date(
+            item.dueDate.year,
+            item.dueDate.month - 1,
+            item.dueDate.day
+        );
+    } else {
+        return false;
+    }
+
+    return (
+        dataParaCampo(data) ===
+        periodo.inicio
+    );
 }
 
 function recolherAnexos(
@@ -2854,5 +3203,6 @@ function protegerTexto(texto) {
 
     return elemento.innerHTML;
 }
+
 
 
