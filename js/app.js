@@ -2,6 +2,9 @@ const CLIENT_ID_CLASSROOM =
     "201759939378-lt1oj42277jqjr8bppkjbrqi08tml64t.apps.googleusercontent.com";
 
 const ESCOPOS_CLASSROOM = [
+    "openid",
+    "email",
+    "profile",
     "https://www.googleapis.com/auth/classroom.courses.readonly",
     "https://www.googleapis.com/auth/classroom.coursework.me.readonly",
     "https://www.googleapis.com/auth/classroom.courseworkmaterials.readonly",
@@ -29,6 +32,17 @@ const paginaPrincipal =
 
 const paginaMateria =
     document.querySelector("#pagina-materia");
+
+const paginaPesquisa =
+    document.querySelector("#pagina-pesquisa");
+
+const paginaAjuda =
+    document.querySelector("#pagina-ajuda");
+
+const paginaAdministracao =
+    document.querySelector("#pagina-administracao");
+
+let paginaAnteriorFerramenta = paginaPrincipal;
 
 const areaMateria =
     document.querySelector("#area-materia");
@@ -232,14 +246,42 @@ document
 
 /* BARRA LATERAL, PESQUISA E AJUDA */
 
-const fundoPesquisa =
-    document.querySelector("#fundo-pesquisa");
+const paginasInternas = [
+    paginaPrincipal,
+    paginaMateria,
+    paginaPesquisa,
+    paginaAjuda,
+    paginaAdministracao
+];
 
-const fundoAjuda =
-    document.querySelector("#fundo-ajuda");
+function mostrarPaginaInterna(pagina) {
+    paginasInternas.forEach(function (item) {
+        item.classList.toggle(
+            "escondido",
+            item !== pagina
+        );
+    });
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+function paginaVisivelAtual() {
+    return paginasInternas.find(function (pagina) {
+        return !pagina.classList.contains("escondido");
+    }) || paginaPrincipal;
+}
 
 function abrirPainelPesquisa() {
-    fundoPesquisa.classList.remove("escondido");
+    const atual = paginaVisivelAtual();
+
+    if (atual !== paginaPesquisa) {
+        paginaAnteriorFerramenta = atual;
+    }
+
+    mostrarPaginaInterna(paginaPesquisa);
 
     window.setTimeout(function () {
         document
@@ -249,15 +291,25 @@ function abrirPainelPesquisa() {
 }
 
 function fecharPainelPesquisa() {
-    fundoPesquisa.classList.add("escondido");
+    mostrarPaginaInterna(
+        paginaAnteriorFerramenta || paginaPrincipal
+    );
 }
 
 function abrirPainelAjuda() {
-    fundoAjuda.classList.remove("escondido");
+    const atual = paginaVisivelAtual();
+
+    if (atual !== paginaAjuda) {
+        paginaAnteriorFerramenta = atual;
+    }
+
+    mostrarPaginaInterna(paginaAjuda);
 }
 
 function fecharPainelAjuda() {
-    fundoAjuda.classList.add("escondido");
+    mostrarPaginaInterna(
+        paginaAnteriorFerramenta || paginaPrincipal
+    );
 }
 
 document
@@ -276,26 +328,20 @@ document
     .querySelector("#fechar-ajuda")
     .addEventListener("click", fecharPainelAjuda);
 
-fundoPesquisa.addEventListener("click", function (evento) {
-    if (evento.target === fundoPesquisa) {
-        fecharPainelPesquisa();
-    }
-});
+document
+    .querySelectorAll("[data-ajuda-acao]")
+    .forEach(function (botao) {
+        botao.addEventListener("click", function () {
+            if (botao.dataset.ajudaAcao === "pesquisa") {
+                abrirPainelPesquisa();
+            }
 
-fundoAjuda.addEventListener("click", function (evento) {
-    if (evento.target === fundoAjuda) {
-        fecharPainelAjuda();
-    }
-});
-
-document.addEventListener("keydown", function (evento) {
-    if (evento.key !== "Escape") {
-        return;
-    }
-
-    fecharPainelPesquisa();
-    fecharPainelAjuda();
-});
+            if (botao.dataset.ajudaAcao === "classroom") {
+                mostrarPaginaPrincipal();
+                conectarClassroom();
+            }
+        });
+    });
 
 /* ALUNO OU RESPONSÁVEL */
 
@@ -862,8 +908,7 @@ function dataParaCampo(data) {
 function abrirMateria(materia) {
     materiaAtual = materia;
 
-    paginaPrincipal.classList.add("escondido");
-    paginaMateria.classList.remove("escondido");
+    mostrarPaginaInterna(paginaMateria);
 
     document.querySelector(
         "#nome-materia"
@@ -886,20 +931,10 @@ function abrirMateria(materia) {
         </p>
     `;
 
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
 }
 
 function mostrarPaginaPrincipal() {
-    paginaPrincipal.classList.remove("escondido");
-    paginaMateria.classList.add("escondido");
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
+    mostrarPaginaInterna(paginaPrincipal);
 }
 
 document
@@ -3164,9 +3199,88 @@ async function receberTokenClassroom(resposta) {
     cartaoClassroom.classList.add("conectado");
 
     statusClassroom.textContent =
-        "Classroom conectado. Carregando turmas...";
+        "Classroom conectado. Confirmando a conta...";
+
+    await confirmarIdentidadeGoogle();
+
+    statusClassroom.textContent =
+        "Conta confirmada. Carregando turmas...";
 
     await carregarTurmas();
+}
+
+async function confirmarIdentidadeGoogle() {
+    if (!tokenClassroom || !usuarioAtual) {
+        return;
+    }
+
+    try {
+        const resposta = await fetch(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            {
+                headers: {
+                    Authorization:
+                        "Bearer " + tokenClassroom
+                }
+            }
+        );
+
+        if (!resposta.ok) {
+            throw new Error(
+                "O Google não confirmou a identidade."
+            );
+        }
+
+        const identidade = await resposta.json();
+        const emailGoogle = normalizarEmail(
+            identidade.email
+        );
+        const emailDaConta = normalizarEmail(
+            usuarioAtual.email
+        );
+
+        usuarioAtual.emailGoogleVerificado =
+            emailGoogle;
+
+        usuarioAtual.identidadeGoogleVerificada =
+            identidade.email_verified === true &&
+            emailGoogle === emailDaConta;
+
+        salvarUsuarioLocal(usuarioAtual);
+
+        usuarioAtual.administrador =
+            usuarioEhDono(usuarioAtual);
+
+        document.querySelector(
+            "#abrir-administracao"
+        ).classList.toggle(
+            "escondido",
+            !usuarioAtual.administrador
+        );
+
+        document.querySelector(
+            "#conta-tipo"
+        ).textContent =
+            usuarioAtual.administrador
+                ? "Administrador da Maltéria"
+                : usuarioAtual.tipo;
+
+        if (
+            emailDaConta === EMAIL_DONO_MALTERIA &&
+            !usuarioAtual.administrador
+        ) {
+            statusClassroom.textContent =
+                "Para liberar a Super administração, " +
+                "conecte a conta Google pepimalti@gmail.com.";
+        }
+    } catch (erro) {
+        usuarioAtual.identidadeGoogleVerificada = false;
+        salvarUsuarioLocal(usuarioAtual);
+
+        statusClassroom.textContent =
+            "O Classroom conectou, mas não foi possível " +
+            "confirmar o e-mail da conta.";
+    }
 }
 
 async function chamarClassroom(caminho) {
@@ -3711,9 +3825,6 @@ function formatarTexto(texto) {
 
 /* SUPER ADMINISTRAÇÃO */
 
-const fundoAdministracao =
-    document.querySelector("#fundo-administracao");
-
 const listaUsuariosAdministracao =
     document.querySelector("#lista-usuarios-administracao");
 
@@ -3795,20 +3906,21 @@ document
         }
 
         desenharUsuariosAdministracao();
-        fundoAdministracao.classList.remove("escondido");
+        paginaAnteriorFerramenta =
+            paginaVisivelAtual();
+        mostrarPaginaInterna(
+            paginaAdministracao
+        );
     });
 
 document
     .querySelector("#fechar-administracao")
     .addEventListener("click", function () {
-        fundoAdministracao.classList.add("escondido");
+        mostrarPaginaInterna(
+            paginaAnteriorFerramenta ||
+            paginaPrincipal
+        );
     });
-
-fundoAdministracao.addEventListener("click", function (evento) {
-    if (evento.target === fundoAdministracao) {
-        fundoAdministracao.classList.add("escondido");
-    }
-});
 
 /* MINHA CONTA */
 
