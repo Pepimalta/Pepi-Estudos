@@ -510,3 +510,134 @@ select:focus {
         font-size: 28px;
     }
 }
+/* PESQUISA INTELIGENTE */
+
+.pesquisa-inteligente {
+    width: min(850px, 100%);
+    text-align: left;
+}
+
+.pesquisa-inteligente > h2,
+.pesquisa-inteligente > p {
+    text-align: center;
+}
+
+.pesquisa-inteligente > p {
+    margin-bottom: 25px;
+    color: var(--cinza);
+    line-height: 1.6;
+}
+
+.periodo-pesquisa {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+textarea {
+    width: 100%;
+    min-height: 120px;
+    border: 2px solid var(--borda);
+    border-radius: 14px;
+    padding: 14px;
+    background: var(--branco);
+    color: var(--texto);
+    font: inherit;
+    line-height: 1.5;
+    outline: none;
+    resize: vertical;
+}
+
+textarea:focus {
+    border-color: var(--roxo);
+    box-shadow:
+        0 0 0 4px rgba(104, 72, 245, 0.12);
+}
+
+.pesquisa-inteligente .botao-principal {
+    margin-top: 17px;
+}
+
+.pesquisa-inteligente .botao-principal:disabled {
+    cursor: wait;
+    opacity: 0.7;
+}
+
+.status-pesquisa {
+    min-height: 24px;
+    margin-top: 16px;
+    color: var(--cinza);
+    text-align: center;
+    font-weight: bold;
+}
+
+.resultado-pesquisa {
+    margin-top: 22px;
+    overflow: hidden;
+    border: 2px solid var(--borda);
+    border-radius: 20px;
+    background: var(--branco);
+}
+
+.cabecalho-resultado {
+    padding: 24px;
+    background: linear-gradient(
+        125deg,
+        var(--roxo),
+        #9477ff
+    );
+    color: var(--branco);
+    text-align: center;
+}
+
+.cabecalho-resultado span {
+    display: inline-block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.cabecalho-resultado h2 {
+    margin: 5px 0;
+}
+
+.cabecalho-resultado p {
+    margin: 7px 0 0;
+}
+
+.resposta-ia {
+    padding: 25px;
+    line-height: 1.75;
+    text-align: left;
+}
+
+.fontes-pesquisa {
+    margin: 0 25px 25px;
+    border-radius: 15px;
+    padding: 16px;
+    background: var(--fundo);
+}
+
+.fontes-pesquisa summary {
+    color: var(--roxo);
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.fontes-pesquisa .arquivo {
+    background: var(--branco);
+}
+
+@media (max-width: 600px) {
+    .periodo-pesquisa {
+        grid-template-columns: 1fr;
+    }
+
+    .cabecalho-resultado,
+    .resposta-ia {
+        padding: 19px;
+    }
+
+    .fontes-pesquisa {
+        margin: 0 19px 19px;
+    }
+}
