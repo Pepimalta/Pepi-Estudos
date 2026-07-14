@@ -352,12 +352,34 @@ function abrirPainelPesquisa() {
     }
 
     mostrarPaginaInterna(paginaPesquisa);
+    desenharHistoricoPesquisas();
 
     window.setTimeout(function () {
         document
             .querySelector("#campo-pesquisa")
             .focus();
     }, 120);
+}
+
+function abrirNovaPesquisa() {
+    document.querySelector("#campo-pesquisa").value = "";
+    document.querySelector("#materia-pesquisa").value = "";
+    document.querySelector("#formato-pesquisa").value = "texto";
+
+    const tipo = document.querySelector("#tipo-pesquisa");
+    if (tipo) tipo.value = "todos";
+
+    const semData = document.querySelector("#pesquisa-sem-data");
+    semData.checked = false;
+    semData.dispatchEvent(new Event("change"));
+    preencherDatasDaSemana();
+
+    document.querySelector("#status-pesquisa").textContent = "";
+    const resposta = document.querySelector("#resposta-pesquisa");
+    resposta.innerHTML = "";
+    resposta.classList.add("escondido");
+
+    abrirPainelPesquisa();
 }
 
 function fecharPainelPesquisa() {
@@ -384,7 +406,7 @@ function fecharPainelAjuda() {
 
 document
     .querySelector("#abrir-pesquisa")
-    .addEventListener("click", abrirPainelPesquisa);
+    .addEventListener("click", abrirNovaPesquisa);
 
 document
     .querySelector("#fechar-pesquisa")
@@ -617,6 +639,7 @@ function entrarNoAplicativo() {
         usuarioEhDono(usuarioAtual);
 
     salvarUsuarioLocal(usuarioAtual);
+    desenharHistoricoPesquisas();
 
     document.querySelector(
         "#saudacao"
@@ -2399,6 +2422,21 @@ async function pesquisarMateriais() {
             formatoPesquisa
         );
 
+        salvarPesquisaNoHistorico({
+            pergunta: pergunta,
+            materiaValor: materiaEscolhida,
+            materia: materiaEscolhida === "__todas__"
+                ? "Todas as matérias"
+                : materiaEscolhida,
+            tipo: tipoPesquisa,
+            formato: formatoPesquisa,
+            semData: semData,
+            dataInicial: semData ? "" : dataInicial,
+            dataFinal: semData ? "" : dataFinal,
+            dados: dados,
+            fontes: fontes
+        });
+
         status.textContent =
             fontes.length +
             (
@@ -2417,6 +2455,156 @@ async function pesquisarMateriais() {
         botao.textContent =
             "🔎 Pesquisar nos materiais";
     }
+}
+
+/* HISTÓRICO DE PESQUISAS */
+
+function chaveHistoricoPesquisas() {
+    const conta = usuarioAtual?.email
+        ? normalizarEmail(usuarioAtual.email)
+        : "visitante";
+
+    return "malteriaHistoricoPesquisas:" + conta;
+}
+
+function lerHistoricoPesquisas() {
+    try {
+        const historico = JSON.parse(
+            localStorage.getItem(chaveHistoricoPesquisas()) || "[]"
+        );
+
+        return Array.isArray(historico) ? historico : [];
+    } catch (erro) {
+        return [];
+    }
+}
+
+function prepararFonteParaHistorico(fonte) {
+    return {
+        chave: fonte.chave || "",
+        origem: fonte.origem || "",
+        pendente: fonte.pendente === true,
+        tipo: fonte.tipo || "Material",
+        materia: fonte.materia || "",
+        titulo: fonte.titulo || "Material sem título",
+        data: fonte.data ? new Date(fonte.data).toISOString() : null,
+        prazo: fonte.prazo ? new Date(fonte.prazo).toISOString() : null,
+        link: fonte.link || ""
+    };
+}
+
+function restaurarFonteDoHistorico(fonte) {
+    return {
+        ...fonte,
+        data: fonte.data ? new Date(fonte.data) : new Date(),
+        prazo: fonte.prazo ? new Date(fonte.prazo) : null
+    };
+}
+
+function salvarPesquisaNoHistorico(pesquisa) {
+    const registro = {
+        id: "pesquisa-" + Date.now(),
+        criadoEm: new Date().toISOString(),
+        ...pesquisa,
+        fontes: pesquisa.fontes.map(prepararFonteParaHistorico)
+    };
+
+    let historico = [registro, ...lerHistoricoPesquisas()].slice(0, 20);
+
+    try {
+        localStorage.setItem(
+            chaveHistoricoPesquisas(),
+            JSON.stringify(historico)
+        );
+    } catch (erro) {
+        historico = historico.slice(0, 8);
+        localStorage.setItem(
+            chaveHistoricoPesquisas(),
+            JSON.stringify(historico)
+        );
+    }
+
+    desenharHistoricoPesquisas();
+}
+
+function desenharHistoricoPesquisas() {
+    const lista = document.querySelector("#lista-historico-pesquisas");
+    if (!lista) return;
+
+    const historico = lerHistoricoPesquisas();
+
+    if (historico.length === 0) {
+        lista.innerHTML = '<p class="historico-vazio">Suas pesquisas aparecerão aqui.</p>';
+        return;
+    }
+
+    lista.innerHTML = historico.map(function (pesquisa) {
+        const titulo = pesquisa.pergunta || "Pesquisa sem título";
+        const data = new Date(pesquisa.criadoEm).toLocaleDateString(
+            "pt-BR",
+            { day: "2-digit", month: "2-digit" }
+        );
+
+        return `
+            <button class="item-historico-pesquisa" type="button" data-pesquisa-id="${protegerTexto(pesquisa.id)}">
+                <span>${protegerTexto(titulo)}</span>
+                <small>${protegerTexto(pesquisa.materia || "Matéria")} · ${data}</small>
+            </button>
+        `;
+    }).join("");
+
+    lista.querySelectorAll("[data-pesquisa-id]").forEach(function (botao) {
+        botao.addEventListener("click", function () {
+            abrirPesquisaDoHistorico(botao.dataset.pesquisaId);
+        });
+    });
+}
+
+function abrirPesquisaDoHistorico(id) {
+    const pesquisa = lerHistoricoPesquisas().find(function (item) {
+        return item.id === id;
+    });
+
+    if (!pesquisa) return;
+
+    abrirPainelPesquisa();
+
+    const materia = document.querySelector("#materia-pesquisa");
+    const materiaExiste = Array.from(materia.options).some(function (opcao) {
+        return opcao.value === pesquisa.materiaValor;
+    });
+
+    materia.value = materiaExiste ? pesquisa.materiaValor : "__todas__";
+    document.querySelector("#campo-pesquisa").value = pesquisa.pergunta || "";
+    document.querySelector("#formato-pesquisa").value = pesquisa.formato || "texto";
+
+    const tipo = document.querySelector("#tipo-pesquisa");
+    if (tipo) tipo.value = pesquisa.tipo || "todos";
+
+    const semData = document.querySelector("#pesquisa-sem-data");
+    semData.checked = pesquisa.semData === true;
+    semData.dispatchEvent(new Event("change"));
+
+    if (!semData.checked) {
+        document.querySelector("#data-inicial").value = pesquisa.dataInicial || "";
+        document.querySelector("#data-final").value = pesquisa.dataFinal || "";
+    }
+
+    const fontes = (pesquisa.fontes || []).map(restaurarFonteDoHistorico);
+
+    desenharResultadoPesquisa(
+        pesquisa.dados || { resposta: "Resposta não disponível." },
+        fontes,
+        encontrarAvisosUrgentes(fontes),
+        pesquisa.materia || "Pesquisa salva",
+        pesquisa.dataInicial || "",
+        pesquisa.dataFinal || "",
+        pesquisa.formato || "texto"
+    );
+
+    document.querySelector("#status-pesquisa").textContent =
+        "Pesquisa salva em " +
+        new Date(pesquisa.criadoEm).toLocaleString("pt-BR") + ".";
 }
 
 function criarPerguntaAutomatica(tipo) {
