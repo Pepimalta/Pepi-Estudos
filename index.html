@@ -438,6 +438,11 @@
                 <span class="ferramenta-texto">Meta e evolução</span>
             </button>
 
+            <button id="abrir-pratica" class="ferramenta-lateral" type="button">
+                <span class="ferramenta-icone">◎</span>
+                <span class="ferramenta-texto">Central de prática</span>
+            </button>
+
             <button id="abrir-administracao" class="ferramenta-lateral escondido" type="button">
                 <span class="ferramenta-icone">♛</span>
                 <span class="ferramenta-texto">Super administração</span>
@@ -496,8 +501,12 @@
                     </div>
 
                     <div class="filtros-relatorio-responsavel">
+                        <label for="data-referencia-relatorio-responsavel">
+                            Em que dia estou?
+                            <input id="data-referencia-relatorio-responsavel" type="date">
+                        </label>
                         <label for="data-relatorio-responsavel">
-                            Preparar para o dia
+                            Qual dia quero preparar?
                             <input id="data-relatorio-responsavel" type="date">
                         </label>
                         <label for="horizonte-relatorio-responsavel">
@@ -763,12 +772,12 @@
                     <section id="resultado-evolucao" class="resultado-evolucao escondido"></section>
                 </section>
 
-                <section class="caixa criador-simuladao">
+                <section id="criador-simuladao" class="caixa criador-simuladao">
                     <div class="meta-bimestral-cabecalho">
                         <div>
                             <small>PRÁTICA POR PERÍODO</small>
                             <h2>Simuladão de várias matérias</h2>
-                            <p>Escolha até quatro matérias. As questões usam atividades e materiais publicados no período.</p>
+                            <p>Escolha uma, algumas ou todas as matérias. A Maltéria distribui as questões e respeita o nível escolhido para cada disciplina.</p>
                         </div>
                         <span aria-hidden="true">🧠</span>
                     </div>
@@ -781,24 +790,63 @@
                                 <option value="30">Últimos 30 dias</option>
                             </select>
                         </label>
-                        <label>Progressão
+                        <label>Estratégia geral
                             <select id="dificuldade-simuladao">
-                                <option value="gradual" selected>Gradual: compreensão até desafio</option>
+                                <option value="inteligente" selected>Maltéria decide pelo histórico</option>
+                                <option value="gradual">Gradual: compreensão até desafio</option>
                                 <option value="reforco">Reforço dos fundamentos</option>
                                 <option value="desafio">Desafio no nível das listas</option>
+                            </select>
+                        </label>
+                        <label>Quantidade de questões
+                            <select id="quantidade-simuladao">
+                                <option value="auto" selected>Automática: 5 por matéria</option>
+                                <option value="10">10 questões</option>
+                                <option value="20">20 questões</option>
+                                <option value="30">30 questões</option>
+                                <option value="40">40 questões</option>
+                                <option value="50">50 questões</option>
                             </select>
                         </label>
                     </div>
 
                     <fieldset class="materias-simuladao">
-                        <legend>Matérias participantes</legend>
+                        <legend>Matérias participantes e nível individual</legend>
+                        <div class="acoes-materias-simuladao">
+                            <button id="selecionar-todas-materias" class="botao-secundario pequeno" type="button">Selecionar todas</button>
+                            <small>O nível individual pode seguir a recomendação ou substituir a estratégia geral.</small>
+                        </div>
                         <div id="lista-materias-simuladao"></div>
                     </fieldset>
+
+                    <div id="recomendacao-simuladao" class="recomendacao-simuladao" aria-live="polite"></div>
 
                     <button id="criar-simuladao" class="botao-principal" type="button">Criar simuladão</button>
                     <div id="status-simuladao" class="status-pesquisa" aria-live="polite"></div>
                     <section id="resultado-simuladao" class="resultado-simuladao escondido"></section>
                 </section>
+            </section>
+
+            <!-- CENTRAL DE PRÁTICA -->
+            <section id="pagina-pratica" class="pagina-ferramenta escondido">
+                <button id="fechar-pratica" class="botao-link voltar-ferramenta" type="button">← Voltar</button>
+
+                <div class="cabecalho-ferramenta pratica-cabecalho">
+                    <span>🧠</span>
+                    <div>
+                        <small>EXERCÍCIOS E SIMULADOS</small>
+                        <h1>Central de prática</h1>
+                        <p>Treine uma matéria, combine várias disciplinas ou peça que a Maltéria ajuste a dificuldade usando o histórico de acertos.</p>
+                    </div>
+                </div>
+
+                <section class="grade-formatos-pratica">
+                    <article><span>📝</span><strong>Quiz interativo</strong><p>Correção e explicação logo após cada resposta.</p></article>
+                    <article><span>🖨️</span><strong>Lista para fazer à mão</strong><p>Folha tradicional com espaço de resolução e gabarito separado.</p></article>
+                    <article><span>🎯</span><strong>Simuladão por período</strong><p>Uma ou várias matérias, com nível manual ou recomendado.</p></article>
+                </section>
+
+                <div id="central-pratica-conteudo"></div>
             </section>
 
             <section id="pagina-administracao" class="pagina-ferramenta escondido">
