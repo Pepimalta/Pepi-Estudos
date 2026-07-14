@@ -48,8 +48,21 @@ const paginaAjuda =
 const paginaNivelMelhora =
     document.querySelector("#pagina-nivel-melhora");
 
+const paginaPratica =
+    document.querySelector("#pagina-pratica");
+
 const paginaAdministracao =
     document.querySelector("#pagina-administracao");
+
+const centralPraticaConteudo =
+    document.querySelector("#central-pratica-conteudo");
+
+const criadorSimuladao =
+    document.querySelector("#criador-simuladao");
+
+if (centralPraticaConteudo && criadorSimuladao) {
+    centralPraticaConteudo.appendChild(criadorSimuladao);
+}
 
 let paginaAnteriorFerramenta = paginaPrincipal;
 
@@ -326,6 +339,7 @@ const paginasInternas = [
     paginaPesquisa,
     paginaAjuda,
     paginaNivelMelhora,
+    paginaPratica,
     paginaAdministracao
 ];
 
@@ -1670,23 +1684,35 @@ function abrirFormatoDeEstudo(formato) {
     }
 
     if (formato === "audio") {
-        const roteiro =
-            estudoGerado.roteiroAudio ||
-            estudoGerado.explicacao;
+        const blocosPodcast = obterBlocosPodcast();
+        const previaPodcast = blocosPodcast
+            .map(function (bloco, indice) {
+                return `
+                    <article class="fala-podcast" data-fala-podcast="${indice}">
+                        <span>${iconeDoPersonagem(bloco.personagem)}</span>
+                        <div>
+                            <strong>${protegerTexto(bloco.personagem)}</strong>
+                            <small>${protegerTexto(bloco.intencao || "Explicação")}</small>
+                            <p>${protegerTexto(bloco.texto)}</p>
+                        </div>
+                    </article>
+                `;
+            })
+            .join("");
 
         area.innerHTML = `
-            <div class="arquivo audio-professora">
+            <div class="arquivo audio-professora podcast-aula">
                 <span class="audio-professora-icone">👩‍🏫</span>
-                <h3>Aula em áudio</h3>
+                <h3>Podcast da aula</h3>
 
                 <p>
-                    Uma professora virtual explicará o conteúdo
-                    acompanhando os slides, com exemplos e revisões.
+                    Uma professora conduz a explicação dos slides com
+                    exemplos, perguntas e participações breves da turma.
                 </p>
 
-                <div class="audio-roteiro-previa">
-                    <strong>Roteiro da aula</strong>
-                    <div>${formatarTexto(roteiro)}</div>
+                <div class="audio-roteiro-previa podcast-roteiro">
+                    <strong>Roteiro interativo</strong>
+                    <div class="lista-falas-podcast">${previaPodcast}</div>
                 </div>
 
                 <p id="status-audio" class="status-audio">
@@ -1697,7 +1723,7 @@ function abrirFormatoDeEstudo(formato) {
                     id="iniciar-audio"
                     class="botao-principal"
                 >
-                    ▶ Ouvir explicação
+                    ▶ Ouvir podcast
                 </button>
 
                 <button
@@ -1722,7 +1748,7 @@ function abrirFormatoDeEstudo(formato) {
         ).addEventListener(
             "click",
             function () {
-                speechSynthesis.cancel();
+                pararAudio();
             }
         );
     }
@@ -1799,77 +1825,202 @@ function desenharListaImpressa(area) {
     });
 }
 
-function iniciarAudio() {
-    speechSynthesis.cancel();
+let temporizadorPodcast = null;
+let podcastInterrompido = false;
+let tentativaDeCarregarVozes = 0;
 
-    const roteiro = String(
-        estudoGerado.roteiroAudio ||
-        estudoGerado.explicacao ||
-        ""
-    )
-        .replace(/#{1,6}\s*/g, "")
-        .replace(/\*\*/g, "")
-        .trim();
+function iniciarAudio() {
+    pararAudio();
+    podcastInterrompido = false;
 
     const status = document.querySelector("#status-audio");
+    const blocos = obterBlocosPodcast();
 
-    if (!roteiro) {
-        status.textContent = "Não há roteiro de áudio disponível.";
+    if (!blocos.length) {
+        status.textContent = "Não há roteiro de podcast disponível.";
         return;
     }
 
-    const trechos = dividirRoteiroParaAudio(roteiro);
-    const voz = escolherVozProfessora();
+    const vozes = escolherVozesPodcast();
 
-    status.textContent =
-        "A professora virtual está começando a aula...";
-
-    trechos.forEach(function (trecho, indice) {
-        const fala = new SpeechSynthesisUtterance(trecho);
-
-        fala.lang = "pt-BR";
-        fala.rate = 0.9;
-        fala.pitch = 1.04;
-        fala.volume = 1;
-
-        if (voz) {
-            fala.voice = voz;
+    if (!vozes.professora) {
+        if (speechSynthesis.getVoices().length === 0 && tentativaDeCarregarVozes < 2) {
+            tentativaDeCarregarVozes++;
+            status.textContent = "Carregando a voz da professora...";
+            temporizadorPodcast = setTimeout(iniciarAudio, 650);
+            return;
         }
 
-        fala.onstart = function () {
-            status.textContent =
-                "Explicando a aula — parte " +
-                (indice + 1) + " de " + trechos.length + ".";
-        };
+        status.textContent =
+            "Este aparelho não disponibilizou uma voz feminina em português. " +
+            "Instale ou ative uma voz feminina do sistema para ouvir o podcast.";
+        return;
+    }
 
-        fala.onend = function () {
-            if (indice === trechos.length - 1) {
-                status.textContent = "Aula concluída. Muito bem!";
-            }
-        };
+    tentativaDeCarregarVozes = 0;
+    status.textContent = "A professora está abrindo o podcast...";
+    falarBlocoDoPodcast(blocos, 0, vozes, status);
+}
 
-        speechSynthesis.speak(fala);
+function pararAudio() {
+    podcastInterrompido = true;
+    speechSynthesis.cancel();
+    clearTimeout(temporizadorPodcast);
+    document.querySelectorAll(".fala-podcast.ativa").forEach(function (elemento) {
+        elemento.classList.remove("ativa");
+    });
+
+    const status = document.querySelector("#status-audio");
+    if (status) {
+        status.textContent = "Podcast parado. Você pode recomeçar quando quiser.";
+    }
+}
+
+function falarBlocoDoPodcast(blocos, indice, vozes, status) {
+    if (podcastInterrompido || indice >= blocos.length) {
+        if (!podcastInterrompido) {
+            status.textContent = "Podcast concluído. Agora responda à pergunta final!";
+        }
+        return;
+    }
+
+    const bloco = blocos[indice];
+    const papel = normalizarPapelPodcast(bloco.personagem);
+    const fala = new SpeechSynthesisUtterance(bloco.texto);
+    const elementoAtual = document.querySelector(`[data-fala-podcast="${indice}"]`);
+
+    document.querySelectorAll(".fala-podcast.ativa").forEach(function (elemento) {
+        elemento.classList.remove("ativa");
+    });
+
+    fala.lang = "pt-BR";
+    fala.volume = 1;
+    fala.voice = papel === "professora" ? vozes.professora : (vozes.estudante || vozes.professora);
+    fala.rate = papel === "professora" ? 1.02 : 1.08;
+    fala.pitch = papel === "professora" ? 1.06 : 1.2;
+
+    fala.onstart = function () {
+        if (elementoAtual) {
+            elementoAtual.classList.add("ativa");
+            elementoAtual.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+
+        status.textContent =
+            bloco.personagem + " — parte " + (indice + 1) + " de " + blocos.length + ".";
+    };
+
+    fala.onend = function () {
+        if (elementoAtual) {
+            elementoAtual.classList.remove("ativa");
+        }
+
+        if (!podcastInterrompido) {
+            const pausa = papel === "professora" && /\?\s*$/.test(bloco.texto) ? 900 : 320;
+            temporizadorPodcast = setTimeout(function () {
+                falarBlocoDoPodcast(blocos, indice + 1, vozes, status);
+            }, pausa);
+        }
+    };
+
+    fala.onerror = function () {
+        status.textContent = "O áudio foi interrompido pelo navegador. Tente novamente.";
+    };
+
+    speechSynthesis.speak(fala);
+}
+
+function escolherVozesPodcast() {
+    const vozesPortugues = speechSynthesis.getVoices().filter(function (voz) {
+        return /^pt(-|_)/i.test(voz.lang);
+    });
+    const femininas = [
+        "francisca", "maria", "camila", "leticia", "letícia", "luciana",
+        "vitoria", "vitória", "fernanda", "helena", "helia", "hélia",
+        "joana", "ingrid", "female", "feminina", "mulher",
+        "google português do brasil", "google portugues do brasil"
+    ];
+    const masculinas = [
+        "daniel", "felipe", "ricardo", "antonio", "antônio", "thiago",
+        "paulo", "male", "masculina", "homem"
+    ];
+    const pontuar = function (voz) {
+        const nome = voz.name.toLowerCase();
+        const indice = femininas.findIndex(function (preferida) {
+            return nome.includes(preferida);
+        });
+        return indice < 0 ? 999 : indice;
+    };
+    const candidatas = vozesPortugues
+        .filter(function (voz) {
+            const nome = voz.name.toLowerCase();
+            return !masculinas.some(function (masculina) {
+                return nome.includes(masculina);
+            }) && femininas.some(function (feminina) {
+                return nome.includes(feminina);
+            });
+        })
+        .sort(function (a, b) {
+            return pontuar(a) - pontuar(b);
+        });
+
+    return {
+        professora: candidatas[0] || null,
+        estudante: candidatas[1] || candidatas[0] || null
+    };
+}
+
+function obterBlocosPodcast() {
+    if (Array.isArray(estudoGerado.podcastAudio) && estudoGerado.podcastAudio.length) {
+        return estudoGerado.podcastAudio
+            .filter(function (bloco) {
+                return bloco && String(bloco.texto || "").trim();
+            })
+            .map(function (bloco) {
+                return {
+                    personagem: String(bloco.personagem || "PROFESSORA").trim(),
+                    texto: limparTextoParaAudio(bloco.texto),
+                    intencao: String(bloco.intencao || "Conversa guiada").trim()
+                };
+            });
+    }
+
+    const roteiro = limparTextoParaAudio(
+        estudoGerado.roteiroAudio || estudoGerado.explicacao || ""
+    );
+
+    return dividirRoteiroParaAudio(roteiro).map(function (trecho, indice) {
+        return {
+            personagem: "PROFESSORA",
+            texto: trecho,
+            intencao: indice === 0 ? "Abertura" : "Explicação comentada"
+        };
     });
 }
 
-function escolherVozProfessora() {
-    const vozesPortugues = speechSynthesis
-        .getVoices()
-        .filter(function (voz) {
-            return /^pt(-|_)/i.test(voz.lang);
-        });
+function limparTextoParaAudio(texto) {
+    return String(texto || "")
+        .replace(/#{1,6}\s*/g, "")
+        .replace(/\*\*/g, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
 
-    const nomesPreferidos = [
-        "francisca", "maria", "luciana", "fernanda",
-        "helena", "camila", "female", "feminina"
-    ];
+function normalizarPapelPodcast(personagem) {
+    return /professora|professor|apresentadora/i.test(String(personagem))
+        ? "professora"
+        : "estudante";
+}
 
-    return vozesPortugues.find(function (voz) {
-        const nome = voz.name.toLowerCase();
-        return nomesPreferidos.some(function (preferido) {
-            return nome.includes(preferido);
-        });
-    }) || vozesPortugues[0] || null;
+function iconeDoPersonagem(personagem) {
+    const papel = normalizarPapelPodcast(personagem);
+    if (papel === "professora") {
+        return "👩‍🏫";
+    }
+    if (/turma/i.test(String(personagem))) {
+        return "👥";
+    }
+    return "🧑‍🎓";
 }
 
 function dividirRoteiroParaAudio(texto) {
@@ -3112,6 +3263,9 @@ async function obterEventosAgenda(
     dataInicial,
     dataFinal
 ) {
+    const emailGoogleConectado =
+        obterEmailGoogleConectado();
+
     const inicio =
         new Date(
             dataInicial + "T00:00:00"
@@ -3210,8 +3364,10 @@ async function obterEventosAgenda(
                         "Evento da agenda",
 
                     materia:
-                        calendario.summary ||
-                        "Google Agenda",
+                        limparNomeDoCalendario(
+                            calendario.summary || "",
+                            calendario.id || ""
+                        ),
 
                     titulo:
                         evento.summary ||
@@ -3229,7 +3385,16 @@ async function obterEventosAgenda(
                         new Date(inicioEvento),
 
                     link:
-                        evento.htmlLink || ""
+                        criarLinkDaAgendaEscolar(
+                            evento.htmlLink || "",
+                            emailGoogleConectado
+                        ),
+
+                    emailGoogle:
+                        emailGoogleConectado,
+
+                    calendarioId:
+                        calendario.id || ""
                 });
             }
         );
@@ -3258,6 +3423,37 @@ async function obterEventosAgenda(
     };
 }
 
+function obterEmailGoogleConectado() {
+    const conexaoSalva = lerConexaoClassroom();
+
+    return normalizarEmail(
+        usuarioAtual?.emailGoogleVerificado ||
+        conexaoSalva?.emailGoogle ||
+        ""
+    );
+}
+
+function criarLinkDaAgendaEscolar(linkOriginal, emailGoogle) {
+    if (!linkOriginal) {
+        return "";
+    }
+
+    try {
+        const endereco = new URL(linkOriginal);
+
+        if (emailGoogle) {
+            endereco.searchParams.set(
+                "authuser",
+                emailGoogle
+            );
+        }
+
+        return endereco.toString();
+    } catch (erro) {
+        return linkOriginal;
+    }
+}
+
 function limparDescricaoDaAgenda(valor) {
     if (!valor) {
         return "";
@@ -3280,9 +3476,31 @@ function limparDescricaoDaAgenda(valor) {
 
     return (documento.body.textContent || "")
         .replace(/\u00a0/g, " ")
+        /* Metadados acrescentados por cópias e sincronizações do Google. */
+        .replace(/\[\s*copiado\s+de[^\]]*\]/gi, "")
+        .replace(/#SYNC:[^\r\n]*/gi, "")
+        .replace(/^\s*(?:sync|source|calendar)[-_:=][^\r\n]*(?:\r?\n|$)/gim, "")
         .replace(/[ \t]+/g, " ")
         .replace(/\n\s*\n+/g, "\n")
         .trim();
+}
+
+function limparNomeDoCalendario(nome, identificador) {
+    const valor = String(nome || "").trim();
+    const id = String(identificador || "").trim();
+    const pareceEmailTecnico =
+        /^[^\s@]+@(?:group\.calendar\.google\.com|google\.com)$/i.test(valor) ||
+        /^[^\s@]+@(?:group\.calendar\.google\.com|google\.com)$/i.test(id);
+    const pareceContaEscolar =
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/i.test(valor);
+
+    if (!valor || pareceEmailTecnico || pareceContaEscolar) {
+        return "Agenda escolar";
+    }
+
+    return valor
+        .replace(/\s*\[copiado[^\]]*\]\s*/gi, " ")
+        .trim() || "Agenda escolar";
 }
 
 function obterDataDoItem(item) {
@@ -3755,6 +3973,9 @@ function salvarConexaoClassroom() {
         JSON.stringify({
             conectado: true,
             turmas: turmasClassroom,
+            emailGoogle: normalizarEmail(
+                usuarioAtual.emailGoogleVerificado || ""
+            ),
             atualizadoEm: new Date().toISOString()
         })
     );
@@ -3815,7 +4036,7 @@ function prepararClienteClassroom() {
                 receberTokenClassroom,
 
             error_callback:
-                function () {
+                function (erroGoogle) {
                     if (tentativaSilenciosaClassroom) {
                         statusClassroom.textContent =
                             "Sua conta foi lembrada, mas o Google " +
@@ -3825,10 +4046,14 @@ function prepararClienteClassroom() {
                             "Reconectar ao Classroom";
                     } else {
                         statusClassroom.textContent =
-                            "A autorização foi cancelada.";
+                            erroGoogle?.type === "popup_failed_to_open"
+                                ? "O navegador bloqueou a janela do Google. Libere pop-ups e tente novamente."
+                                : "O Google bloqueou ou cancelou a autorização. " +
+                                  "Durante os testes, o e-mail da criança precisa estar na lista de testadores; " +
+                                  "contas escolares também podem exigir liberação pela administração da escola.";
 
                         textoClassroom.textContent =
-                            "Conectar ao Classroom";
+                            "Tentar conectar novamente";
                     }
 
                     tentativaSilenciosaClassroom = false;
@@ -4119,11 +4344,39 @@ async function carregarTurmas() {
 const dataRelatorioResponsavel =
     document.querySelector("#data-relatorio-responsavel");
 
+const dataReferenciaRelatorioResponsavel =
+    document.querySelector("#data-referencia-relatorio-responsavel");
+
 document
     .querySelector("#atualizar-relatorio-responsavel")
     .addEventListener("click", carregarRelatorioResponsavel);
 
+let dataReferenciaRelatorioFoiEditada = false;
+
+dataReferenciaRelatorioResponsavel.addEventListener("change", function () {
+    dataReferenciaRelatorioFoiEditada = true;
+});
+
+dataRelatorioResponsavel.addEventListener("change", function () {
+    if (
+        !dataReferenciaRelatorioFoiEditada &&
+        dataRelatorioResponsavel.value
+    ) {
+        const vespera = new Date(
+            dataRelatorioResponsavel.value + "T12:00:00"
+        );
+        vespera.setDate(vespera.getDate() - 1);
+        dataReferenciaRelatorioResponsavel.value =
+            dataParaCampo(vespera);
+    }
+});
+
 function prepararRelatorioResponsavel() {
+    if (!dataReferenciaRelatorioResponsavel.value) {
+        dataReferenciaRelatorioResponsavel.value =
+            dataParaCampo(new Date());
+    }
+
     if (!dataRelatorioResponsavel.value) {
         const amanha = new Date();
         amanha.setDate(amanha.getDate() + 1);
@@ -4138,6 +4391,7 @@ async function carregarRelatorioResponsavel() {
     const area = document.querySelector("#resultado-relatorio-responsavel");
     const botao = document.querySelector("#atualizar-relatorio-responsavel");
     const dataAlvo = dataRelatorioResponsavel.value;
+    const dataReferencia = dataReferenciaRelatorioResponsavel.value;
     const dias = Number(
         document.querySelector("#horizonte-relatorio-responsavel").value
     ) || 21;
@@ -4147,14 +4401,17 @@ async function carregarRelatorioResponsavel() {
         return;
     }
 
-    if (!dataAlvo) {
-        status.textContent = "Escolha a data que deseja preparar.";
+    if (!dataAlvo || !dataReferencia) {
+        status.textContent = "Informe o dia de referência e o dia que deseja preparar.";
         return;
     }
 
-    const inicio = new Date(dataAlvo + "T12:00:00");
+    const inicio = new Date(dataReferencia + "T12:00:00");
     inicio.setDate(inicio.getDate() - dias);
     const dataInicio = dataParaCampo(inicio);
+    const dataFimConsulta = dataAlvo > dataReferencia
+        ? dataAlvo
+        : dataReferencia;
 
     botao.disabled = true;
     botao.textContent = "Atualizando...";
@@ -4163,17 +4420,19 @@ async function carregarRelatorioResponsavel() {
     arquivosPdfParaIA = [];
 
     try {
-        const agenda = await obterEventosAgenda(dataInicio, dataAlvo);
+        const agenda = await obterEventosAgenda(dataInicio, dataFimConsulta);
         const eventosEscolares = agenda.fontes.filter(eventoDaAgendaPareceEscolar);
         const contextoClassroom = await obterContextoResponsavelClassroom(
             dataInicio,
-            dataAlvo
+            dataFimConsulta
         );
+        const horarioSalvo = lerHorarioSemanalResponsavel();
 
         const conteudoAgenda = eventosEscolares.map(function (item) {
             return (
                 "REGISTRO DA AGENDA\n" +
                 "Data em que aparece: " + dataParaCampo(item.data) + "\n" +
+                "Dia da semana do registro: " + nomeDoDiaDaSemana(item.data) + "\n" +
                 "Calendário/matéria: " + item.materia + "\n" +
                 "Título: " + item.titulo + "\n" +
                 "Descrição: " + (item.descricao || "Sem descrição")
@@ -4189,12 +4448,22 @@ async function carregarRelatorioResponsavel() {
                 tipo: "relatorio_responsavel",
                 materia: "Agenda escolar do aluno",
                 dataInicio: dataInicio,
+                dataReferencia: dataReferencia,
                 dataAlvo: dataAlvo,
                 conteudo: (
+                    "=== DATAS DA CONSULTA ===\n" +
+                    "Dia em que o responsável está: " + dataReferencia +
+                    " (" + nomeDoDiaDaSemana(new Date(dataReferencia + "T12:00:00")) + ")\n" +
+                    "Dia que deseja preparar: " + dataAlvo +
+                    " (" + nomeDoDiaDaSemana(new Date(dataAlvo + "T12:00:00")) + ")\n\n" +
                     "=== AGENDA NO PERÍODO ===\n" +
                     (conteudoAgenda || "Nenhum registro escolar encontrado.") +
                     "\n\n=== CLASSROOM E HORÁRIO ===\n" +
-                    contextoClassroom
+                    contextoClassroom +
+                    "\n\n=== HORÁRIO CONFIRMADO EM CONSULTA ANTERIOR ===\n" +
+                    (horarioSalvo.length
+                        ? JSON.stringify(horarioSalvo)
+                        : "Nenhum horário anterior salvo.")
                 ).slice(0, 60000),
                 arquivos: arquivosPdfParaIA
             })
@@ -4206,7 +4475,20 @@ async function carregarRelatorioResponsavel() {
             throw new Error(dados.erro || "Não foi possível preparar o relatório.");
         }
 
-        desenharRelatorioResponsavel(dados, dataAlvo, dataInicio);
+        if (
+            dados.horarioEncontrado === true &&
+            Array.isArray(dados.horarioSemanal) &&
+            dados.horarioSemanal.length
+        ) {
+            salvarHorarioSemanalResponsavel(dados.horarioSemanal);
+        }
+
+        desenharRelatorioResponsavel(
+            dados,
+            dataAlvo,
+            dataInicio,
+            dataReferencia
+        );
         status.textContent =
             "Relatório atualizado às " +
             new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) +
@@ -4218,6 +4500,37 @@ async function carregarRelatorioResponsavel() {
         botao.disabled = false;
         botao.textContent = "↻ Atualizar relatório";
     }
+}
+
+function chaveHorarioSemanalResponsavel() {
+    const filho = document.querySelector("#filho-selecionado")?.value || "aluno-atual";
+    const conta = normalizarEmail(usuarioAtual?.email || "sem-conta");
+    return "malteriaHorarioSemanal:" + conta + ":" + filho;
+}
+
+function lerHorarioSemanalResponsavel() {
+    try {
+        const horario = JSON.parse(
+            localStorage.getItem(chaveHorarioSemanalResponsavel()) || "[]"
+        );
+        return Array.isArray(horario) ? horario : [];
+    } catch (erro) {
+        return [];
+    }
+}
+
+function salvarHorarioSemanalResponsavel(horario) {
+    localStorage.setItem(
+        chaveHorarioSemanalResponsavel(),
+        JSON.stringify(horario)
+    );
+}
+
+function nomeDoDiaDaSemana(data) {
+    return new Date(data).toLocaleDateString(
+        "pt-BR",
+        { weekday: "long" }
+    );
 }
 
 async function obterContextoResponsavelClassroom(dataInicio, dataAlvo) {
@@ -4306,21 +4619,54 @@ async function obterContextoResponsavelClassroom(dataInicio, dataAlvo) {
     return texto || "Nenhum horário ou atividade adicional foi localizado no Classroom.";
 }
 
-function desenharRelatorioResponsavel(dados, dataAlvo, dataInicio) {
+function desenharRelatorioResponsavel(
+    dados,
+    dataAlvo,
+    dataInicio,
+    dataReferencia
+) {
     const area = document.querySelector("#resultado-relatorio-responsavel");
     const entregas = Array.isArray(dados.entregas) ? dados.entregas : [];
     const avisos = Array.isArray(dados.avisos) ? dados.avisos : [];
     const horario = Array.isArray(dados.horarioSemanal) ? dados.horarioSemanal : [];
+    const materiasDoDia = Array.isArray(dados.materiasDoDia)
+        ? dados.materiasDoDia
+        : [];
 
     area.innerHTML = `
         <div class="resumo-relatorio-responsavel">
             <div>
                 <small>PREPARAÇÃO PARA</small>
                 <h3>${formatarDataCampo(dataAlvo)}</h3>
+                <span>Consultado como se hoje fosse ${formatarDataCampo(dataReferencia)}</span>
                 <span>Busca realizada desde ${formatarDataCampo(dataInicio)}</span>
             </div>
             <p>${protegerTexto(dados.resumo || "")}</p>
         </div>
+
+        <section class="cobertura-materias-relatorio">
+            <h3>Matérias previstas para esse dia</h3>
+            ${materiasDoDia.length ? `
+                <div class="grade-cobertura-materias">
+                    ${materiasDoDia.map(function (item) {
+                        const situacao = item.situacao || "A confirmar";
+                        const classe = normalizarPesquisa(situacao).replace(/\s+/g, "-");
+                        return `
+                            <article class="${protegerTexto(classe)}">
+                                <strong>${protegerTexto(item.materia || "Matéria")}</strong>
+                                <span>${protegerTexto(situacao)}</span>
+                                <small>${protegerTexto(item.detalhe || "")}</small>
+                            </article>
+                        `;
+                    }).join("")}
+                </div>
+            ` : `
+                <p class="aviso-horario-nao-encontrado">
+                    O horário desse dia não foi localizado com segurança.
+                    O relatório abaixo não deve ser considerado uma lista completa.
+                </p>
+            `}
+        </section>
 
         <div class="tabela-pesquisa-rolagem">
             <table class="tabela-pesquisa tabela-entregas-responsavel">
@@ -4479,8 +4825,17 @@ function desenharAtividadesDaData(itens, dataEscolhida) {
                         ${item.link ? `
                             <a href="${protegerTexto(item.link)}"
                                target="_blank" rel="noopener noreferrer">
-                                Abrir na Agenda
+                                Abrir na Agenda escolar
                             </a>
+                            ${item.emailGoogle ? `
+                                <small class="conta-link-agenda">
+                                    Conta: ${protegerTexto(item.emailGoogle)}
+                                </small>
+                            ` : `
+                                <small class="conta-link-agenda aviso">
+                                    O Google poderá pedir que você escolha a conta escolar.
+                                </small>
+                            `}
                         ` : ""}
                     </div>
                 `;
@@ -5352,6 +5707,23 @@ document
     });
 
 document
+    .querySelector("#abrir-pratica")
+    .addEventListener("click", function () {
+        paginaAnteriorFerramenta = paginaVisivelAtual();
+        mostrarPaginaInterna(paginaPratica);
+        preencherMateriasSimuladao();
+        atualizarRecomendacaoSimuladao();
+    });
+
+document
+    .querySelector("#fechar-pratica")
+    .addEventListener("click", function () {
+        mostrarPaginaInterna(
+            paginaAnteriorFerramenta || paginaPrincipal
+        );
+    });
+
+document
     .querySelector("#analisar-evolucao")
     .addEventListener("click", analisarNivelEvolucao);
 
@@ -5362,6 +5734,18 @@ document
 document
     .querySelector("#criar-simuladao")
     .addEventListener("click", criarSimuladaoGeral);
+
+document
+    .querySelector("#selecionar-todas-materias")
+    .addEventListener("click", alternarTodasMateriasSimuladao);
+
+document
+    .querySelector("#dificuldade-simuladao")
+    .addEventListener("change", atualizarRecomendacaoSimuladao);
+
+document
+    .querySelector("#quantidade-simuladao")
+    .addEventListener("change", atualizarRecomendacaoSimuladao);
 
 function chaveAnaliseEvolucao() {
     const conta = usuarioAtual?.email
@@ -5555,12 +5939,125 @@ function preencherMateriasSimuladao() {
 
     area.innerHTML = turmas.map(function (turma) {
         return `
-            <label>
-                <input type="checkbox" name="materia-simuladao" value="${protegerTexto(turma.id)}">
-                <span>${protegerTexto(turma.name)}</span>
-            </label>
+            <article class="materia-configuracao-simuladao">
+                <label>
+                    <input type="checkbox" name="materia-simuladao" value="${protegerTexto(turma.id)}">
+                    <span>${protegerTexto(turma.name)}</span>
+                </label>
+                <select data-nivel-materia="${protegerTexto(turma.id)}" aria-label="Nível de ${protegerTexto(turma.name)}" disabled>
+                    <option value="auto" selected>Seguir recomendação</option>
+                    <option value="reforco">Reforço</option>
+                    <option value="gradual">Gradual</option>
+                    <option value="desafio">Desafio</option>
+                </select>
+            </article>
         `;
     }).join("");
+
+    area.querySelectorAll('input[name="materia-simuladao"]').forEach(function (campo) {
+        campo.addEventListener("change", function () {
+            const seletor = area.querySelector('[data-nivel-materia="' + campo.value + '"]');
+            if (seletor) seletor.disabled = !campo.checked;
+            atualizarRecomendacaoSimuladao();
+        });
+    });
+
+    area.querySelectorAll("[data-nivel-materia]").forEach(function (seletor) {
+        seletor.addEventListener("change", atualizarRecomendacaoSimuladao);
+    });
+
+    atualizarRecomendacaoSimuladao();
+}
+
+function alternarTodasMateriasSimuladao() {
+    const campos = Array.from(
+        document.querySelectorAll('input[name="materia-simuladao"]')
+    );
+    const selecionar = campos.some(function (campo) { return !campo.checked; });
+
+    campos.forEach(function (campo) {
+        campo.checked = selecionar;
+        const seletor = document.querySelector('[data-nivel-materia="' + campo.value + '"]');
+        if (seletor) seletor.disabled = !selecionar;
+    });
+
+    document.querySelector("#selecionar-todas-materias").textContent =
+        selecionar ? "Limpar seleção" : "Selecionar todas";
+    atualizarRecomendacaoSimuladao();
+}
+
+function recomendarNivelDaMateria(nomeMateria) {
+    const nome = normalizarPesquisa(nomeMateria);
+    const simulados = obterPraticasLocais().filter(function (item) {
+        return normalizarPesquisa(item.materia || "").includes(nome) &&
+            Number(item.total) > 0;
+    });
+    const total = simulados.reduce(function (soma, item) {
+        return soma + Number(item.total || 0);
+    }, 0);
+    const acertos = simulados.reduce(function (soma, item) {
+        return soma + Number(item.acertos || 0);
+    }, 0);
+
+    if (total < 10) return "gradual";
+    const taxa = acertos / total;
+    if (taxa < 0.6) return "reforco";
+    if (taxa >= 0.85 && total >= 15) return "desafio";
+    return "gradual";
+}
+
+function configuracaoDoSimuladao(materias) {
+    const estrategia = document.querySelector("#dificuldade-simuladao").value;
+    const mapa = {};
+
+    materias.forEach(function (materia) {
+        const seletor = document.querySelector('[data-nivel-materia="' + materia.id + '"]');
+        const individual = seletor ? seletor.value : "auto";
+        mapa[materia.name] = individual !== "auto"
+            ? individual
+            : estrategia === "inteligente"
+                ? recomendarNivelDaMateria(materia.name)
+                : estrategia;
+    });
+
+    const escolha = document.querySelector("#quantidade-simuladao").value;
+    const quantidade = escolha === "auto"
+        ? Math.min(50, Math.max(5, materias.length * 5))
+        : Math.min(50, Math.max(5, Number(escolha) || 10));
+
+    return { estrategia: estrategia, mapa: mapa, quantidade: quantidade };
+}
+
+function rotuloNivelSimuladao(nivel) {
+    return { reforco: "reforço", gradual: "gradual", desafio: "desafio" }[nivel] || "gradual";
+}
+
+function atualizarRecomendacaoSimuladao() {
+    const area = document.querySelector("#recomendacao-simuladao");
+    if (!area) return;
+
+    const ids = Array.from(
+        document.querySelectorAll('input[name="materia-simuladao"]:checked')
+    ).map(function (campo) { return campo.value; });
+    const materias = (Array.isArray(turmasClassroom) ? turmasClassroom : [])
+        .filter(function (turma) { return ids.includes(String(turma.id)); });
+
+    if (materias.length === 0) {
+        area.innerHTML = "<strong>Inteligência Maltéria</strong><p>Selecione as matérias. A recomendação aparecerá aqui.</p>";
+        return;
+    }
+
+    const configuracao = configuracaoDoSimuladao(materias);
+    const niveis = materias.map(function (materia) {
+        return "<li><strong>" + protegerTexto(materia.name) + ":</strong> " +
+            rotuloNivelSimuladao(configuracao.mapa[materia.name]) + "</li>";
+    }).join("");
+
+    area.innerHTML = `
+        <strong>✨ Recomendação da Maltéria</strong>
+        <p>Serão criadas aproximadamente <b>${configuracao.quantidade} questões</b>. Sem histórico suficiente, o nível começa gradual; desafio só é recomendado depois de acertos consistentes.</p>
+        <ul>${niveis}</ul>
+    `;
 }
 
 async function criarSimuladaoGeral() {
@@ -5576,8 +6073,8 @@ async function criarSimuladaoGeral() {
         return;
     }
 
-    if (ids.length < 2 || ids.length > 4) {
-        status.textContent = "Escolha de duas a quatro matérias.";
+    if (ids.length < 1) {
+        status.textContent = "Escolha pelo menos uma matéria.";
         return;
     }
 
@@ -5585,7 +6082,8 @@ async function criarSimuladaoGeral() {
         return ids.includes(String(turma.id));
     });
     const dias = Number(document.querySelector("#periodo-simuladao").value) || 14;
-    const dificuldade = document.querySelector("#dificuldade-simuladao").value;
+    const configuracao = configuracaoDoSimuladao(materias);
+    const dificuldade = configuracao.estrategia;
     const fim = new Date();
     const inicio = new Date();
     inicio.setDate(inicio.getDate() - (dias - 1));
@@ -5601,7 +6099,7 @@ async function criarSimuladaoGeral() {
             dataParaCampo(fim)
         );
 
-        status.textContent = "Criando uma sequência gradual de questões...";
+        status.textContent = "Criando " + configuracao.quantidade + " questões com níveis ajustados por matéria...";
 
         const resposta = await fetch(ENDERECO_IA, {
             method: "POST",
@@ -5611,7 +6109,9 @@ async function criarSimuladaoGeral() {
                 materia: materias.map(function (item) { return item.name; }).join(", "),
                 titulo: "Simuladão dos últimos " + dias + " dias",
                 conteudo: conteudo,
-                dificuldade: dificuldade
+                dificuldade: dificuldade,
+                quantidade: configuracao.quantidade,
+                mapaDificuldade: configuracao.mapa
             })
         });
         const dados = await resposta.json();
