@@ -25,6 +25,8 @@ let uploadsDaSessao = [];
 const animacaoMalteria =
     document.querySelector("#animacao-malteria");
 const telaBoasVindas = document.querySelector("#boas-vindas");
+const transicaoProximo =
+    document.querySelector("#transicao-proximo");
 const telaEscolha = document.querySelector("#escolha");
 const telaLogin = document.querySelector("#login");
 const telaCadastro = document.querySelector("#cadastro");
@@ -183,7 +185,25 @@ function esconderTelasPrincipais() {
 document
     .querySelector("#avancar-apresentacao")
     .addEventListener("click", function () {
-        mostrarTela(telaEscolha);
+        esconderTelasPrincipais();
+        transicaoProximo.classList.remove(
+            "escondido",
+            "transicao-saindo"
+        );
+
+        window.setTimeout(function () {
+            transicaoProximo.classList.add(
+                "transicao-saindo"
+            );
+            mostrarTela(telaEscolha);
+
+            window.setTimeout(function () {
+                transicaoProximo.classList.add("escondido");
+                transicaoProximo.classList.remove(
+                    "transicao-saindo"
+                );
+            }, reduzirMovimento ? 30 : 480);
+        }, reduzirMovimento ? 250 : 2100);
     });
 
 function mostrarTela(tela) {
