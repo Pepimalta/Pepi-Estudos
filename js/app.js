@@ -22,6 +22,7 @@ const EMAIL_DONO_MALTERIA =
 let estudoGerado = null;
 let periodoEstudoAtual = null;
 let uploadsDaSessao = [];
+let arquivosPdfParaIA = [];
 const animacaoMalteria =
     document.querySelector("#animacao-malteria");
 const telaBoasVindas = document.querySelector("#boas-vindas");
@@ -43,6 +44,9 @@ const paginaPesquisa =
 
 const paginaAjuda =
     document.querySelector("#pagina-ajuda");
+
+const paginaNivelMelhora =
+    document.querySelector("#pagina-nivel-melhora");
 
 const paginaAdministracao =
     document.querySelector("#pagina-administracao");
@@ -321,6 +325,7 @@ const paginasInternas = [
     paginaMateria,
     paginaPesquisa,
     paginaAjuda,
+    paginaNivelMelhora,
     paginaAdministracao
 ];
 
@@ -700,6 +705,10 @@ function prepararPainelAluno() {
     document.querySelector(
         "#area-filhos"
     ).classList.add("escondido");
+
+    document.querySelector(
+        "#painel-responsavel-resumo"
+    ).classList.add("escondido");
 }
 
 function prepararPainelResponsavel() {
@@ -712,7 +721,12 @@ function prepararPainelResponsavel() {
         "#area-filhos"
     ).classList.remove("escondido");
 
+    document.querySelector(
+        "#painel-responsavel-resumo"
+    ).classList.remove("escondido");
+
     atualizarListaDeFilhos();
+    prepararRelatorioResponsavel();
 }
 
 /* VÁRIOS FILHOS */
@@ -1247,6 +1261,20 @@ async function mostrarExplicacoes() {
                 Matéria de ontem
             </button>
 
+            <button
+                id="estudar-semana"
+                class="botao-secundario pequeno"
+            >
+                Últimos 7 dias
+            </button>
+
+            <button
+                id="estudar-duas-semanas"
+                class="botao-secundario pequeno"
+            >
+                Últimas 2 semanas
+            </button>
+
             <div class="escolher-data-estudo">
                 <label for="data-estudo">
                     Escolher outra data
@@ -1292,6 +1320,28 @@ async function mostrarExplicacoes() {
         }
     );
 
+    document.querySelector("#estudar-semana")
+        .addEventListener("click", function () {
+            const inicio = new Date(hoje);
+            inicio.setDate(inicio.getDate() - 6);
+            criarEstudoDoPeriodo(
+                dataParaCampo(inicio),
+                dataParaCampo(hoje),
+                "últimos 7 dias"
+            );
+        });
+
+    document.querySelector("#estudar-duas-semanas")
+        .addEventListener("click", function () {
+            const inicio = new Date(hoje);
+            inicio.setDate(inicio.getDate() - 13);
+            criarEstudoDoPeriodo(
+                dataParaCampo(inicio),
+                dataParaCampo(hoje),
+                "últimas 2 semanas"
+            );
+        });
+
     document.querySelector(
         "#estudar-data"
     ).addEventListener(
@@ -1318,9 +1368,17 @@ async function criarEstudoDaData(
     data,
     nomePeriodo
 ) {
+    return criarEstudoDoPeriodo(data, data, nomePeriodo);
+}
+
+async function criarEstudoDoPeriodo(
+    dataInicial,
+    dataFinal,
+    nomePeriodo
+) {
     periodoEstudoAtual = {
-        inicio: data,
-        fim: data,
+        inicio: dataInicial,
+        fim: dataFinal,
         nome: nomePeriodo
     };
 
@@ -1338,6 +1396,13 @@ async function criarEstudoDaData(
     try {
         estudoGerado =
             await gerarEstudoDaMateria();
+
+        registrarPraticaLocal({
+            tipo: "estudo_preparado",
+            materia: materiaAtual?.name || "Matéria",
+            periodo: nomePeriodo,
+            minutos: 10
+        });
 
         desenharOpcoesDoEstudo();
     } catch (erro) {
@@ -1374,9 +1439,10 @@ async function criarEstudoDaData(
             "#tentar-novamente-estudo"
         ).addEventListener(
             "click",
-            function () {
-                criarEstudoDaData(
-                    data,
+                function () {
+                criarEstudoDoPeriodo(
+                    dataInicial,
+                    dataFinal,
                     nomePeriodo
                 );
             }
@@ -1417,6 +1483,10 @@ function desenharOpcoesDoEstudo() {
 
             <button data-estudo="audio">
                 🎧 Ouvir
+            </button>
+
+            <button data-estudo="lista">
+                🖨️ Lista para fazer à mão
             </button>
         </div>
 
@@ -1470,6 +1540,11 @@ function abrirFormatoDeEstudo(formato) {
                 </div>
             </div>
         `;
+    }
+
+    if (formato === "lista") {
+        desenharListaImpressa(area);
+        return;
     }
 
     if (formato === "slides") {
@@ -1653,6 +1728,77 @@ function abrirFormatoDeEstudo(formato) {
     }
 }
 
+function desenharListaImpressa(area) {
+    const lista = estudoGerado.listaImpressa || {};
+    const questoes = Array.isArray(lista.questoes) ? lista.questoes : [];
+    const gabarito = Array.isArray(lista.gabarito) ? lista.gabarito : [];
+
+    if (questoes.length === 0) {
+        area.innerHTML = `
+            <div class="arquivo">
+                <h3>Lista ainda não disponível</h3>
+                <p>Gere novamente o estudo para criar a folha de exercícios à mão.</p>
+            </div>
+        `;
+        return;
+    }
+
+    const htmlQuestoes = questoes.map(function (questao, indice) {
+        const linhas = Math.min(10, Math.max(2, Number(questao.espacoLinhas) || 4));
+        return `
+            <article class="questao-folha">
+                <p><strong>${Number(questao.numero) || indice + 1}.</strong> ${protegerTexto(questao.enunciado)}</p>
+                <div class="linhas-resposta" style="--quantidade-linhas: ${linhas}"></div>
+            </article>
+        `;
+    }).join("");
+
+    const htmlGabarito = gabarito.map(function (item, indice) {
+        return `
+            <li>
+                <strong>${Number(item.numero) || indice + 1}.</strong>
+                ${protegerTexto(item.resposta)}
+                <small>${protegerTexto(item.explicacao)}</small>
+            </li>
+        `;
+    }).join("");
+
+    area.innerHTML = `
+        <div class="acoes-lista-impressa">
+            <p>Resolva no papel e confira o gabarito somente depois.</p>
+            <button id="imprimir-lista" class="botao-principal" type="button">
+                🖨️ Imprimir ou salvar em PDF
+            </button>
+        </div>
+
+        <section class="folha-impressa">
+            <header>
+                <span class="marca-folha">MALTÉRIA</span>
+                <h2>${protegerTexto(lista.titulo || ("Lista de " + materiaAtual.name))}</h2>
+                <p>${protegerTexto(lista.orientacoes || "Resolva com atenção e mostre seu raciocínio.")}</p>
+                <div class="identificacao-folha">
+                    <span>Nome: ____________________________________</span>
+                    <span>Data: ____/____/________</span>
+                </div>
+            </header>
+            <main>${htmlQuestoes}</main>
+        </section>
+
+        <details class="gabarito-lista">
+            <summary>Ver gabarito depois de terminar</summary>
+            <ol>${htmlGabarito}</ol>
+        </details>
+    `;
+
+    document.querySelector("#imprimir-lista").addEventListener("click", function () {
+        document.body.classList.add("imprimindo-lista");
+        window.print();
+        setTimeout(function () {
+            document.body.classList.remove("imprimindo-lista");
+        }, 500);
+    });
+}
+
 function iniciarAudio() {
     speechSynthesis.cancel();
 
@@ -1824,6 +1970,7 @@ function mostrarUpload() {
 
             for (const arquivo of arquivos) {
                 let texto = "";
+                let arquivoIA = null;
 
                 if (
                     arquivo.type.startsWith("text/") ||
@@ -1833,6 +1980,22 @@ function mostrarUpload() {
                         await arquivo.text();
                 }
 
+                if (arquivo.type === "application/pdf") {
+                    const preparado = await prepararArquivoEvolucao(
+                        arquivo,
+                        "material_pdf"
+                    );
+
+                    arquivoIA = {
+                        nome: preparado.nome,
+                        mimeType: preparado.mimeType,
+                        data: preparado.data,
+                        tamanho: preparado.tamanho
+                    };
+
+                    texto = "PDF integral preparado para leitura pela IA.";
+                }
+
                 uploadsDaSessao.push({
                     materiaId:
                         String(materiaAtual.id),
@@ -1840,7 +2003,8 @@ function mostrarUpload() {
                     data: data,
                     tipo: tipo,
                     nome: arquivo.name,
-                    texto: texto
+                    texto: texto,
+                    arquivoIA: arquivoIA
                 });
             }
 
@@ -2098,6 +2262,15 @@ async function mostrarSimulado() {
                 ) {
                     desenharQuestao();
                 } else {
+                    registrarPraticaLocal({
+                        tipo: "simulado",
+                        materia: materiaAtual?.name || "Matéria",
+                        periodo: periodoEstudoAtual?.nome || "período atual",
+                        acertos: pontos,
+                        total: estudoGerado.simulado.length,
+                        minutos: Math.max(10, estudoGerado.simulado.length * 2)
+                    });
+
                     areaMateria.innerHTML = `
                         <h2>Resultado</h2>
 
@@ -2105,6 +2278,11 @@ async function mostrarSimulado() {
                             Você acertou
                             ${pontos} de
                             ${estudoGerado.simulado.length}.
+                        </p>
+
+                        <p>
+                            Este resultado ajuda a escolher a próxima prática.
+                            Ele não é uma nota nem uma cobrança.
                         </p>
                     `;
                 }
@@ -2160,6 +2338,8 @@ document
     );
 
 async function pesquisarMateriais() {
+    arquivosPdfParaIA = [];
+
     const materiaEscolhida =
         document.querySelector(
             "#materia-pesquisa"
@@ -2327,6 +2507,12 @@ async function pesquisarMateriais() {
         });
 
         if (uploadsPesquisa.length > 0) {
+            uploadsPesquisa.forEach(function (upload) {
+                if (upload.arquivoIA) {
+                    adicionarPdfParaIA(upload.arquivoIA);
+                }
+            });
+
             conteudo += "\n\nUPLOADS DA MATÉRIA:\n" +
                 uploadsPesquisa.map(function (upload) {
                     return (
@@ -2395,7 +2581,8 @@ async function pesquisarMateriais() {
                     dataInicial: semData ? "" : dataInicial,
                     dataFinal: semData ? "" : dataFinal,
                     conteudo:
-                        conteudo.slice(0, 60000)
+                        conteudo.slice(0, 60000),
+                    arquivos: arquivosPdfParaIA
                 })
             }
         );
@@ -3358,7 +3545,9 @@ function desenharResultadoPesquisa(
         <article class="resposta-ia">
             ${formato === "slides" && Array.isArray(dados.slides)
                 ? renderizarSlidesDaPesquisa(dados.slides)
-                : formatarTexto(dados.resposta)}
+                : formato === "tabela" && dados.tabela
+                    ? renderizarTabelaDaPesquisa(dados.tabela)
+                    : formatarTexto(dados.resposta)}
         </article>
 
         <details class="detalhes-finais">
@@ -3423,6 +3612,51 @@ function renderizarSlidesDaPesquisa(slides) {
                 `;
             }).join("")}
         </div>
+    `;
+}
+
+function renderizarTabelaDaPesquisa(tabela) {
+    const colunas = Array.isArray(tabela.colunas)
+        ? tabela.colunas
+        : [];
+    const linhas = Array.isArray(tabela.linhas)
+        ? tabela.linhas
+        : [];
+
+    if (colunas.length === 0) {
+        return formatarTexto(tabela.titulo || "Não foi possível montar a tabela.");
+    }
+
+    return `
+        <section class="tabela-pesquisa-container">
+            <h3>${protegerTexto(tabela.titulo || "Tabela da pesquisa")}</h3>
+            <div class="tabela-pesquisa-rolagem">
+                <table class="tabela-pesquisa">
+                    <thead>
+                        <tr>
+                            ${colunas.map(function (coluna) {
+                                return `<th>${protegerTexto(coluna)}</th>`;
+                            }).join("")}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${linhas.map(function (linha) {
+                            const celulas = Array.isArray(linha.celulas)
+                                ? linha.celulas
+                                : [];
+
+                            return `
+                                <tr>
+                                    ${colunas.map(function (_, indice) {
+                                        return `<td>${protegerTexto(celulas[indice] || "—")}</td>`;
+                                    }).join("")}
+                                </tr>
+                            `;
+                        }).join("")}
+                    </tbody>
+                </table>
+            </div>
+        </section>
     `;
 }
 
@@ -3880,6 +4114,257 @@ async function carregarTurmas() {
     }
 }
 
+/* RELATÓRIO DO RESPONSÁVEL */
+
+const dataRelatorioResponsavel =
+    document.querySelector("#data-relatorio-responsavel");
+
+document
+    .querySelector("#atualizar-relatorio-responsavel")
+    .addEventListener("click", carregarRelatorioResponsavel);
+
+function prepararRelatorioResponsavel() {
+    if (!dataRelatorioResponsavel.value) {
+        const amanha = new Date();
+        amanha.setDate(amanha.getDate() + 1);
+        dataRelatorioResponsavel.value = dataParaCampo(amanha);
+    }
+}
+
+async function carregarRelatorioResponsavel() {
+    prepararRelatorioResponsavel();
+
+    const status = document.querySelector("#status-relatorio-responsavel");
+    const area = document.querySelector("#resultado-relatorio-responsavel");
+    const botao = document.querySelector("#atualizar-relatorio-responsavel");
+    const dataAlvo = dataRelatorioResponsavel.value;
+    const dias = Number(
+        document.querySelector("#horizonte-relatorio-responsavel").value
+    ) || 21;
+
+    if (!tokenClassroom) {
+        status.textContent = "Conecte a conta Google do aluno para consultar a Agenda e o Classroom.";
+        return;
+    }
+
+    if (!dataAlvo) {
+        status.textContent = "Escolha a data que deseja preparar.";
+        return;
+    }
+
+    const inicio = new Date(dataAlvo + "T12:00:00");
+    inicio.setDate(inicio.getDate() - dias);
+    const dataInicio = dataParaCampo(inicio);
+
+    botao.disabled = true;
+    botao.textContent = "Atualizando...";
+    status.textContent = "Relendo avisos antigos da Agenda e procurando o horário de aulas...";
+    area.classList.add("escondido");
+    arquivosPdfParaIA = [];
+
+    try {
+        const agenda = await obterEventosAgenda(dataInicio, dataAlvo);
+        const eventosEscolares = agenda.fontes.filter(eventoDaAgendaPareceEscolar);
+        const contextoClassroom = await obterContextoResponsavelClassroom(
+            dataInicio,
+            dataAlvo
+        );
+
+        const conteudoAgenda = eventosEscolares.map(function (item) {
+            return (
+                "REGISTRO DA AGENDA\n" +
+                "Data em que aparece: " + dataParaCampo(item.data) + "\n" +
+                "Calendário/matéria: " + item.materia + "\n" +
+                "Título: " + item.titulo + "\n" +
+                "Descrição: " + (item.descricao || "Sem descrição")
+            );
+        }).join("\n\n");
+
+        status.textContent = "Interpretando as datas reais de entrega...";
+
+        const resposta = await fetch(ENDERECO_IA, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                tipo: "relatorio_responsavel",
+                materia: "Agenda escolar do aluno",
+                dataInicio: dataInicio,
+                dataAlvo: dataAlvo,
+                conteudo: (
+                    "=== AGENDA NO PERÍODO ===\n" +
+                    (conteudoAgenda || "Nenhum registro escolar encontrado.") +
+                    "\n\n=== CLASSROOM E HORÁRIO ===\n" +
+                    contextoClassroom
+                ).slice(0, 60000),
+                arquivos: arquivosPdfParaIA
+            })
+        });
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+            throw new Error(dados.erro || "Não foi possível preparar o relatório.");
+        }
+
+        desenharRelatorioResponsavel(dados, dataAlvo, dataInicio);
+        status.textContent =
+            "Relatório atualizado às " +
+            new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) +
+            ".";
+    } catch (erro) {
+        console.error(erro);
+        status.textContent = traduzirErroDaInteligencia(erro.message);
+    } finally {
+        botao.disabled = false;
+        botao.textContent = "↻ Atualizar relatório";
+    }
+}
+
+async function obterContextoResponsavelClassroom(dataInicio, dataAlvo) {
+    let texto = "";
+    const anexosHorario = [];
+
+    for (const turma of turmasClassroom.slice(0, 20)) {
+        try {
+            const respostas = await Promise.all([
+                chamarClassroom(
+                    "courses/" + turma.id + "/courseWorkMaterials?pageSize=100"
+                ),
+                chamarClassroom(
+                    "courses/" + turma.id + "/courseWork?pageSize=100"
+                )
+            ]);
+
+            const materiais = respostas[0].courseWorkMaterial || [];
+            const atividades = respostas[1].courseWork || [];
+
+            materiais.forEach(function (material) {
+                const descricao =
+                    (material.title || "") + " " + (material.description || "");
+                const normalizado = normalizarPesquisa(descricao);
+                const pareceHorario = [
+                    "horario", "grade de aulas", "quadro de horarios",
+                    "cronograma semanal", "tabela de aulas"
+                ].some(function (termo) {
+                    return normalizado.includes(termo);
+                });
+
+                if (pareceHorario) {
+                    texto +=
+                        "\nPOSSÍVEL HORÁRIO DA TURMA " + turma.name +
+                        "\nTítulo: " + (material.title || "") +
+                        "\nDescrição: " + (material.description || "") + "\n";
+                    recolherAnexos(material.materials, anexosHorario);
+                }
+            });
+
+            atividades.forEach(function (atividade) {
+                const dataCriacao = dataParaCampo(
+                    new Date(atividade.creationTime || atividade.updateTime || 0)
+                );
+                const dataEntrega = atividade.dueDate
+                    ? dataParaCampo(new Date(
+                        atividade.dueDate.year,
+                        atividade.dueDate.month - 1,
+                        atividade.dueDate.day
+                    ))
+                    : "não informada";
+
+                if (
+                    dataEntrega === dataAlvo ||
+                    (dataCriacao >= dataInicio && dataCriacao <= dataAlvo)
+                ) {
+                    texto +=
+                        "\nATIVIDADE DO CLASSROOM\n" +
+                        "Matéria: " + turma.name + "\n" +
+                        "Data do registro: " + dataCriacao + "\n" +
+                        "Data oficial de entrega: " + dataEntrega + "\n" +
+                        "Título: " + (atividade.title || "") + "\n" +
+                        "Descrição: " + (atividade.description || "") + "\n";
+                }
+            });
+        } catch (erro) {
+            console.warn("Não foi possível consultar a turma:", turma.name, erro);
+        }
+    }
+
+    const anexosUnicos = Array.from(
+        new Map(anexosHorario.map(function (anexo) {
+            return [anexo.id, anexo];
+        })).values()
+    );
+
+    for (const anexo of anexosUnicos.slice(0, 3)) {
+        try {
+            const conteudo = await lerArquivoDoDrive(anexo.id);
+            texto += "\nARQUIVO DE HORÁRIO: " + anexo.nome + "\n" + conteudo + "\n";
+        } catch (erro) {
+            console.warn("Horário não lido:", anexo.nome, erro);
+        }
+    }
+
+    return texto || "Nenhum horário ou atividade adicional foi localizado no Classroom.";
+}
+
+function desenharRelatorioResponsavel(dados, dataAlvo, dataInicio) {
+    const area = document.querySelector("#resultado-relatorio-responsavel");
+    const entregas = Array.isArray(dados.entregas) ? dados.entregas : [];
+    const avisos = Array.isArray(dados.avisos) ? dados.avisos : [];
+    const horario = Array.isArray(dados.horarioSemanal) ? dados.horarioSemanal : [];
+
+    area.innerHTML = `
+        <div class="resumo-relatorio-responsavel">
+            <div>
+                <small>PREPARAÇÃO PARA</small>
+                <h3>${formatarDataCampo(dataAlvo)}</h3>
+                <span>Busca realizada desde ${formatarDataCampo(dataInicio)}</span>
+            </div>
+            <p>${protegerTexto(dados.resumo || "")}</p>
+        </div>
+
+        <div class="tabela-pesquisa-rolagem">
+            <table class="tabela-pesquisa tabela-entregas-responsavel">
+                <thead><tr><th>Matéria</th><th>Tipo</th><th>O que fazer</th><th>Quando foi avisado</th><th>Prioridade</th></tr></thead>
+                <tbody>
+                    ${entregas.length ? entregas.map(function (item) {
+                        return `
+                            <tr>
+                                <td>${protegerTexto(item.materia || "A confirmar")}</td>
+                                <td><span class="etiqueta-tipo-entrega">${protegerTexto(item.tipo || "Tarefa")}</span></td>
+                                <td><strong>${protegerTexto(item.titulo || "")}</strong><small>${protegerTexto(item.justificativa || "")}</small></td>
+                                <td>${protegerTexto(item.dataRegistro || "Não informada")}</td>
+                                <td>${protegerTexto(item.prioridade || "Normal")}</td>
+                            </tr>
+                        `;
+                    }).join("") : '<tr><td colspan="5">Nenhuma entrega confirmada para essa data.</td></tr>'}
+                </tbody>
+            </table>
+        </div>
+
+        ${avisos.length ? `
+            <section class="avisos-relatorio-responsavel">
+                <h3>⚠️ Pontos que precisam de confirmação</h3>
+                <ul>${avisos.map(function (aviso) {
+                    return `<li>${protegerTexto(aviso)}</li>`;
+                }).join("")}</ul>
+            </section>
+        ` : ""}
+
+        ${horario.length ? `
+            <details class="detalhes-finais horario-semanal-responsavel">
+                <summary>Ver horário semanal encontrado</summary>
+                <div class="grade-horario-responsavel">
+                    ${horario.map(function (dia) {
+                        return `<div><strong>${protegerTexto(dia.dia)}</strong><span>${protegerTexto((dia.aulas || []).join(" · "))}</span></div>`;
+                    }).join("")}
+                </div>
+            </details>
+        ` : ""}
+    `;
+
+    area.classList.remove("escondido");
+}
+
 /* AVISOS POR DATA */
 
 const campoDataAtividades =
@@ -4040,6 +4525,8 @@ function eventoDaAgendaPareceEscolar(evento) {
 }
 
 async function gerarEstudoDaMateria() {
+    arquivosPdfParaIA = [];
+
     const conteudo =
         await obterConteudoDaMateria(
             periodoEstudoAtual
@@ -4073,7 +4560,8 @@ async function gerarEstudoDaMateria() {
                         "todo o período"
                     ),
 
-                conteudo: conteudo
+                conteudo: conteudo,
+                arquivos: arquivosPdfParaIA
             })
         }
     );
@@ -4099,8 +4587,8 @@ async function obterConteudoDaMateria(
 
     if (periodo) {
         texto +=
-            "Data escolhida: " +
-            periodo.inicio +
+            "Período escolhido: " +
+            periodo.inicio + " até " + (periodo.fim || periodo.inicio) +
             "\n";
     }
 
@@ -4147,7 +4635,7 @@ async function obterConteudoDaMateria(
         try {
             const agenda = await obterEventosAgenda(
                 periodo.inicio,
-                periodo.inicio
+                periodo.fim || periodo.inicio
             );
 
             eventosAgenda = agenda.fontes.filter(
@@ -4287,7 +4775,11 @@ async function obterConteudoDaMateria(
                     String(materiaAtual.id) &&
                 (
                     !periodo ||
-                    upload.data === periodo.inicio
+                    !upload.data ||
+                    (
+                        upload.data >= periodo.inicio &&
+                        upload.data <= (periodo.fim || periodo.inicio)
+                    )
                 )
             );
         }
@@ -4305,6 +4797,10 @@ async function obterConteudoDaMateria(
     texto += "\n=== 3. UPLOADS DO ALUNO ===\n";
 
     uploads.forEach(function (upload) {
+        if (upload.arquivoIA) {
+            adicionarPdfParaIA(upload.arquivoIA);
+        }
+
         texto +=
             "\nUPLOAD: " +
             upload.nome +
@@ -4521,7 +5017,9 @@ function itemEstaNoPeriodoDeEstudo(
     });
 
     return datas.some(function (data) {
-        return dataParaCampo(data) === periodo.inicio;
+        const valor = dataParaCampo(data);
+        return valor >= periodo.inicio &&
+            valor <= (periodo.fim || periodo.inicio);
     });
 }
 
@@ -4597,6 +5095,43 @@ async function lerArquivoDoDrive(id) {
             "https://www.googleapis.com/drive/v3/files/" +
             encodeURIComponent(id) +
             "?alt=media";
+    } else if (tipo === "application/pdf") {
+        const respostaPdf = await fetch(
+            "https://www.googleapis.com/drive/v3/files/" +
+            encodeURIComponent(id) +
+            "?alt=media",
+            {
+                headers: {
+                    Authorization: "Bearer " + tokenClassroom
+                }
+            }
+        );
+
+        if (!respostaPdf.ok) {
+            throw new Error(await respostaPdf.text());
+        }
+
+        const blob = await respostaPdf.blob();
+
+        if (blob.size > 2800000) {
+            return (
+                "PDF encontrado: " + metadados.name +
+                ". O arquivo é maior que o limite de leitura integral desta versão."
+            );
+        }
+
+        const dataUrl = await lerBlobComoDataUrl(blob);
+        const foiAdicionado = adicionarPdfParaIA({
+            id: id,
+            nome: metadados.name,
+            mimeType: "application/pdf",
+            data: dataUrl.split(",")[1],
+            tamanho: blob.size
+        });
+
+        return foiAdicionado
+            ? "PDF integral anexado à solicitação da IA: " + metadados.name
+            : "PDF encontrado, mas o limite conjunto de documentos foi atingido: " + metadados.name;
     } else {
         return (
             "Arquivo anexado: " +
@@ -4624,6 +5159,47 @@ async function lerArquivoDoDrive(id) {
     }
 
     return await arquivoResposta.text();
+}
+
+function adicionarPdfParaIA(arquivo) {
+    if (!arquivo?.data || arquivo.mimeType !== "application/pdf") {
+        return false;
+    }
+
+    const jaExiste = arquivosPdfParaIA.some(function (item) {
+        return (
+            arquivo.id && item.id === arquivo.id
+        ) || (
+            !arquivo.id &&
+            item.nome === arquivo.nome &&
+            item.data.length === arquivo.data.length
+        );
+    });
+
+    if (jaExiste) {
+        return true;
+    }
+
+    const tamanhoAtual = arquivosPdfParaIA.reduce(function (total, item) {
+        return total + (Number(item.tamanho) || 0);
+    }, 0);
+
+    if (
+        arquivosPdfParaIA.length >= 5 ||
+        tamanhoAtual + (Number(arquivo.tamanho) || 0) > 3000000
+    ) {
+        return false;
+    }
+
+    arquivosPdfParaIA.push({
+        id: arquivo.id || "",
+        nome: arquivo.nome || "Material.pdf",
+        mimeType: "application/pdf",
+        data: arquivo.data,
+        tamanho: Number(arquivo.tamanho) || 0
+    });
+
+    return true;
 }
 
 function formatarTexto(texto) {
@@ -4754,6 +5330,691 @@ function desenharUsuariosAdministracao() {
         );
         listaUsuariosAdministracao.appendChild(cartao);
     });
+}
+
+/* NÍVEL DE MELHORA */
+
+document
+    .querySelector("#abrir-nivel-melhora")
+    .addEventListener("click", function () {
+        paginaAnteriorFerramenta = paginaVisivelAtual();
+        mostrarPaginaInterna(paginaNivelMelhora);
+        prepararPainelMetaEvolucao();
+        restaurarAnaliseEvolucao();
+    });
+
+document
+    .querySelector("#fechar-nivel-melhora")
+    .addEventListener("click", function () {
+        mostrarPaginaInterna(
+            paginaAnteriorFerramenta || paginaPrincipal
+        );
+    });
+
+document
+    .querySelector("#analisar-evolucao")
+    .addEventListener("click", analisarNivelEvolucao);
+
+document
+    .querySelector("#salvar-meta-bimestral")
+    .addEventListener("click", salvarMetaBimestral);
+
+document
+    .querySelector("#criar-simuladao")
+    .addEventListener("click", criarSimuladaoGeral);
+
+function chaveAnaliseEvolucao() {
+    const conta = usuarioAtual?.email
+        ? normalizarEmail(usuarioAtual.email)
+        : "visitante";
+
+    return "malteriaAnaliseEvolucao:" + conta;
+}
+
+function chaveDadosEvolucao(sufixo) {
+    const conta = usuarioAtual?.email
+        ? normalizarEmail(usuarioAtual.email)
+        : "visitante";
+
+    return "malteria:" + sufixo + ":" + conta;
+}
+
+function prepararPainelMetaEvolucao() {
+    restaurarMetaBimestral();
+    desenharEstatisticasPratica();
+    preencherMateriasSimuladao();
+}
+
+function salvarMetaBimestral() {
+    const mediaAtual = Number(
+        document.querySelector("#media-atual-meta").value
+    );
+    const mediaDesejada = Number(
+        document.querySelector("#media-desejada-meta").value
+    );
+    const escala = Number(
+        document.querySelector("#escala-meta").value
+    );
+    const resumo = document.querySelector("#resumo-meta-bimestral");
+
+    if (
+        !Number.isFinite(mediaAtual) ||
+        !Number.isFinite(mediaDesejada) ||
+        !Number.isFinite(escala) ||
+        escala <= 0 ||
+        mediaAtual < 0 ||
+        mediaDesejada < 0 ||
+        mediaAtual > escala ||
+        mediaDesejada > escala
+    ) {
+        resumo.textContent =
+            "Informe médias válidas e o valor máximo usado pela escola.";
+        return;
+    }
+
+    const meta = {
+        bimestre: document.querySelector("#bimestre-meta").value,
+        mediaAtual: mediaAtual,
+        mediaDesejada: mediaDesejada,
+        escala: escala,
+        regras: document.querySelector("#regras-nota-meta").value.trim(),
+        atualizadaEm: new Date().toISOString()
+    };
+
+    localStorage.setItem(
+        chaveDadosEvolucao("metaBimestral"),
+        JSON.stringify(meta)
+    );
+
+    desenharResumoMeta(meta);
+}
+
+function restaurarMetaBimestral() {
+    let meta = null;
+
+    try {
+        meta = JSON.parse(
+            localStorage.getItem(
+                chaveDadosEvolucao("metaBimestral")
+            ) || "null"
+        );
+    } catch (erro) {
+        meta = null;
+    }
+
+    if (!meta) {
+        document.querySelector("#resumo-meta-bimestral").innerHTML = `
+            <strong>Comece pela meta, não pela cobrança.</strong>
+            <span>Quando o boletim for enviado, a Maltéria poderá revisar esta meta conforme a escala real da escola.</span>
+        `;
+        return;
+    }
+
+    document.querySelector("#bimestre-meta").value = meta.bimestre || "1";
+    document.querySelector("#media-atual-meta").value = meta.mediaAtual;
+    document.querySelector("#media-desejada-meta").value = meta.mediaDesejada;
+    document.querySelector("#escala-meta").value = meta.escala;
+    document.querySelector("#regras-nota-meta").value = meta.regras || "";
+    desenharResumoMeta(meta);
+}
+
+function desenharResumoMeta(meta) {
+    const diferenca = Number(meta.mediaDesejada) - Number(meta.mediaAtual);
+    const percentualAtual = Math.round(
+        (Number(meta.mediaAtual) / Number(meta.escala)) * 100
+    );
+    const resumo = document.querySelector("#resumo-meta-bimestral");
+
+    resumo.innerHTML = `
+        <strong>${meta.bimestre}º bimestre: ${protegerTexto(meta.mediaAtual)} → ${protegerTexto(meta.mediaDesejada)}</strong>
+        <span>Média atual equivalente a ${percentualAtual}% da escala informada. Caminho até a meta: ${protegerTexto(diferenca.toFixed(2))} ponto(s).</span>
+        <small>A meta orienta a prática; não é promessa de nota nem instrumento de pressão.</small>
+    `;
+}
+
+function registrarPraticaLocal(registro) {
+    const chave = chaveDadosEvolucao("praticas");
+    let praticas = [];
+
+    try {
+        praticas = JSON.parse(localStorage.getItem(chave) || "[]");
+    } catch (erro) {
+        praticas = [];
+    }
+
+    praticas.push({
+        ...registro,
+        id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : String(Date.now()) + Math.random(),
+        data: new Date().toISOString()
+    });
+
+    localStorage.setItem(
+        chave,
+        JSON.stringify(praticas.slice(-500))
+    );
+
+    desenharEstatisticasPratica();
+}
+
+function obterPraticasLocais() {
+    try {
+        return JSON.parse(
+            localStorage.getItem(
+                chaveDadosEvolucao("praticas")
+            ) || "[]"
+        );
+    } catch (erro) {
+        return [];
+    }
+}
+
+function desenharEstatisticasPratica() {
+    const area = document.querySelector("#estatisticas-pratica");
+    if (!area) return;
+
+    const limite = new Date();
+    limite.setDate(limite.getDate() - 29);
+
+    const praticas = obterPraticasLocais().filter(function (item) {
+        return new Date(item.data) >= limite;
+    });
+    const dias = new Set(praticas.map(function (item) {
+        return String(item.data).slice(0, 10);
+    }));
+    const simulados = praticas.filter(function (item) {
+        return item.tipo === "simulado" || item.tipo === "simuladao";
+    });
+    const acertos = simulados.reduce(function (total, item) {
+        return total + (Number(item.acertos) || 0);
+    }, 0);
+    const questoes = simulados.reduce(function (total, item) {
+        return total + (Number(item.total) || 0);
+    }, 0);
+    const minutos = praticas.reduce(function (total, item) {
+        return total + (Number(item.minutos) || 0);
+    }, 0);
+
+    area.innerHTML = `
+        <article><strong>${dias.size}</strong><span>dias com prática</span></article>
+        <article><strong>${praticas.length}</strong><span>atividades registradas</span></article>
+        <article><strong>${minutos}</strong><span>minutos estimados</span></article>
+        <article><strong>${questoes ? Math.round(acertos / questoes * 100) + "%" : "—"}</strong><span>acertos em simulados</span></article>
+    `;
+}
+
+function preencherMateriasSimuladao() {
+    const area = document.querySelector("#lista-materias-simuladao");
+    const turmas = Array.isArray(turmasClassroom) ? turmasClassroom : [];
+
+    if (turmas.length === 0) {
+        area.innerHTML = "<p>Conecte o Classroom para escolher as matérias.</p>";
+        return;
+    }
+
+    area.innerHTML = turmas.map(function (turma) {
+        return `
+            <label>
+                <input type="checkbox" name="materia-simuladao" value="${protegerTexto(turma.id)}">
+                <span>${protegerTexto(turma.name)}</span>
+            </label>
+        `;
+    }).join("");
+}
+
+async function criarSimuladaoGeral() {
+    const status = document.querySelector("#status-simuladao");
+    const area = document.querySelector("#resultado-simuladao");
+    const botao = document.querySelector("#criar-simuladao");
+    const ids = Array.from(
+        document.querySelectorAll('input[name="materia-simuladao"]:checked')
+    ).map(function (campo) { return campo.value; });
+
+    if (!tokenClassroom) {
+        status.textContent = "Conecte a conta escolar do Google primeiro.";
+        return;
+    }
+
+    if (ids.length < 2 || ids.length > 4) {
+        status.textContent = "Escolha de duas a quatro matérias.";
+        return;
+    }
+
+    const materias = turmasClassroom.filter(function (turma) {
+        return ids.includes(String(turma.id));
+    });
+    const dias = Number(document.querySelector("#periodo-simuladao").value) || 14;
+    const dificuldade = document.querySelector("#dificuldade-simuladao").value;
+    const fim = new Date();
+    const inicio = new Date();
+    inicio.setDate(inicio.getDate() - (dias - 1));
+
+    botao.disabled = true;
+    area.classList.add("escondido");
+    status.textContent = "Reunindo atividades e materiais das matérias escolhidas...";
+
+    try {
+        const conteudo = await obterConteudoSimuladao(
+            materias,
+            dataParaCampo(inicio),
+            dataParaCampo(fim)
+        );
+
+        status.textContent = "Criando uma sequência gradual de questões...";
+
+        const resposta = await fetch(ENDERECO_IA, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                tipo: "simuladao",
+                materia: materias.map(function (item) { return item.name; }).join(", "),
+                titulo: "Simuladão dos últimos " + dias + " dias",
+                conteudo: conteudo,
+                dificuldade: dificuldade
+            })
+        });
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+            throw new Error(dados.erro || "Não foi possível criar o simuladão.");
+        }
+
+        desenharSimuladaoInterativo(dados, {
+            dias: dias,
+            dificuldade: dificuldade,
+            materias: materias.map(function (item) { return item.name; })
+        });
+        status.textContent = "Simuladão pronto. Faça no seu ritmo.";
+    } catch (erro) {
+        console.error(erro);
+        status.textContent = traduzirErroDaInteligencia(erro.message);
+    } finally {
+        botao.disabled = false;
+    }
+}
+
+async function obterConteudoSimuladao(materias, inicio, fim) {
+    let texto = `SIMULADÃO MALTÉRIA\nPERÍODO: ${inicio} até ${fim}\n`;
+
+    for (const materia of materias) {
+        const respostas = await Promise.all([
+            chamarClassroom("courses/" + materia.id + "/courseWork?pageSize=100"),
+            chamarClassroom("courses/" + materia.id + "/courseWorkMaterials?pageSize=100")
+        ]);
+        const periodo = { inicio: inicio, fim: fim };
+        const atividades = (respostas[0].courseWork || [])
+            .filter(function (item) { return itemEstaNoPeriodoDeEstudo(item, periodo); })
+            .slice(0, 12);
+        const materiais = (respostas[1].courseWorkMaterial || [])
+            .filter(function (item) { return itemEstaNoPeriodoDeEstudo(item, periodo); })
+            .slice(0, 12);
+
+        texto += `\n=== ${materia.name} ===\n`;
+        atividades.forEach(function (item) {
+            texto += "ATIVIDADE: " + (item.title || "") +
+                "\n" + (item.description || "") +
+                descreverMateriaisClassroom(item.materials) + "\n";
+        });
+        materiais.forEach(function (item) {
+            texto += "MATERIAL: " + (item.title || "") +
+                "\n" + (item.description || "") +
+                descreverMateriaisClassroom(item.materials) + "\n";
+        });
+
+        if (atividades.length + materiais.length === 0) {
+            texto += "Nenhum item publicado dentro deste período.\n";
+        }
+    }
+
+    if (texto.length < 180) {
+        throw new Error("Não encontrei material suficiente no período escolhido.");
+    }
+
+    return texto.slice(0, 60000);
+}
+
+function desenharSimuladaoInterativo(dados, configuracao) {
+    const area = document.querySelector("#resultado-simuladao");
+    const questoes = Array.isArray(dados.questoes) ? dados.questoes : [];
+
+    if (questoes.length === 0) {
+        throw new Error("A IA não conseguiu preparar questões com os materiais encontrados.");
+    }
+
+    let atual = 0;
+    let pontos = 0;
+
+    function desenhar() {
+        const questao = questoes[atual];
+        area.innerHTML = `
+            <div class="cabecalho-questao-simuladao">
+                <span>${protegerTexto(questao.materia || "Simuladão")}</span>
+                <small>Questão ${atual + 1} de ${questoes.length} · ${protegerTexto(questao.nivel || "progressiva")}</small>
+            </div>
+            <h3>${protegerTexto(questao.pergunta)}</h3>
+            <div class="alternativas-simuladao">
+                ${(questao.alternativas || []).map(function (alternativa, indice) {
+                    return `<button class="alternativa" data-indice="${indice}" type="button">${protegerTexto(alternativa)}</button>`;
+                }).join("")}
+            </div>
+            <div id="retorno-simuladao"></div>
+        `;
+        area.classList.remove("escondido");
+
+        area.querySelectorAll(".alternativa").forEach(function (botao) {
+            botao.addEventListener("click", function () {
+                responder(Number(botao.dataset.indice));
+            });
+        });
+    }
+
+    function responder(indice) {
+        const questao = questoes[atual];
+        const acertou = indice === Number(questao.correta);
+        if (acertou) pontos++;
+
+        area.querySelectorAll(".alternativa").forEach(function (botao, indiceBotao) {
+            botao.disabled = true;
+            if (indiceBotao === Number(questao.correta)) botao.classList.add("correta");
+            else if (indiceBotao === indice) botao.classList.add("errada");
+        });
+
+        document.querySelector("#retorno-simuladao").innerHTML = `
+            <div class="arquivo">
+                <strong>${acertou ? "✅ Boa estratégia!" : "💡 Esta é uma oportunidade de revisão."}</strong>
+                <p>${protegerTexto(questao.explicacao || "")}</p>
+                <button id="avancar-simuladao" class="botao-principal" type="button">${atual + 1 < questoes.length ? "Próxima questão" : "Ver resultado"}</button>
+            </div>
+        `;
+
+        document.querySelector("#avancar-simuladao").addEventListener("click", function () {
+            atual++;
+            if (atual < questoes.length) {
+                desenhar();
+                return;
+            }
+
+            registrarPraticaLocal({
+                tipo: "simuladao",
+                materia: configuracao.materias.join(", "),
+                periodo: "últimos " + configuracao.dias + " dias",
+                acertos: pontos,
+                total: questoes.length,
+                minutos: Math.max(20, questoes.length * 2)
+            });
+
+            area.innerHTML = `
+                <h2>Prática concluída</h2>
+                <p>Você acertou <strong>${pontos} de ${questoes.length}</strong> questões.</p>
+                <p>${protegerTexto(dados.orientacao || "Use o resultado para escolher o que revisar. Não se trata de uma nota escolar.")}</p>
+            `;
+        });
+    }
+
+    desenhar();
+}
+
+function restaurarAnaliseEvolucao() {
+    try {
+        const analise = JSON.parse(
+            localStorage.getItem(chaveAnaliseEvolucao()) || "null"
+        );
+
+        if (analise) {
+            desenharAnaliseEvolucao(analise);
+        }
+    } catch (erro) {
+        localStorage.removeItem(chaveAnaliseEvolucao());
+    }
+}
+
+async function analisarNivelEvolucao() {
+    const boletim = document.querySelector("#boletim-evolucao").files[0];
+    const avaliacoes = Array.from(
+        document.querySelector("#avaliacoes-evolucao").files
+    );
+    const consentimento = document.querySelector("#consentimento-evolucao").checked;
+    const objetivo = document.querySelector("#objetivo-evolucao").value;
+    const status = document.querySelector("#status-evolucao");
+    const botao = document.querySelector("#analisar-evolucao");
+
+    if (!boletim) {
+        status.textContent = "Envie o boletim escolar para iniciar a análise.";
+        return;
+    }
+
+    if (!consentimento) {
+        status.textContent = "Confirme a autorização para a análise temporária dos documentos.";
+        return;
+    }
+
+    if (avaliacoes.length > 5) {
+        status.textContent = "Escolha no máximo 5 provas ou folhas de exercícios.";
+        return;
+    }
+
+    botao.disabled = true;
+    botao.textContent = "Analisando documentos...";
+    status.textContent = "Preparando o boletim e as avaliações com segurança...";
+
+    try {
+        const arquivosOriginais = [
+            { arquivo: boletim, categoria: "boletim" },
+            ...avaliacoes.map(function (arquivo) {
+                return { arquivo: arquivo, categoria: "avaliacao" };
+            })
+        ];
+
+        const arquivos = [];
+        let tamanhoTotal = 0;
+
+        for (const item of arquivosOriginais) {
+            const preparado = await prepararArquivoEvolucao(
+                item.arquivo,
+                item.categoria
+            );
+
+            tamanhoTotal += preparado.tamanho;
+            arquivos.push(preparado);
+        }
+
+        if (tamanhoTotal > 3000000) {
+            throw new Error(
+                "Os documentos ficaram grandes demais. Envie menos arquivos ou fotos com tamanho menor."
+            );
+        }
+
+        status.textContent = "A inteligência da Maltéria está identificando notas, dificuldades e pontos fortes...";
+
+        const resposta = await fetch(ENDERECO_IA, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                tipo: "nivel_evolucao",
+                materia: "Desempenho escolar geral",
+                conteudo: "Análise de boletim e avaliações enviados pelo aluno.",
+                objetivo: objetivo,
+                arquivos: arquivos.map(function (arquivo) {
+                    return {
+                        nome: arquivo.nome,
+                        categoria: arquivo.categoria,
+                        mimeType: arquivo.mimeType,
+                        data: arquivo.data
+                    };
+                })
+            })
+        });
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+            throw new Error(dados.erro || "Não foi possível analisar os documentos.");
+        }
+
+        localStorage.setItem(
+            chaveAnaliseEvolucao(),
+            JSON.stringify(dados)
+        );
+
+        desenharAnaliseEvolucao(dados);
+        status.textContent = "Análise concluída. Os arquivos enviados não foram guardados no histórico.";
+    } catch (erro) {
+        console.error(erro);
+        status.textContent = traduzirErroDaInteligencia(erro.message);
+    } finally {
+        botao.disabled = false;
+        botao.textContent = "✨ Analisar meu nível";
+    }
+}
+
+async function prepararArquivoEvolucao(arquivo, categoria) {
+    const tiposPermitidos = [
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "application/pdf"
+    ];
+
+    if (!tiposPermitidos.includes(arquivo.type)) {
+        throw new Error("Use somente imagens JPG, PNG, WEBP ou arquivos PDF.");
+    }
+
+    let blob = arquivo;
+
+    if (arquivo.type.startsWith("image/")) {
+        blob = await comprimirImagemEvolucao(arquivo);
+    } else if (arquivo.size > 2500000) {
+        throw new Error("O PDF deve ter no máximo 2,5 MB.");
+    }
+
+    const dataUrl = await lerBlobComoDataUrl(blob);
+
+    return {
+        nome: arquivo.name,
+        categoria: categoria,
+        mimeType: blob.type || arquivo.type,
+        data: dataUrl.split(",")[1],
+        tamanho: blob.size
+    };
+}
+
+function lerBlobComoDataUrl(blob) {
+    return new Promise(function (resolve, reject) {
+        const leitor = new FileReader();
+        leitor.onload = function () { resolve(leitor.result); };
+        leitor.onerror = function () { reject(new Error("Não foi possível ler um dos arquivos.")); };
+        leitor.readAsDataURL(blob);
+    });
+}
+
+async function comprimirImagemEvolucao(arquivo) {
+    const url = URL.createObjectURL(arquivo);
+
+    try {
+        const imagem = await new Promise(function (resolve, reject) {
+            const elemento = new Image();
+            elemento.onload = function () { resolve(elemento); };
+            elemento.onerror = function () { reject(new Error("Não foi possível abrir uma das imagens.")); };
+            elemento.src = url;
+        });
+
+        const limite = 1600;
+        const escala = Math.min(1, limite / Math.max(imagem.width, imagem.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(imagem.width * escala);
+        canvas.height = Math.round(imagem.height * escala);
+        canvas.getContext("2d").drawImage(imagem, 0, 0, canvas.width, canvas.height);
+
+        return await new Promise(function (resolve, reject) {
+            canvas.toBlob(
+                function (blob) {
+                    if (blob) resolve(blob);
+                    else reject(new Error("Não foi possível preparar uma das imagens."));
+                },
+                "image/jpeg",
+                0.78
+            );
+        });
+    } finally {
+        URL.revokeObjectURL(url);
+    }
+}
+
+function desenharAnaliseEvolucao(dados) {
+    const area = document.querySelector("#resultado-evolucao");
+    const indice = Math.max(0, Math.min(100, Number(dados.indicePotencial) || 0));
+    const materias = Array.isArray(dados.materiasPrioritarias)
+        ? dados.materiasPrioritarias
+        : [];
+    const plano = Array.isArray(dados.planoSemanal) ? dados.planoSemanal : [];
+
+    area.innerHTML = `
+        <div class="painel-indice-evolucao">
+            <div class="circulo-evolucao" style="--indice-evolucao: ${indice * 3.6}deg">
+                <strong>${indice}%</strong>
+                <span>potencial estimado</span>
+            </div>
+            <div>
+                <small>NÍVEL RECOMENDADO</small>
+                <h2>${protegerTexto(dados.nivelDificuldade || "Intermediário")}</h2>
+                <p>${protegerTexto(dados.resumo || "")}</p>
+            </div>
+        </div>
+
+        <p class="mensagem-formal-evolucao">${protegerTexto(
+            dados.mensagemFormal ||
+            `Com o uso consistente da Maltéria, seu potencial estimado de evolução é de ${indice}%. O aplicativo oferece organização e prática; o resultado final também depende da sua dedicação.`
+        )}</p>
+
+        <div class="grade-diagnostico-evolucao">
+            <article>
+                <h3>✨ Pontos fortes</h3>
+                <ul>${(dados.pontosFortes || []).map(function (item) {
+                    return `<li>${protegerTexto(item)}</li>`;
+                }).join("")}</ul>
+            </article>
+            <article>
+                <h3>🎯 Pontos de atenção</h3>
+                <ul>${(dados.pontosAtencao || []).map(function (item) {
+                    return `<li>${protegerTexto(item)}</li>`;
+                }).join("")}</ul>
+            </article>
+        </div>
+
+        <section class="prioridades-evolucao">
+            <h3>Prioridades por matéria</h3>
+            ${materias.map(function (item) {
+                return `
+                    <article>
+                        <strong>${protegerTexto(item.materia)}</strong>
+                        <span>${protegerTexto(item.situacao)}</span>
+                        <p>${protegerTexto(item.acao)}</p>
+                    </article>
+                `;
+            }).join("")}
+        </section>
+
+        <section class="plano-evolucao">
+            <h3>Plano inicial recomendado</h3>
+            ${plano.map(function (item) {
+                return `
+                    <article>
+                        <strong>${protegerTexto(item.dia)}</strong>
+                        <span>${protegerTexto(item.foco)} · ${Number(item.minutos) || 20} min</span>
+                        <p>${protegerTexto(item.atividade)}</p>
+                    </article>
+                `;
+            }).join("")}
+        </section>
+
+        <p class="aviso-indice-evolucao">
+            Este índice é uma estimativa educacional criada a partir dos documentos enviados. Ele não garante aumento equivalente nas notas e deve ser revisto quando houver um novo boletim.
+        </p>
+    `;
+
+    area.classList.remove("escondido");
+    area.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
 document
