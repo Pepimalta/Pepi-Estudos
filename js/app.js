@@ -22,6 +22,8 @@ const EMAIL_DONO_MALTERIA =
 let estudoGerado = null;
 let periodoEstudoAtual = null;
 let uploadsDaSessao = [];
+const animacaoMalteria =
+    document.querySelector("#animacao-malteria");
 const telaBoasVindas = document.querySelector("#boas-vindas");
 const telaEscolha = document.querySelector("#escolha");
 const telaLogin = document.querySelector("#login");
@@ -55,6 +57,47 @@ let clienteClassroom = null;
 let turmasClassroom = [];
 let atividadesPorTurma = {};
 let tentativaSilenciosaClassroom = false;
+
+/* ABERTURA ANIMADA DA MALTÉRIA */
+
+let aberturaMalteriaEncerrada = false;
+
+function encerrarAberturaMalteria() {
+    if (aberturaMalteriaEncerrada) {
+        return;
+    }
+
+    aberturaMalteriaEncerrada = true;
+    animacaoMalteria.classList.add("intro-encerrando");
+
+    window.setTimeout(function () {
+        animacaoMalteria.classList.add("escondido");
+        document.body.classList.remove("intro-ativa");
+    }, 650);
+}
+
+document.body.classList.add("intro-ativa");
+
+animacaoMalteria.addEventListener(
+    "click",
+    encerrarAberturaMalteria
+);
+
+animacaoMalteria.addEventListener("keydown", function (evento) {
+    if (evento.key === "Enter" || evento.key === " ") {
+        evento.preventDefault();
+        encerrarAberturaMalteria();
+    }
+});
+
+const reduzirMovimento = window.matchMedia(
+    "(prefers-reduced-motion: reduce)"
+).matches;
+
+window.setTimeout(
+    encerrarAberturaMalteria,
+    reduzirMovimento ? 900 : 4800
+);
 
 function normalizarEmail(email) {
     return String(email || "")
