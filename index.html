@@ -517,7 +517,22 @@
                         <option value="">Escolha uma matéria</option>
                     </select>
 
-                    <div class="periodo-pesquisa">
+                    <label for="formato-pesquisa">Como deseja receber a resposta?</label>
+                    <select id="formato-pesquisa">
+                        <option value="texto">Texto explicado e organizado</option>
+                        <option value="topicos">Tópicos e expressões importantes</option>
+                        <option value="slides">Apresentação de slides</option>
+                    </select>
+
+                    <label class="opcao-sem-data">
+                        <input id="pesquisa-sem-data" type="checkbox">
+                        <span>
+                            <strong>Sem data</strong>
+                            Usar todas as atividades, materiais e uploads da matéria.
+                        </span>
+                    </label>
+
+                    <div id="periodo-pesquisa" class="periodo-pesquisa">
                         <div><label for="data-inicial">Data inicial</label><input id="data-inicial" type="date"></div>
                         <div><label for="data-final">Data final</label><input id="data-final" type="date"></div>
                     </div>
@@ -545,14 +560,14 @@
                 </div>
 
                 <div class="grade-ajuda">
-                    <article class="cartao-ajuda"><span>❤️</span><h2>Primeiros passos</h2><p>Cadastre sua conta, entre na Maltéria e conecte a conta escolar do Google.</p></article>
-                    <article class="cartao-ajuda"><span>👨‍🏫</span><h2>Google Classroom</h2><p>Use “Conectar ao Classroom” no cabeçalho para carregar turmas, materiais e atividades.</p><button class="botao-secundario acao-ajuda" data-ajuda-acao="classroom" type="button">Conectar ou atualizar</button></article>
+                    <article class="cartao-ajuda"><span>🚀</span><h2>Primeiros passos</h2><p>Cadastre sua conta, entre na Maltéria e conecte a conta escolar do Google.</p></article>
+                    <article class="cartao-ajuda"><span>🎓</span><h2>Google Classroom</h2><p>Use “Conectar ao Classroom” no cabeçalho para carregar turmas, materiais e atividades.</p><button class="botao-secundario acao-ajuda" data-ajuda-acao="classroom" type="button">Conectar ou atualizar</button></article>
                     <article class="cartao-ajuda"><span>🔎</span><h2>Pesquisa inteligente</h2><p>Escolha a matéria e o período. A resposta será criada com o conteúdo encontrado.</p><button class="botao-secundario acao-ajuda" data-ajuda-acao="pesquisa" type="button">Abrir pesquisa</button></article>
                     <article class="cartao-ajuda"><span>🧠</span><h2>Explicações e slides</h2><p>Entre em uma matéria e escolha Explicações para criar resumo, cópia, revisão e slides.</p></article>
                     <article class="cartao-ajuda"><span>📝</span><h2>Atividades e simulados</h2><p>Confira tarefas reais do Classroom e pratique com simulados produzidos a partir do material.</p></article>
                     <article class="cartao-ajuda"><span>👨‍👩‍👧‍👦</span><h2>Conta de responsável</h2><p>Adicione filhos, selecione quem deseja acompanhar e veja matérias e próximos prazos.</p></article>
                     <article class="cartao-ajuda"><span>📎</span><h2>Uploads</h2><p>Adicione fotos, textos, exercícios e provas antigas dentro da matéria correta.</p></article>
-                    <article class="cartao-ajuda"><span>😭</span><h2>Algo não deu certo?</h2><p>Atualize a página, reconecte o Classroom e confira se selecionou a conta escolar correta.</p></article>
+                    <article class="cartao-ajuda"><span>🛠️</span><h2>Algo não funcionou?</h2><p>Atualize a página, reconecte o Classroom e confira se selecionou a conta escolar correta.</p></article>
                 </div>
             </section>
 
