@@ -1346,17 +1346,17 @@ body {
 
 .cartao-materia:nth-child(3n + 1) {
     background: linear-gradient(145deg, #fff 28%, #f0eaff 100%);
-    border-bottom: 5px solid var(--roxo);
+    border-bottom: 5px solid #0889b2;
 }
 
 .cartao-materia:nth-child(3n + 2) {
     background: linear-gradient(145deg, #fff 28%, #e8fbff 100%);
-    border-bottom: 5px solid var(--azul-vivo);
+    border-bottom: 5px solid #e8e800;
 }
 
 .cartao-materia:nth-child(3n) {
     background: linear-gradient(145deg, #fff 28%, #fff0f8 100%);
-    border-bottom: 5px solid var(--rosa-vivo);
+    border-bottom: 5px solid #f752a2;
 }
 
 .cartao-materia::after {
