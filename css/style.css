@@ -1936,7 +1936,7 @@ body {
 
 .barra-lateral:hover,
 .barra-lateral:focus-within {
-    width: 230px;
+    width: 280px;
 }
 
 .barra-lateral-marca,
@@ -1958,7 +1958,7 @@ body {
 
 .ferramenta-lateral {
     display: flex;
-    width: 210px;
+    width: 260px;
     align-items: center;
     gap: 12px;
     border: 0;
@@ -1983,6 +1983,80 @@ body {
 }
 
 .ferramenta-texto { white-space: nowrap; }
+
+.historico-pesquisas-lateral {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+}
+
+.barra-lateral:hover .historico-pesquisas-lateral,
+.barra-lateral:focus-within .historico-pesquisas-lateral {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.historico-pesquisas-titulo {
+    padding: 8px 10px 7px;
+    color: #7b728f;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.lista-historico-pesquisas {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    flex-direction: column;
+    gap: 5px;
+    overflow-y: auto;
+    padding: 0 3px 8px;
+}
+
+.item-historico-pesquisa {
+    display: grid;
+    width: 250px;
+    gap: 3px;
+    border: 0;
+    border-radius: 12px;
+    padding: 9px 10px;
+    background: transparent;
+    color: var(--texto);
+    text-align: left;
+}
+
+.item-historico-pesquisa:hover,
+.item-historico-pesquisa:focus-visible {
+    background: #f0ecff;
+    color: var(--roxo-escuro);
+}
+
+.item-historico-pesquisa span {
+    overflow: hidden;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.item-historico-pesquisa small {
+    overflow: hidden;
+    color: #81798e;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.historico-vazio {
+    width: 245px;
+    margin: 4px 8px;
+    color: #8b8398;
+    font-size: 13px;
+    line-height: 1.4;
+}
 
 .fundo-painel {
     position: fixed;
@@ -2156,6 +2230,7 @@ body {
     .barra-lateral { top: auto; right: 14px; bottom: 14px; left: 14px; width: auto; height: 64px; flex-direction: row; border-left: 1px solid var(--borda); border-radius: 20px; }
     .barra-lateral:hover, .barra-lateral:focus-within { width: auto; }
     .barra-lateral-marca { display: none; }
+    .historico-pesquisas-lateral { display: none; }
     .ferramenta-lateral { width: auto; flex: 1; justify-content: center; }
     .ferramenta-texto { display: inline; }
     .painel-pesquisa { padding: 24px 18px 100px; }
