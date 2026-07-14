@@ -119,6 +119,31 @@ body.intro-ativa {
     animation: intro-desenhar-m .72s cubic-bezier(.2,.8,.2,1) forwards;
 }
 
+.intro-m-haste::after,
+.intro-m-diagonal::after {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background:
+        linear-gradient(
+            180deg,
+            #ff5fa2 0%,
+            #ff9f43 18%,
+            #ffe45e 34%,
+            #52e39b 50%,
+            #3ddbf2 67%,
+            #5674ff 83%,
+            #bd6cff 100%
+        );
+    background-size: 100% 260%;
+    box-shadow: inset 0 0 15px rgba(255,255,255,.42);
+    content: "";
+    opacity: 0;
+    animation:
+        intro-cor-m 1.5s var(--cor-delay, .4s)
+        cubic-bezier(.3,.7,.3,1) forwards;
+}
+
 .intro-m-haste {
     top: 10px;
     width: 40px;
@@ -127,11 +152,13 @@ body.intro-ativa {
 
 .intro-m-esquerda {
     left: 16px;
+    --cor-delay: .38s;
     animation-delay: .38s;
 }
 
 .intro-m-direita {
     right: 16px;
+    --cor-delay: 1.12s;
     animation-delay: 1.12s;
 }
 
@@ -144,13 +171,15 @@ body.intro-ativa {
 
 .intro-m-diagonal-um {
     left: 49px;
-    transform: rotate(-35deg);
+    --cor-delay: .63s;
+    transform: rotate(-19deg);
     animation-delay: .63s;
 }
 
 .intro-m-diagonal-dois {
     right: 49px;
-    transform: rotate(35deg);
+    --cor-delay: .88s;
+    transform: rotate(19deg);
     animation-delay: .88s;
 }
 
@@ -259,6 +288,24 @@ body.intro-ativa {
     to { clip-path: inset(0 0 0 0); }
 }
 
+@keyframes intro-cor-m {
+    0% {
+        opacity: 1;
+        background-position: 50% 100%;
+        filter: saturate(1.35) brightness(1.18);
+    }
+    66% {
+        opacity: 1;
+        background-position: 50% 0%;
+        filter: saturate(1.25) brightness(1.1);
+    }
+    100% {
+        opacity: 0;
+        background-position: 50% 0%;
+        filter: saturate(1) brightness(1);
+    }
+}
+
 @keyframes intro-brilho-m {
     0% { left: -20%; opacity: 0; }
     25% { opacity: 1; }
@@ -311,6 +358,101 @@ body.intro-ativa {
     .animacao-malteria::after {
         animation-duration: .01ms !important;
         animation-delay: 0ms !important;
+    }
+}
+
+/* SEGUNDA ANIMAÇÃO: CARREGAMENTO APÓS "PRÓXIMO" */
+.transicao-proximo {
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background:
+        radial-gradient(circle at 50% 44%, rgba(112, 81, 255, .16), transparent 25%),
+        linear-gradient(145deg, #fdfcff, #f1edff 62%, #e8faff);
+    opacity: 1;
+    transition: opacity .45s ease, transform .45s ease;
+}
+
+.transicao-proximo.transicao-saindo {
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(1.035);
+}
+
+.mini-m-janela {
+    position: relative;
+    width: 98px;
+    height: 102px;
+    overflow: visible;
+    margin-bottom: 18px;
+}
+
+.mini-m-escala {
+    width: 230px;
+    height: 235px;
+    transform: scale(.425);
+    transform-origin: top left;
+}
+
+.intro-m-pequeno {
+    margin: 0;
+    filter:
+        drop-shadow(0 0 16px rgba(107, 77, 255, .52))
+        drop-shadow(0 10px 20px rgba(75, 44, 183, .2));
+}
+
+.intro-m-pequeno .intro-m-haste::after,
+.intro-m-pequeno .intro-m-diagonal::after {
+    animation-duration: .85s;
+}
+
+.transicao-proximo > strong {
+    background: linear-gradient(90deg, #4930bc, #7655ff, #21a9c5);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-size: 17px;
+    letter-spacing: .04em;
+}
+
+.pontos-carregamento {
+    display: flex;
+    gap: 7px;
+    margin-top: 14px;
+}
+
+.pontos-carregamento i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--roxo);
+    animation: ponto-carregando .85s ease-in-out infinite alternate;
+}
+
+.pontos-carregamento i:nth-child(2) {
+    background: #8c6cff;
+    animation-delay: .16s;
+}
+
+.pontos-carregamento i:nth-child(3) {
+    background: #38c4d7;
+    animation-delay: .32s;
+}
+
+@keyframes ponto-carregando {
+    from { opacity: .28; transform: translateY(2px) scale(.78); }
+    to { opacity: 1; transform: translateY(-3px) scale(1.12); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .transicao-proximo *,
+    .transicao-proximo {
+        animation-duration: .01ms !important;
+        transition-duration: .01ms !important;
     }
 }
 
