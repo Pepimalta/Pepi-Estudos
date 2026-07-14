@@ -871,6 +871,18 @@ function prepararFiltrosPesquisa() {
     preencherDatasDaSemana();
 }
 
+const opcaoPesquisaSemData =
+    document.querySelector("#pesquisa-sem-data");
+
+opcaoPesquisaSemData.addEventListener("change", function () {
+    const semData = opcaoPesquisaSemData.checked;
+    const periodo = document.querySelector("#periodo-pesquisa");
+
+    periodo.classList.toggle("periodo-desativado", semData);
+    document.querySelector("#data-inicial").disabled = semData;
+    document.querySelector("#data-final").disabled = semData;
+});
+
 function preencherDatasDaSemana() {
     const inicial =
         document.querySelector("#data-inicial");
@@ -1351,11 +1363,11 @@ function abrirFormatoDeEstudo(formato) {
             <div class="arquivo">
                 <h3>Explicação</h3>
 
-                <p>
+                <div class="texto-estudo">
                     ${formatarTexto(
                         estudoGerado.explicacao
                     )}
-                </p>
+                </div>
             </div>
         `;
     }
@@ -1365,11 +1377,11 @@ function abrirFormatoDeEstudo(formato) {
             <div class="arquivo">
                 <h3>Cópia guiada</h3>
 
-                <p>
+                <div class="texto-estudo copia-estudo">
                     ${formatarTexto(
                         estudoGerado.copia
                     )}
-                </p>
+                </div>
             </div>
         `;
     }
@@ -1497,13 +1509,27 @@ function abrirFormatoDeEstudo(formato) {
     }
 
     if (formato === "audio") {
+        const roteiro =
+            estudoGerado.roteiroAudio ||
+            estudoGerado.explicacao;
+
         area.innerHTML = `
-            <div class="arquivo">
-                <h3>Áudio explicativo</h3>
+            <div class="arquivo audio-professora">
+                <span class="audio-professora-icone">👩‍🏫</span>
+                <h3>Aula em áudio</h3>
 
                 <p>
-                    O aplicativo lerá a explicação
-                    em voz alta.
+                    Uma professora virtual explicará o conteúdo
+                    acompanhando os slides, com exemplos e revisões.
+                </p>
+
+                <div class="audio-roteiro-previa">
+                    <strong>Roteiro da aula</strong>
+                    <div>${formatarTexto(roteiro)}</div>
+                </div>
+
+                <p id="status-audio" class="status-audio">
+                    Pronto para começar.
                 </p>
 
                 <button
@@ -1544,14 +1570,95 @@ function abrirFormatoDeEstudo(formato) {
 function iniciarAudio() {
     speechSynthesis.cancel();
 
-    const fala = new SpeechSynthesisUtterance(
-        estudoGerado.explicacao
-    );
+    const roteiro = String(
+        estudoGerado.roteiroAudio ||
+        estudoGerado.explicacao ||
+        ""
+    )
+        .replace(/#{1,6}\s*/g, "")
+        .replace(/\*\*/g, "")
+        .trim();
 
-    fala.lang = "pt-BR";
-    fala.rate = 0.95;
+    const status = document.querySelector("#status-audio");
 
-    speechSynthesis.speak(fala);
+    if (!roteiro) {
+        status.textContent = "Não há roteiro de áudio disponível.";
+        return;
+    }
+
+    const trechos = dividirRoteiroParaAudio(roteiro);
+    const voz = escolherVozProfessora();
+
+    status.textContent =
+        "A professora virtual está começando a aula...";
+
+    trechos.forEach(function (trecho, indice) {
+        const fala = new SpeechSynthesisUtterance(trecho);
+
+        fala.lang = "pt-BR";
+        fala.rate = 0.9;
+        fala.pitch = 1.04;
+        fala.volume = 1;
+
+        if (voz) {
+            fala.voice = voz;
+        }
+
+        fala.onstart = function () {
+            status.textContent =
+                "Explicando a aula — parte " +
+                (indice + 1) + " de " + trechos.length + ".";
+        };
+
+        fala.onend = function () {
+            if (indice === trechos.length - 1) {
+                status.textContent = "Aula concluída. Muito bem!";
+            }
+        };
+
+        speechSynthesis.speak(fala);
+    });
+}
+
+function escolherVozProfessora() {
+    const vozesPortugues = speechSynthesis
+        .getVoices()
+        .filter(function (voz) {
+            return /^pt(-|_)/i.test(voz.lang);
+        });
+
+    const nomesPreferidos = [
+        "francisca", "maria", "luciana", "fernanda",
+        "helena", "camila", "female", "feminina"
+    ];
+
+    return vozesPortugues.find(function (voz) {
+        const nome = voz.name.toLowerCase();
+        return nomesPreferidos.some(function (preferido) {
+            return nome.includes(preferido);
+        });
+    }) || vozesPortugues[0] || null;
+}
+
+function dividirRoteiroParaAudio(texto) {
+    const frases = texto.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [texto];
+    const trechos = [];
+    let atual = "";
+
+    frases.forEach(function (frase) {
+        if ((atual + " " + frase).length > 420 && atual) {
+            trechos.push(atual.trim());
+            atual = frase;
+        } else {
+            atual += " " + frase;
+        }
+    });
+
+    if (atual.trim()) {
+        trechos.push(atual.trim());
+    }
+
+    return trechos;
 }
 
 /* UPLOADS */
@@ -1977,6 +2084,12 @@ async function pesquisarMateriais() {
             "#tipo-pesquisa"
         )?.value || "todos";
 
+    const formatoPesquisa =
+        document.querySelector("#formato-pesquisa").value;
+
+    const semData =
+        document.querySelector("#pesquisa-sem-data").checked;
+
     const dataInicial =
         document.querySelector(
             "#data-inicial"
@@ -2020,15 +2133,21 @@ async function pesquisarMateriais() {
         return;
     }
 
-    if (!dataInicial || !dataFinal) {
+    if (!semData && (!dataInicial || !dataFinal)) {
         status.textContent =
             "Escolha a data inicial e a data final.";
         return;
     }
 
-    if (dataInicial > dataFinal) {
+    if (!semData && dataInicial > dataFinal) {
         status.textContent =
             "A data inicial não pode ser posterior à data final.";
+        return;
+    }
+
+    if (semData && tipoPesquisa === "agenda") {
+        status.textContent =
+            "Para pesquisar a Agenda, desmarque Sem data e escolha um período.";
         return;
     }
 
@@ -2066,8 +2185,8 @@ async function pesquisarMateriais() {
             const resultado =
                 await obterMateriaisDoPeriodo(
                     turma,
-                    dataInicial,
-                    dataFinal,
+                    semData ? "" : dataInicial,
+                    semData ? "" : dataFinal,
                     tipoPesquisa
                 );
 
@@ -2087,8 +2206,11 @@ async function pesquisarMateriais() {
             .join("\n\n");
 
         if (
-            tipoPesquisa === "todos" ||
-            tipoPesquisa === "agenda"
+            !semData &&
+            (
+                tipoPesquisa === "todos" ||
+                tipoPesquisa === "agenda"
+            )
         ) {
             const agenda =
                 await obterEventosAgenda(
@@ -2102,6 +2224,53 @@ async function pesquisarMateriais() {
 
             conteudo +=
                 "\n\n" + agenda.conteudo;
+        }
+
+        const uploadsPesquisa = uploadsDaSessao.filter(function (upload) {
+            const pertenceMateria =
+                materiaEscolhida === "__todas__" ||
+                turmas.some(function (turma) {
+                    return String(turma.id) === String(upload.materiaId);
+                });
+
+            const estaNoPeriodo = semData ||
+                (!upload.data ||
+                    (upload.data >= dataInicial && upload.data <= dataFinal));
+
+            return pertenceMateria && estaNoPeriodo;
+        });
+
+        if (uploadsPesquisa.length > 0) {
+            conteudo += "\n\nUPLOADS DA MATÉRIA:\n" +
+                uploadsPesquisa.map(function (upload) {
+                    return (
+                        "UPLOAD: " + upload.nome +
+                        "\nDATA: " + (upload.data || "Sem data") +
+                        "\nCONTEÚDO: " +
+                        (upload.texto || "Arquivo enviado pelo aluno")
+                    );
+                }).join("\n\n");
+
+            fontes = fontes.concat(
+                uploadsPesquisa.map(function (upload, indice) {
+                    return {
+                        chave: "upload-pesquisa-" + indice + "-" + upload.nome,
+                        origem: "upload",
+                        pendente: false,
+                        tipo: "Upload",
+                        materia: materiaEscolhida === "__todas__"
+                            ? "Material enviado"
+                            : materiaEscolhida,
+                        titulo: upload.nome,
+                        descricao: upload.texto || "",
+                        data: upload.data
+                            ? new Date(upload.data + "T12:00:00")
+                            : new Date(),
+                        prazo: null,
+                        link: ""
+                    };
+                })
+            );
         }
 
         if (fontes.length === 0) {
@@ -2135,8 +2304,10 @@ async function pesquisarMateriais() {
                             : materiaEscolhida,
 
                     pergunta: pergunta,
-                    dataInicial: dataInicial,
-                    dataFinal: dataFinal,
+                    formato: formatoPesquisa,
+                    semData: semData,
+                    dataInicial: semData ? "" : dataInicial,
+                    dataFinal: semData ? "" : dataFinal,
                     conteudo:
                         conteudo.slice(0, 60000)
                 })
@@ -2160,8 +2331,9 @@ async function pesquisarMateriais() {
             materiaEscolhida === "__todas__"
                 ? "Todas as matérias"
                 : materiaEscolhida,
-            dataInicial,
-            dataFinal
+            semData ? "" : dataInicial,
+            semData ? "" : dataFinal,
+            formatoPesquisa
         );
 
         status.textContent =
@@ -2217,11 +2389,15 @@ async function obterMateriaisDoPeriodo(
     dataFinal,
     filtro
 ) {
-    const inicio =
-        new Date(dataInicial + "T00:00:00");
+    const semData = !dataInicial || !dataFinal;
 
-    const fim =
-        new Date(dataFinal + "T23:59:59");
+    const inicio = semData
+        ? null
+        : new Date(dataInicial + "T00:00:00");
+
+    const fim = semData
+        ? null
+        : new Date(dataFinal + "T23:59:59");
 
     const respostas = await Promise.all([
         chamarClassroom(
@@ -2275,7 +2451,7 @@ async function obterMateriaisDoPeriodo(
             );
 
         if (
-            dataEstaNoPeriodo(data, inicio, fim) &&
+            (semData || dataEstaNoPeriodo(data, inicio, fim)) &&
             tipoCombinaComFiltro(tipo, filtro)
         ) {
             itens.push({
@@ -2331,11 +2507,11 @@ async function obterMateriaisDoPeriodo(
                     : tipoDetectado;
 
             if (
-                dataEstaNoPeriodo(
+                (semData || dataEstaNoPeriodo(
                     data,
                     inicio,
                     fim
-                ) &&
+                )) &&
                 (
                     filtro === "todos" ||
                     filtro === "material" ||
@@ -2384,10 +2560,10 @@ async function obterMateriaisDoPeriodo(
     let conteudo =
         "MATÉRIA: " +
         turma.name +
-        "\nPERÍODO: " +
-        dataInicial +
-        " até " +
-        dataFinal +
+        "\nABRANGÊNCIA: " +
+        (semData
+            ? "Todos os materiais disponíveis da matéria"
+            : dataInicial + " até " + dataFinal) +
         "\n";
 
     const anexos = [];
@@ -2604,7 +2780,9 @@ async function obterEventosAgenda(
                         "Evento sem título",
 
                     descricao:
-                        evento.description || "",
+                        limparDescricaoDaAgenda(
+                            evento.description || ""
+                        ),
 
                     data:
                         new Date(inicioEvento),
@@ -2640,6 +2818,33 @@ async function obterEventosAgenda(
         conteudo: conteudo,
         fontes: fontes
     };
+}
+
+function limparDescricaoDaAgenda(valor) {
+    if (!valor) {
+        return "";
+    }
+
+    const htmlComQuebras = String(valor)
+        .replace(/<br\s*\/?\s*>/gi, "\n")
+        .replace(/<\/(p|div|li|tr|h[1-6]|table)>/gi, "\n");
+
+    const documento = new DOMParser().parseFromString(
+        htmlComQuebras,
+        "text/html"
+    );
+
+    documento
+        .querySelectorAll("script, style")
+        .forEach(function (elemento) {
+            elemento.remove();
+        });
+
+    return (documento.body.textContent || "")
+        .replace(/\u00a0/g, " ")
+        .replace(/[ \t]+/g, " ")
+        .replace(/\n\s*\n+/g, "\n")
+        .trim();
 }
 
 function obterDataDoItem(item) {
@@ -2792,7 +2997,8 @@ function desenharResultadoPesquisa(
     urgentes,
     materia,
     dataInicial,
-    dataFinal
+    dataFinal,
+    formato
 ) {
     const area =
         document.querySelector(
@@ -2892,15 +3098,16 @@ function desenharResultadoPesquisa(
 
             <h2>${protegerTexto(materia)}</h2>
 
-            <p>
-                ${formatarDataCampo(dataInicial)}
-                até
-                ${formatarDataCampo(dataFinal)}
+            <p>${dataInicial && dataFinal
+                ? formatarDataCampo(dataInicial) + " até " + formatarDataCampo(dataFinal)
+                : "Todos os materiais disponíveis da matéria"}
             </p>
         </div>
 
         <article class="resposta-ia">
-            ${formatarTexto(dados.resposta)}
+            ${formato === "slides" && Array.isArray(dados.slides)
+                ? renderizarSlidesDaPesquisa(dados.slides)
+                : formatarTexto(dados.resposta)}
         </article>
 
         <details class="detalhes-finais">
@@ -2946,6 +3153,26 @@ function desenharResultadoPesquisa(
         behavior: "smooth",
         block: "start"
     });
+}
+
+function renderizarSlidesDaPesquisa(slides) {
+    return `
+        <div class="slides-pesquisa">
+            ${slides.map(function (slide, indice) {
+                return `
+                    <section class="slide-pesquisa">
+                        <small>SLIDE ${indice + 1}</small>
+                        <h3>${protegerTexto(slide.titulo || "")}</h3>
+                        <ul>
+                            ${(slide.pontos || []).map(function (ponto) {
+                                return `<li>${protegerTexto(ponto)}</li>`;
+                            }).join("")}
+                        </ul>
+                    </section>
+                `;
+            }).join("")}
+        </div>
+    `;
 }
 
 function carregarItensConcluidos() {
@@ -3480,6 +3707,12 @@ function desenharAtividadesDaData(itens, dataEscolhida) {
     area.innerHTML =
         itens
             .map(function (item) {
+                const descricao = item.descricao || "";
+                const descricaoLonga = descricao.length > 420;
+                const resumo = descricaoLonga
+                    ? descricao.slice(0, 417).trim() + "..."
+                    : descricao;
+
                 return `
                     <div class="arquivo">
                         <strong>
@@ -3494,8 +3727,17 @@ function desenharAtividadesDaData(itens, dataEscolhida) {
                             )}
                         </p>
 
-                        ${item.descricao ? `
-                            <p>${protegerTexto(item.descricao)}</p>
+                        ${resumo ? `
+                            <p class="resumo-agenda">
+                                ${protegerTexto(resumo)}
+                            </p>
+                        ` : ""}
+
+                        ${descricaoLonga ? `
+                            <details class="detalhes-agenda">
+                                <summary>Ver descrição completa</summary>
+                                <p>${protegerTexto(descricao).replace(/\n/g, "<br>")}</p>
+                            </details>
                         ` : ""}
 
                         ${item.link ? `
@@ -4134,8 +4376,58 @@ async function lerArquivoDoDrive(id) {
 }
 
 function formatarTexto(texto) {
-    return protegerTexto(texto)
-        .replace(/\n/g, "<br>");
+    const seguro = protegerTexto(texto || "")
+        .replace(/\s+(#{1,3})\s+/g, "\n$1 ")
+        .replace(/\s+-\s+\*\*/g, "\n- **");
+
+    const linhas = seguro.split(/\n+/);
+    let html = "";
+    let listaAberta = false;
+
+    function fecharLista() {
+        if (listaAberta) {
+            html += "</ul>";
+            listaAberta = false;
+        }
+    }
+
+    linhas.forEach(function (linhaOriginal) {
+        const linha = linhaOriginal.trim();
+
+        if (!linha) {
+            fecharLista();
+            return;
+        }
+
+        const titulo = linha.match(/^#{1,3}\s+(.+)/);
+        const topico = linha.match(/^(?:[-•*]|\d+[.)])\s+(.+)/);
+
+        if (titulo) {
+            fecharLista();
+            html += "<h3>" + formatarNegritoSeguro(titulo[1]) + "</h3>";
+            return;
+        }
+
+        if (topico) {
+            if (!listaAberta) {
+                html += "<ul>";
+                listaAberta = true;
+            }
+
+            html += "<li>" + formatarNegritoSeguro(topico[1]) + "</li>";
+            return;
+        }
+
+        fecharLista();
+        html += "<p>" + formatarNegritoSeguro(linha) + "</p>";
+    });
+
+    fecharLista();
+    return html;
+}
+
+function formatarNegritoSeguro(texto) {
+    return texto.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
 }
 
 /* SUPER ADMINISTRAÇÃO */
