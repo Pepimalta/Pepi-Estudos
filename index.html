@@ -27,10 +27,7 @@
         </div>
 
         <div class="intro-m" aria-hidden="true">
-            <span class="intro-m-haste intro-m-esquerda"></span>
-            <span class="intro-m-diagonal intro-m-diagonal-um"></span>
-            <span class="intro-m-diagonal intro-m-diagonal-dois"></span>
-            <span class="intro-m-haste intro-m-direita"></span>
+            <span class="intro-m-letra">M</span>
             <span class="intro-m-brilho"></span>
         </div>
 
@@ -80,10 +77,7 @@
         <div class="mini-m-janela" aria-hidden="true">
             <div class="mini-m-escala">
                 <div class="intro-m intro-m-pequeno">
-                    <span class="intro-m-haste intro-m-esquerda"></span>
-                    <span class="intro-m-diagonal intro-m-diagonal-um"></span>
-                    <span class="intro-m-diagonal intro-m-diagonal-dois"></span>
-                    <span class="intro-m-haste intro-m-direita"></span>
+                    <span class="intro-m-letra">M</span>
                     <span class="intro-m-brilho"></span>
                 </div>
             </div>
@@ -439,6 +433,11 @@
                 <span class="ferramenta-texto">Ajuda</span>
             </button>
 
+            <button id="abrir-nivel-melhora" class="ferramenta-lateral" type="button">
+                <span class="ferramenta-icone">↗</span>
+                <span class="ferramenta-texto">Meta e evolução</span>
+            </button>
+
             <button id="abrir-administracao" class="ferramenta-lateral escondido" type="button">
                 <span class="ferramenta-icone">♛</span>
                 <span class="ferramenta-texto">Super administração</span>
@@ -483,6 +482,39 @@
                     >
                         + Adicionar outro filho
                     </button>
+                </section>
+
+                <!-- RESUMO EXCLUSIVO DO RESPONSÁVEL -->
+                <section id="painel-responsavel-resumo" class="caixa painel-responsavel-resumo escondido">
+                    <div class="cabecalho-relatorio-responsavel">
+                        <div>
+                            <span class="rotulo-destaque">VISÃO DO RESPONSÁVEL</span>
+                            <h2>O que precisa ser entregue?</h2>
+                            <p>A Maltéria procura avisos antigos e calcula a data real de entrega.</p>
+                        </div>
+                        <span class="icone-relatorio-responsavel">📋</span>
+                    </div>
+
+                    <div class="filtros-relatorio-responsavel">
+                        <label for="data-relatorio-responsavel">
+                            Preparar para o dia
+                            <input id="data-relatorio-responsavel" type="date">
+                        </label>
+                        <label for="horizonte-relatorio-responsavel">
+                            Procurar nos últimos
+                            <select id="horizonte-relatorio-responsavel">
+                                <option value="14">2 semanas</option>
+                                <option value="21" selected>3 semanas</option>
+                                <option value="28">4 semanas</option>
+                                <option value="42">6 semanas</option>
+                                <option value="56">8 semanas</option>
+                            </select>
+                        </label>
+                        <button id="atualizar-relatorio-responsavel" class="botao-principal" type="button">↻ Atualizar relatório</button>
+                    </div>
+
+                    <div id="status-relatorio-responsavel" class="status-pesquisa" aria-live="polite"></div>
+                    <section id="resultado-relatorio-responsavel" class="resultado-relatorio-responsavel escondido"></section>
                 </section>
 
                 <!-- ATIVIDADES POR DATA -->
@@ -581,6 +613,7 @@
                         <option value="texto">Texto explicado e organizado</option>
                         <option value="topicos">Tópicos e expressões importantes</option>
                         <option value="slides">Apresentação de slides</option>
+                        <option value="tabela">Tabela organizada</option>
                     </select>
 
                     <label class="opcao-sem-data">
@@ -631,6 +664,143 @@
             </section>
 
             <!-- PÁGINA DE SUPER ADMINISTRAÇÃO -->
+            <!-- PÁGINA DE NÍVEL DE MELHORA -->
+            <section id="pagina-nivel-melhora" class="pagina-ferramenta escondido">
+                <button id="fechar-nivel-melhora" class="botao-link voltar-ferramenta" type="button">← Voltar</button>
+
+                <div class="cabecalho-ferramenta nivel-melhora-cabecalho">
+                    <span>📈</span>
+                    <div>
+                        <small>ACOMPANHAMENTO PERSONALIZADO</small>
+                        <h1>Meta e evolução</h1>
+                        <p>Defina uma meta para o bimestre, acompanhe a prática e use o boletim para ajustar o estudo.</p>
+                    </div>
+                </div>
+
+                <section class="caixa meta-bimestral">
+                    <div class="meta-bimestral-cabecalho">
+                        <div>
+                            <small>META DO BIMESTRE</small>
+                            <h2>Qual resultado você quer alcançar?</h2>
+                            <p>A Maltéria respeita a escala e as regras de cálculo informadas pela escola.</p>
+                        </div>
+                        <span aria-hidden="true">🎯</span>
+                    </div>
+
+                    <div class="grade-meta-bimestral">
+                        <label>Bimestre
+                            <select id="bimestre-meta">
+                                <option value="1">1º bimestre</option>
+                                <option value="2">2º bimestre</option>
+                                <option value="3">3º bimestre</option>
+                                <option value="4">4º bimestre</option>
+                            </select>
+                        </label>
+                        <label>Média atual
+                            <input id="media-atual-meta" type="number" inputmode="decimal" step="0.01" placeholder="Ex.: 78">
+                        </label>
+                        <label>Meta desejada
+                            <input id="media-desejada-meta" type="number" inputmode="decimal" step="0.01" placeholder="Ex.: 84">
+                        </label>
+                        <label>Valor máximo da escala
+                            <input id="escala-meta" type="number" inputmode="decimal" step="0.01" placeholder="Ex.: 100">
+                        </label>
+                    </div>
+
+                    <label for="regras-nota-meta">Como a escola calcula a nota?</label>
+                    <textarea id="regras-nota-meta" rows="3" placeholder="Ex.: provas têm peso 2, teste tem peso 1 e trabalhos compõem a média."></textarea>
+                    <button id="salvar-meta-bimestral" class="botao-principal" type="button">Salvar meta</button>
+                    <div id="resumo-meta-bimestral" class="resumo-meta-bimestral" aria-live="polite"></div>
+                </section>
+
+                <section class="caixa painel-pratica-local">
+                    <div class="meta-bimestral-cabecalho">
+                        <div>
+                            <small>DIÁRIO DE APRENDIZAGEM</small>
+                            <h2>Prática registrada neste aparelho</h2>
+                            <p>Entrar na Maltéria não conta sozinho: registramos estudos preparados e simulados concluídos.</p>
+                        </div>
+                        <span aria-hidden="true">🌱</span>
+                    </div>
+                    <div id="estatisticas-pratica" class="grade-estatisticas-pratica"></div>
+                    <p class="mensagem-nao-punitiva">Este painel serve para entender a rotina e escolher o próximo passo, nunca para punir ou comparar o aluno.</p>
+                </section>
+
+                <section class="caixa nivel-melhora-conteudo">
+                    <div class="nivel-melhora-introducao">
+                        <div><strong>1</strong><span>Envie o boletim</span></div>
+                        <div><strong>2</strong><span>Acrescente provas ou exercícios</span></div>
+                        <div><strong>3</strong><span>Receba sua análise</span></div>
+                    </div>
+
+                    <div class="grupo-arquivo-evolucao">
+                        <label for="boletim-evolucao">Boletim escolar <strong>obrigatório</strong></label>
+                        <input id="boletim-evolucao" type="file" accept="image/jpeg,image/png,image/webp,application/pdf">
+                        <small>Envie uma foto nítida ou um PDF.</small>
+                    </div>
+
+                    <div class="grupo-arquivo-evolucao">
+                        <label for="avaliacoes-evolucao">Provas, listas e folhas de exercícios</label>
+                        <input id="avaliacoes-evolucao" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple>
+                        <small>Opcional: até 5 arquivos para a IA entender os erros e acertos.</small>
+                    </div>
+
+                    <label for="objetivo-evolucao">Qual é o principal objetivo?</label>
+                    <select id="objetivo-evolucao">
+                        <option value="melhorar_notas">Melhorar minhas notas</option>
+                        <option value="recuperar_conteudo">Recuperar conteúdos que não entendi</option>
+                        <option value="preparar_provas">Preparar-me melhor para provas</option>
+                        <option value="aprofundar">Aprofundar meus conhecimentos</option>
+                    </select>
+
+                    <label class="consentimento-evolucao">
+                        <input id="consentimento-evolucao" type="checkbox">
+                        <span>Autorizo o envio temporário desses documentos para a análise da IA. As imagens não serão guardadas no histórico da Maltéria.</span>
+                    </label>
+
+                    <button id="analisar-evolucao" class="botao-principal" type="button">✨ Analisar meu nível</button>
+                    <div id="status-evolucao" class="status-pesquisa" aria-live="polite"></div>
+                    <section id="resultado-evolucao" class="resultado-evolucao escondido"></section>
+                </section>
+
+                <section class="caixa criador-simuladao">
+                    <div class="meta-bimestral-cabecalho">
+                        <div>
+                            <small>PRÁTICA POR PERÍODO</small>
+                            <h2>Simuladão de várias matérias</h2>
+                            <p>Escolha até quatro matérias. As questões usam atividades e materiais publicados no período.</p>
+                        </div>
+                        <span aria-hidden="true">🧠</span>
+                    </div>
+
+                    <div class="grade-configuracao-simuladao">
+                        <label>Período
+                            <select id="periodo-simuladao">
+                                <option value="7">Últimos 7 dias</option>
+                                <option value="14" selected>Últimas 2 semanas</option>
+                                <option value="30">Últimos 30 dias</option>
+                            </select>
+                        </label>
+                        <label>Progressão
+                            <select id="dificuldade-simuladao">
+                                <option value="gradual" selected>Gradual: compreensão até desafio</option>
+                                <option value="reforco">Reforço dos fundamentos</option>
+                                <option value="desafio">Desafio no nível das listas</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <fieldset class="materias-simuladao">
+                        <legend>Matérias participantes</legend>
+                        <div id="lista-materias-simuladao"></div>
+                    </fieldset>
+
+                    <button id="criar-simuladao" class="botao-principal" type="button">Criar simuladão</button>
+                    <div id="status-simuladao" class="status-pesquisa" aria-live="polite"></div>
+                    <section id="resultado-simuladao" class="resultado-simuladao escondido"></section>
+                </section>
+            </section>
+
             <section id="pagina-administracao" class="pagina-ferramenta escondido">
                 <button id="fechar-administracao" class="botao-link voltar-ferramenta" type="button">← Voltar</button>
 
