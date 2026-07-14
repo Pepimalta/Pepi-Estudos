@@ -1470,7 +1470,7 @@ body {
     min-width: 218px;
     align-items: center;
     gap: 10px;
-    border: 1px solid var(--borda);
+    border: 1px solid #5fa5ff;
     border-radius: 15px;
     padding: 8px 12px;
     background: var(--branco);
@@ -1481,7 +1481,10 @@ body {
 }
 
 .classroom-canto > button:hover {
-    border-color: var(--roxo);
+    border-color: #5fa5ff;
+    box-shadow:
+        0 7px 22px rgba(64, 43, 150, 0.09),
+        0 0 0 3px rgba(95, 165, 255, 0.16);
     transform: translateY(-2px);
 }
 
@@ -1514,7 +1517,7 @@ body {
 }
 
 .classroom-canto.conectado > button {
-    border-color: #a9e8ce;
+    border-color: #5fa5ff;
     background: #f2fff9;
 }
 
