@@ -71,7 +71,9 @@ export default async function handler(req, res) {
             conteudo,
             objetivo,
             arquivos,
-            dificuldade
+            dificuldade,
+            quantidade,
+            mapaDificuldade
         } = req.body || {};
 
         if (tipo === "nivel_evolucao") {
@@ -111,7 +113,9 @@ export default async function handler(req, res) {
                 materia,
                 titulo,
                 conteudo: conteudoLimitado,
-                dificuldade: dificuldade || "gradual"
+                dificuldade: dificuldade || "gradual",
+                quantidade: Math.min(50, Math.max(5, Number(quantidade) || 15)),
+                mapaDificuldade: mapaDificuldade || {}
             });
         }
 
@@ -162,12 +166,19 @@ Crie um simulado interdisciplinar usando SOMENTE os materiais fornecidos.
 MATÉRIAS: ${dados.materia}
 PERÍODO: ${dados.titulo || "período selecionado"}
 DIFICULDADE: ${dados.dificuldade}
+QUANTIDADE SOLICITADA: ${dados.quantidade}
+NÍVEL POR MATÉRIA: ${JSON.stringify(dados.mapaDificuldade)}
 
 MATERIAIS:
 ${dados.conteudo}
 
 REGRAS:
-- Crie de 12 a 16 questões, distribuídas de forma equilibrada entre as matérias.
+- Crie exatamente ${dados.quantidade} questões.
+- Distribua as questões da forma mais equilibrada possível entre todas as matérias selecionadas.
+- Obedeça ao nível individual informado em NÍVEL POR MATÉRIA.
+- Quando o nível individual for "reforco", revise fundamentos e erros recorrentes.
+- Quando for "gradual", comece com compreensão e avance até aplicação.
+- Quando for "desafio", cobre raciocínio mais profundo sem usar conteúdo externo.
 - Em "gradual", comece com compreensão, avance para aplicação e termine com desafios.
 - Em "reforço", priorize fundamentos e exemplos semelhantes aos materiais.
 - Em "desafio", aumente o raciocínio sem cobrar conteúdo externo.
@@ -217,6 +228,7 @@ async function criarRelatorioResponsavel(res, dados) {
 Você é a assistente educacional da visão do responsável no aplicativo Maltéria.
 
 DATA-ALVO DO RELATÓRIO: ${dados.dataAlvo}
+DATA DE REFERÊNCIA (DIA EM QUE O RESPONSÁVEL ESTÁ): ${dados.dataReferencia || "não informada"}
 INÍCIO DA JANELA RETROATIVA: ${dados.dataInicio || "não informado"}
 
 DADOS DA AGENDA, CLASSROOM E POSSÍVEL HORÁRIO:
@@ -228,9 +240,20 @@ exatamente na data-alvo. Os professores podem ter registrado a orientação
 semanas antes da data real.
 
 REGRAS DE INTERPRETAÇÃO:
+- Antes de procurar tarefas, determine o dia da semana da data-alvo e monte
+  a lista completa das matérias previstas naquele dia usando o horário encontrado.
+- Depois examine, uma por uma, todas as matérias previstas para a data-alvo.
+  Não encerre a análise ao encontrar a primeira entrega.
+- Para cada matéria do dia, informe em materiasDoDia se há uma entrega confirmada,
+  se nenhum aviso foi localizado ou se ainda precisa de confirmação.
+- Se o horário não estiver disponível ou não for confiável, horarioEncontrado deve
+  ser false e o resumo deve dizer claramente que o relatório pode estar incompleto.
 - A data do evento é a data em que a orientação foi registrada, não
   necessariamente a data de entrega.
 - "Para amanhã" significa o dia seguinte à data do registro.
+- "Para depois de amanhã" significa dois dias depois da data do registro.
+- "Para sexta-feira" ou outro dia da semana significa a primeira ocorrência
+  futura daquele dia depois do registro, salvo indicação diferente no texto.
 - "Para o dia 15" significa o primeiro dia 15 coerente posterior ao registro,
   salvo quando o texto informar mês ou ano.
 - "Próxima aula" significa o próximo dia em que aquela matéria aparece no
@@ -243,6 +266,8 @@ REGRAS DE INTERPRETAÇÃO:
   escreveu prova e "Teste" quando escreveu teste.
 - Trabalho, seminário e projeto também devem manter categorias próprias.
 - Use a data oficial do Classroom quando ela existir e for compatível.
+- Considere registros feitos em todas as datas da janela retroativa, inclusive
+  avisos de outras matérias e avisos gerais da escola.
 - Inclua na tabela somente itens cuja entrega calculada seja a data-alvo.
 - Não inclua compromissos pessoais ou eventos sem relação escolar.
 - Informe a data original do registro e explique brevemente como a data de
@@ -274,6 +299,18 @@ Responda somente em JSON válido.
                     required: ["dia", "aulas"]
                 }
             },
+            materiasDoDia: {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        materia: { type: "STRING" },
+                        situacao: { type: "STRING" },
+                        detalhe: { type: "STRING" }
+                    },
+                    required: ["materia", "situacao", "detalhe"]
+                }
+            },
             entregas: {
                 type: "ARRAY",
                 items: {
@@ -303,6 +340,7 @@ Responda somente em JSON válido.
             "resumo",
             "horarioEncontrado",
             "horarioSemanal",
+            "materiasDoDia",
             "entregas",
             "avisos"
         ]
@@ -648,13 +686,24 @@ REGRAS:
 - Distribua os slides em: abertura, objetivos, conceitos, desenvolvimento,
   exemplos, aplicação, erros comuns, exercício orientado e conclusão.
 - O primeiro slide deve apresentar o tema e o último deve revisar o aprendizado.
-- Crie também um roteiro de áudio como se uma professora estivesse dando
-  a aula com apoio dos slides. A professora deve cumprimentar o aluno,
-  apresentar o objetivo, explicar cada slide com palavras naturais,
-  acrescentar exemplos, usar transições como "agora vamos observar" e
-  terminar recapitulando o conteúdo.
-- O roteiro de áudio não deve apenas ler os tópicos dos slides. Ele deve
-  explicá-los, em tom acolhedor, paciente e didático.
+- Crie também um roteiro de áudio em formato de podcast educativo, guiado
+  por uma professora dinâmica e apoiado nos slides. Não transforme os
+  tópicos em leitura: comente, conecte ideias, faça analogias, resolva
+  exemplos e explique por que cada etapa importa.
+- O podcast deve ter de 12 a 20 blocos curtos. Alterne principalmente a
+  PROFESSORA com participações breves de estudantes fictícios, como LIA,
+  JOÃO ou TURMA. Os estudantes podem responder uma pergunta, levantar uma
+  dúvida comum ou tentar um raciocínio; a professora retoma e esclarece.
+- Escreva falas naturais em português brasileiro, com energia, pausas para
+  o aluno pensar, perguntas curtas e transições variadas. Evite tom robótico,
+  frases burocráticas e bordões repetidos.
+- A professora deve ter presença acolhedora e interessante, como bons
+  comunicadores de educação, mas não deve copiar, imitar ou mencionar a voz,
+  bordões ou identidade de qualquer pessoa real.
+- O podcast deve começar apresentando o desafio da aula, acompanhar a ordem
+  conceitual dos slides e terminar com uma recapitulação e uma pergunta de
+  checagem. O estudante fictício nunca deve ensinar conteúdo incorreto sem
+  correção imediata da professora.
 - Revise gramática, concordância, letras maiúsculas e pontuação de todos
   os formatos antes de responder.
 - A revisão deve ter entre 12 e 18 pontos importantes.
@@ -691,6 +740,29 @@ Responda somente em JSON válido.
 
             roteiroAudio: {
                 type: "STRING"
+            },
+
+            podcastAudio: {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        personagem: {
+                            type: "STRING"
+                        },
+                        texto: {
+                            type: "STRING"
+                        },
+                        intencao: {
+                            type: "STRING"
+                        }
+                    },
+                    required: [
+                        "personagem",
+                        "texto",
+                        "intencao"
+                    ]
+                }
             },
 
             slides: {
@@ -803,6 +875,7 @@ Responda somente em JSON válido.
             "explicacao",
             "copia",
             "roteiroAudio",
+            "podcastAudio",
             "slides",
             "revisao",
             "simulado",
