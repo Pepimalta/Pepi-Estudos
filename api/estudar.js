@@ -62,6 +62,8 @@ export default async function handler(req, res) {
             materia,
             titulo,
             pergunta,
+            formato,
+            semData,
             dataInicial,
             dataFinal,
             conteudo
@@ -83,6 +85,8 @@ export default async function handler(req, res) {
                 {
                     materia,
                     pergunta,
+                    formato: formato || "texto",
+                    semData: Boolean(semData),
                     dataInicial,
                     dataFinal,
                     conteudo: conteudoLimitado
@@ -130,9 +134,12 @@ MATÉRIA:
 ${dados.materia}
 
 PERÍODO PESQUISADO:
-${dados.dataInicial || "Não informado"}
+${dados.semData ? "Sem data: usar todo o acervo fornecido da matéria" : dados.dataInicial || "Não informado"}
 até
-${dados.dataFinal || "Não informado"}
+${dados.semData ? "todo o acervo disponível" : dados.dataFinal || "Não informado"}
+
+FORMATO SOLICITADO:
+${dados.formato || "texto"}
 
 PERGUNTA DO ALUNO:
 ${dados.pergunta}
@@ -151,6 +158,16 @@ REGRAS OBRIGATÓRIAS:
 - Quando encontrar provas, trabalhos, exercícios ou deveres,
   mencione seus nomes e datas.
 - Organize a resposta com títulos e parágrafos.
+- Revise a gramática antes de responder.
+- Toda frase deve começar corretamente, ter sentido completo e terminar
+  com pontuação adequada. Não use letra maiúscula no meio de uma frase,
+  exceto em nomes próprios, siglas ou início de citação.
+- Não misture títulos, parágrafos e tópicos na mesma linha.
+- Se o formato for "texto", escreva seções com títulos e parágrafos completos.
+- Se o formato for "topicos", use títulos curtos e tópicos completos,
+  destacando conceitos, expressões, fórmulas e exemplos importantes.
+- Se o formato for "slides", crie de 6 a 10 slides. Cada slide deve ter
+  título e de 3 a 5 pontos curtos, claros e gramaticalmente corretos.
 - Destaque os pontos mais importantes.
 - Se houver contas, apresente o cálculo passo a passo.
 - Se houver datas históricas, nomes ou fórmulas,
@@ -167,6 +184,21 @@ Responda somente em JSON válido.
         properties: {
             resposta: {
                 type: "STRING"
+            },
+
+            slides: {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        titulo: { type: "STRING" },
+                        pontos: {
+                            type: "ARRAY",
+                            items: { type: "STRING" }
+                        }
+                    },
+                    required: ["titulo", "pontos"]
+                }
             }
         },
 
@@ -220,18 +252,34 @@ REGRAS:
 - Só informe que o material está incompleto quando o TOTAL DE FONTES for zero
   ou quando as fontes realmente não contiverem os dados essenciais para explicar.
   Nesse caso, diga claramente o que faltou, em uma observação curta no final.
-- A explicação deve realmente ensinar o conteúdo.
-- Organize a explicação em partes.
-- Apresente definições importantes.
-- Inclua exemplos retirados ou baseados no material.
-- Explique cálculos passo a passo quando existirem.
-- Mostre erros comuns que o aluno deve evitar.
-- Termine a explicação com um pequeno resumo.
-- A cópia guiada deve ser completa e organizada.
-- A cópia deve ter títulos, subtítulos e exemplos.
-- Os slides devem ter títulos e pontos curtos.
-- Crie entre 8 e 12 slides.
-- Cada slide deve ter entre 3 e 5 pontos.
+- A explicação deve ser uma aula completa, com aproximadamente 700 a
+  1.200 palavras quando o material permitir. Não faça apenas um resumo.
+- Divida a explicação em: objetivo da aula, conceitos fundamentais,
+  desenvolvimento passo a passo, exemplos resolvidos, erros comuns,
+  aplicação prática e resumo final.
+- Apresente definições importantes em frases completas.
+- Inclua pelo menos dois exemplos explicados, quando o material permitir.
+- Explique cálculos passo a passo quando existirem, sem pular operações.
+- A cópia guiada deve ser um conteúdo pronto para o aluno escrever no
+  caderno, com aproximadamente 500 a 900 palavras quando houver conteúdo.
+- Organize a cópia em: título, assunto da aula, definições, regras ou
+  fórmulas, explicação organizada, exemplos e resumo para memorizar.
+- Não escreva uma cópia formada por frases soltas ou ideias sem conexão.
+- Crie entre 10 e 14 slides.
+- Cada slide deve ter entre 4 e 6 pontos informativos. Os pontos devem ser
+  curtos para apresentação, mas completos o suficiente para ensinar.
+- Distribua os slides em: abertura, objetivos, conceitos, desenvolvimento,
+  exemplos, aplicação, erros comuns, exercício orientado e conclusão.
+- O primeiro slide deve apresentar o tema e o último deve revisar o aprendizado.
+- Crie também um roteiro de áudio como se uma professora estivesse dando
+  a aula com apoio dos slides. A professora deve cumprimentar o aluno,
+  apresentar o objetivo, explicar cada slide com palavras naturais,
+  acrescentar exemplos, usar transições como "agora vamos observar" e
+  terminar recapitulando o conteúdo.
+- O roteiro de áudio não deve apenas ler os tópicos dos slides. Ele deve
+  explicá-los, em tom acolhedor, paciente e didático.
+- Revise gramática, concordância, letras maiúsculas e pontuação de todos
+  os formatos antes de responder.
 - A revisão deve ter entre 12 e 18 pontos importantes.
 - O simulado deve ter 10 questões.
 - Cada questão deve ter exatamente 4 alternativas.
@@ -251,6 +299,10 @@ Responda somente em JSON válido.
             },
 
             copia: {
+                type: "STRING"
+            },
+
+            roteiroAudio: {
                 type: "STRING"
             },
 
@@ -330,6 +382,7 @@ Responda somente em JSON válido.
         required: [
             "explicacao",
             "copia",
+            "roteiroAudio",
             "slides",
             "revisao",
             "simulado"
@@ -398,7 +451,7 @@ async function chamarGemini(
                         generationConfig: {
                             temperature: 0.2,
 
-                            maxOutputTokens: 8192,
+                            maxOutputTokens: 16384,
 
                             responseMimeType:
                                 "application/json",
