@@ -64,10 +64,28 @@ export default async function handler(req, res) {
             pergunta,
             formato,
             semData,
+            dataInicio,
             dataInicial,
             dataFinal,
-            conteudo
+            dataAlvo,
+            conteudo,
+            objetivo,
+            arquivos,
+            dificuldade
         } = req.body || {};
+
+        if (tipo === "nivel_evolucao") {
+            if (!Array.isArray(arquivos) || arquivos.length === 0) {
+                return res.status(400).json({
+                    erro: "Envie pelo menos o boletim escolar."
+                });
+            }
+
+            return await avaliarNivelEvolucao(res, {
+                objetivo,
+                arquivos
+            });
+        }
 
         if (!materia || !conteudo) {
             return res.status(400).json({
@@ -79,6 +97,24 @@ export default async function handler(req, res) {
         const conteudoLimitado =
             String(conteudo).slice(0, 60000);
 
+        if (tipo === "relatorio_responsavel") {
+            return await criarRelatorioResponsavel(res, {
+                dataInicio,
+                dataAlvo,
+                conteudo: conteudoLimitado,
+                arquivos
+            });
+        }
+
+        if (tipo === "simuladao") {
+            return await criarSimuladao(res, {
+                materia,
+                titulo,
+                conteudo: conteudoLimitado,
+                dificuldade: dificuldade || "gradual"
+            });
+        }
+
         if (tipo === "pesquisa") {
             return await responderPesquisa(
                 res,
@@ -89,7 +125,8 @@ export default async function handler(req, res) {
                     semData: Boolean(semData),
                     dataInicial,
                     dataFinal,
-                    conteudo: conteudoLimitado
+                    conteudo: conteudoLimitado,
+                    arquivos
                 }
             );
         }
@@ -99,7 +136,8 @@ export default async function handler(req, res) {
             {
                 materia,
                 titulo,
-                conteudo: conteudoLimitado
+                conteudo: conteudoLimitado,
+                arquivos
             }
         );
     } catch (erro) {
@@ -114,6 +152,307 @@ export default async function handler(req, res) {
             erro: mensagem
         });
     }
+}
+
+async function criarSimuladao(res, dados) {
+    const instrucao = `
+Você é a professora virtual do aplicativo Maltéria.
+Crie um simulado interdisciplinar usando SOMENTE os materiais fornecidos.
+
+MATÉRIAS: ${dados.materia}
+PERÍODO: ${dados.titulo || "período selecionado"}
+DIFICULDADE: ${dados.dificuldade}
+
+MATERIAIS:
+${dados.conteudo}
+
+REGRAS:
+- Crie de 12 a 16 questões, distribuídas de forma equilibrada entre as matérias.
+- Em "gradual", comece com compreensão, avance para aplicação e termine com desafios.
+- Em "reforço", priorize fundamentos e exemplos semelhantes aos materiais.
+- Em "desafio", aumente o raciocínio sem cobrar conteúdo externo.
+- Cada questão deve ter exatamente quatro alternativas e apenas uma correta.
+- Informe a matéria e o nível de cada questão.
+- Explique a resposta com clareza e sem tom punitivo.
+- O nível deve acompanhar uma escola tradicional e exigente, mas ser apropriado à idade.
+- Não invente conteúdo que não possa ser sustentado pelos materiais.
+- Responda somente em JSON válido.
+`;
+
+    const schema = {
+        type: "OBJECT",
+        properties: {
+            orientacao: { type: "STRING" },
+            questoes: {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        materia: { type: "STRING" },
+                        nivel: { type: "STRING" },
+                        pergunta: { type: "STRING" },
+                        alternativas: { type: "ARRAY", items: { type: "STRING" } },
+                        correta: { type: "INTEGER" },
+                        explicacao: { type: "STRING" }
+                    },
+                    required: ["materia", "nivel", "pergunta", "alternativas", "correta", "explicacao"]
+                }
+            }
+        },
+        required: ["orientacao", "questoes"]
+    };
+
+    const resultado = await chamarGemini(instrucao, schema);
+    return res.status(200).json(resultado);
+}
+
+async function criarRelatorioResponsavel(res, dados) {
+    if (!dados.dataAlvo) {
+        return res.status(400).json({
+            erro: "Escolha a data que deseja preparar."
+        });
+    }
+
+    const instrucao = `
+Você é a assistente educacional da visão do responsável no aplicativo Maltéria.
+
+DATA-ALVO DO RELATÓRIO: ${dados.dataAlvo}
+INÍCIO DA JANELA RETROATIVA: ${dados.dataInicio || "não informado"}
+
+DADOS DA AGENDA, CLASSROOM E POSSÍVEL HORÁRIO:
+${dados.conteudo}
+
+TAREFA:
+Descubra quais entregas, deveres, trabalhos, provas ou testes devem acontecer
+exatamente na data-alvo. Os professores podem ter registrado a orientação
+semanas antes da data real.
+
+REGRAS DE INTERPRETAÇÃO:
+- A data do evento é a data em que a orientação foi registrada, não
+  necessariamente a data de entrega.
+- "Para amanhã" significa o dia seguinte à data do registro.
+- "Para o dia 15" significa o primeiro dia 15 coerente posterior ao registro,
+  salvo quando o texto informar mês ou ano.
+- "Próxima aula" significa o próximo dia em que aquela matéria aparece no
+  horário semanal encontrado.
+- "Próxima aula de Ciências", por exemplo, deve usar o próximo dia de Ciências,
+  mesmo que outras matérias tenham aula antes.
+- Se não houver horário confiável, não invente a data. Coloque a dúvida em avisos.
+- Tarefa, dever e dever de casa pertencem à categoria "Dever de casa".
+- Prova e teste são categorias diferentes. Preserve "Prova" quando o professor
+  escreveu prova e "Teste" quando escreveu teste.
+- Trabalho, seminário e projeto também devem manter categorias próprias.
+- Use a data oficial do Classroom quando ela existir e for compatível.
+- Inclua na tabela somente itens cuja entrega calculada seja a data-alvo.
+- Não inclua compromissos pessoais ou eventos sem relação escolar.
+- Informe a data original do registro e explique brevemente como a data de
+  entrega foi calculada.
+- Leia integralmente qualquer PDF de horário anexado.
+- Se encontrar o horário, devolva-o organizado por dia da semana.
+- Responda em português do Brasil, de maneira formal, objetiva e sem alarmismo.
+- Não invente matérias, datas ou tarefas.
+
+Responda somente em JSON válido.
+`;
+
+    const schema = {
+        type: "OBJECT",
+        properties: {
+            resumo: { type: "STRING" },
+            horarioEncontrado: { type: "BOOLEAN" },
+            horarioSemanal: {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        dia: { type: "STRING" },
+                        aulas: {
+                            type: "ARRAY",
+                            items: { type: "STRING" }
+                        }
+                    },
+                    required: ["dia", "aulas"]
+                }
+            },
+            entregas: {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        materia: { type: "STRING" },
+                        tipo: { type: "STRING" },
+                        titulo: { type: "STRING" },
+                        dataEntrega: { type: "STRING" },
+                        dataRegistro: { type: "STRING" },
+                        origem: { type: "STRING" },
+                        justificativa: { type: "STRING" },
+                        prioridade: { type: "STRING" }
+                    },
+                    required: [
+                        "materia", "tipo", "titulo", "dataEntrega",
+                        "dataRegistro", "origem", "justificativa", "prioridade"
+                    ]
+                }
+            },
+            avisos: {
+                type: "ARRAY",
+                items: { type: "STRING" }
+            }
+        },
+        required: [
+            "resumo",
+            "horarioEncontrado",
+            "horarioSemanal",
+            "entregas",
+            "avisos"
+        ]
+    };
+
+    const resultado = await chamarGemini(
+        instrucao,
+        schema,
+        prepararPartesDeArquivos(dados.arquivos)
+    );
+
+    return res.status(200).json(resultado);
+}
+
+async function avaliarNivelEvolucao(res, dados) {
+    const arquivosValidos = dados.arquivos
+        .filter(function (arquivo) {
+            return arquivo &&
+                typeof arquivo.data === "string" &&
+                typeof arquivo.mimeType === "string" &&
+                (
+                    arquivo.mimeType.startsWith("image/") ||
+                    arquivo.mimeType === "application/pdf"
+                );
+        })
+        .slice(0, 6);
+
+    if (arquivosValidos.length === 0) {
+        return res.status(400).json({
+            erro: "Os documentos enviados não puderam ser lidos."
+        });
+    }
+
+    const descricaoArquivos = arquivosValidos.map(function (arquivo, indice) {
+        return `${indice + 1}. ${arquivo.categoria || "documento"}: ${arquivo.nome || "arquivo escolar"}`;
+    }).join("\n");
+
+    const instrucao = `
+Você é a inteligência educacional da Maltéria.
+
+Analise cuidadosamente os documentos escolares anexados. O primeiro documento
+deve ser o boletim; os demais podem ser provas, listas ou folhas de exercícios.
+
+OBJETIVO DO ALUNO:
+${dados.objetivo || "melhorar_notas"}
+
+DOCUMENTOS:
+${descricaoArquivos}
+
+REGRAS OBRIGATÓRIAS:
+- Responda em português do Brasil, com linguagem formal, clara e acolhedora.
+- Leia somente informações realmente visíveis nos documentos. Não invente notas,
+  matérias, erros, competências ou diagnósticos.
+- Observe notas por matéria, evolução entre períodos, padrões de erro, questões
+  resolvidas e conteúdos que precisam de reforço.
+- Escolha um nível de dificuldade entre: Reforço, Básico, Intermediário ou Avançado.
+- O índice deve representar o potencial estimado de evolução com organização,
+  estudo e prática. Ele não representa aumento garantido de nota.
+- Calcule o índice de 0 a 100 com prudência. Considere quantidade e qualidade dos
+  documentos, lacunas de aprendizagem, regularidade das notas e possibilidade de
+  melhora. Não escolha um número aleatório.
+- Se os documentos estiverem incompletos ou pouco legíveis, reduza a confiança da
+  análise e explique isso no resumo.
+- A mensagem formal deve seguir esta ideia: "Com o uso consistente da Maltéria,
+  seu potencial estimado de evolução é de X%. A plataforma oferece organização,
+  explicações e prática; a concretização desse potencial também depende da sua
+  dedicação e rotina de estudos."
+- Crie um plano inicial de 5 dias, com sessões realistas de 20 a 45 minutos.
+- Não faça diagnóstico médico, psicológico ou de transtorno de aprendizagem.
+- Não diga que o aluno certamente melhorará uma porcentagem específica.
+
+Responda somente em JSON válido.
+`;
+
+    const schema = {
+        type: "OBJECT",
+        properties: {
+            indicePotencial: { type: "INTEGER" },
+            nivelDificuldade: { type: "STRING" },
+            confianca: { type: "STRING" },
+            resumo: { type: "STRING" },
+            mensagemFormal: { type: "STRING" },
+            pontosFortes: {
+                type: "ARRAY",
+                items: { type: "STRING" }
+            },
+            pontosAtencao: {
+                type: "ARRAY",
+                items: { type: "STRING" }
+            },
+            materiasPrioritarias: {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        materia: { type: "STRING" },
+                        situacao: { type: "STRING" },
+                        acao: { type: "STRING" }
+                    },
+                    required: ["materia", "situacao", "acao"]
+                }
+            },
+            planoSemanal: {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        dia: { type: "STRING" },
+                        foco: { type: "STRING" },
+                        atividade: { type: "STRING" },
+                        minutos: { type: "INTEGER" }
+                    },
+                    required: ["dia", "foco", "atividade", "minutos"]
+                }
+            }
+        },
+        required: [
+            "indicePotencial",
+            "nivelDificuldade",
+            "confianca",
+            "resumo",
+            "mensagemFormal",
+            "pontosFortes",
+            "pontosAtencao",
+            "materiasPrioritarias",
+            "planoSemanal"
+        ]
+    };
+
+    const partesDosDocumentos = arquivosValidos.map(function (arquivo) {
+        return {
+            inlineData: {
+                mimeType: arquivo.mimeType,
+                data: arquivo.data
+            }
+        };
+    });
+
+    const resultado = await chamarGemini(
+        instrucao,
+        schema,
+        partesDosDocumentos
+    );
+
+    resultado.indicePotencial = Math.max(
+        0,
+        Math.min(100, Number(resultado.indicePotencial) || 0)
+    );
+
+    return res.status(200).json(resultado);
 }
 
 async function responderPesquisa(res, dados) {
@@ -168,6 +507,12 @@ REGRAS OBRIGATÓRIAS:
   destacando conceitos, expressões, fórmulas e exemplos importantes.
 - Se o formato for "slides", crie de 6 a 10 slides. Cada slide deve ter
   título e de 3 a 5 pontos curtos, claros e gramaticalmente corretos.
+- Se o formato for "tabela", organize as informações em uma tabela detalhada.
+  Crie cabeçalhos claros, mantenha o mesmo número de células em todas as linhas
+  e use uma linha para cada conteúdo, atividade, conceito ou comparação.
+- Leia integralmente os PDFs anexados, inclusive PDFs escaneados, e use o
+  conteúdo deles como fonte principal da resposta. Não resuma apenas o nome
+  do arquivo.
 - Destaque os pontos mais importantes.
 - Se houver contas, apresente o cálculo passo a passo.
 - Se houver datas históricas, nomes ou fórmulas,
@@ -199,17 +544,45 @@ Responda somente em JSON válido.
                     },
                     required: ["titulo", "pontos"]
                 }
+            },
+
+            tabela: {
+                type: "OBJECT",
+                properties: {
+                    titulo: { type: "STRING" },
+                    colunas: {
+                        type: "ARRAY",
+                        items: { type: "STRING" }
+                    },
+                    linhas: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                celulas: {
+                                    type: "ARRAY",
+                                    items: { type: "STRING" }
+                                }
+                            },
+                            required: ["celulas"]
+                        }
+                    }
+                },
+                required: ["titulo", "colunas", "linhas"]
             }
         },
 
         required: [
-            "resposta"
+            "resposta",
+            "slides",
+            "tabela"
         ]
     };
 
     const resultado = await chamarGemini(
         instrucao,
-        schema
+        schema,
+        prepararPartesDeArquivos(dados.arquivos)
     );
 
     return res.status(200).json(resultado);
@@ -230,6 +603,10 @@ ${dados.titulo || "Materiais do Classroom"}
 
 MATERIAL:
 ${dados.conteudo}
+
+Os PDFs anexados devem ser abertos e lidos integralmente. Use o texto, as
+imagens, as tabelas e os exercícios encontrados neles para criar a explicação,
+a cópia, os slides, a revisão e o simulado. Não use somente o nome do PDF.
 
 Crie uma resposta em português do Brasil.
 
@@ -286,6 +663,16 @@ REGRAS:
 - A alternativa correta deve ser um número de 0 até 3.
 - Explique por que a resposta está correta.
 - Não use informações externas ao material.
+- Crie também uma lista tradicional para o aluno resolver à mão.
+- A lista deve ter de 12 a 20 questões, com progressão de dificuldade,
+  espaço sugerido para resolução e variedade adequada à matéria.
+- Priorize questões discursivas, cálculos, produção escrita, interpretação,
+  organização de raciocínio e treino semelhante às folhas escolares.
+- Em Inglês, inclua vocabulário, compreensão, formação de frases e produção escrita.
+- A lista não deve depender de clicar em alternativas no computador.
+- Crie um gabarito separado, com resposta e explicação breve de cada questão.
+- Use analogias simples e exemplos ligados à vida da criança quando isso ajudar,
+  sem infantilizar nem reduzir o nível escolar.
 
 Responda somente em JSON válido.
 `;
@@ -376,6 +763,39 @@ Responda somente em JSON válido.
                         "explicacao"
                     ]
                 }
+            },
+
+            listaImpressa: {
+                type: "OBJECT",
+                properties: {
+                    titulo: { type: "STRING" },
+                    orientacoes: { type: "STRING" },
+                    questoes: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                numero: { type: "INTEGER" },
+                                enunciado: { type: "STRING" },
+                                espacoLinhas: { type: "INTEGER" }
+                            },
+                            required: ["numero", "enunciado", "espacoLinhas"]
+                        }
+                    },
+                    gabarito: {
+                        type: "ARRAY",
+                        items: {
+                            type: "OBJECT",
+                            properties: {
+                                numero: { type: "INTEGER" },
+                                resposta: { type: "STRING" },
+                                explicacao: { type: "STRING" }
+                            },
+                            required: ["numero", "resposta", "explicacao"]
+                        }
+                    }
+                },
+                required: ["titulo", "orientacoes", "questoes", "gabarito"]
             }
         },
 
@@ -385,21 +805,63 @@ Responda somente em JSON válido.
             "roteiroAudio",
             "slides",
             "revisao",
-            "simulado"
+            "simulado",
+            "listaImpressa"
         ]
     };
 
     const resultado = await chamarGemini(
         instrucao,
-        schema
+        schema,
+        prepararPartesDeArquivos(dados.arquivos)
     );
 
     return res.status(200).json(resultado);
 }
 
+function prepararPartesDeArquivos(arquivos) {
+    if (!Array.isArray(arquivos)) {
+        return [];
+    }
+
+    let tamanhoBase64 = 0;
+
+    return arquivos
+        .filter(function (arquivo) {
+            if (
+                !arquivo ||
+                typeof arquivo.data !== "string" ||
+                typeof arquivo.mimeType !== "string"
+            ) {
+                return false;
+            }
+
+            const tipoPermitido =
+                arquivo.mimeType === "application/pdf" ||
+                arquivo.mimeType.startsWith("image/");
+
+            if (!tipoPermitido) {
+                return false;
+            }
+
+            tamanhoBase64 += arquivo.data.length;
+            return tamanhoBase64 <= 4100000;
+        })
+        .slice(0, 6)
+        .map(function (arquivo) {
+            return {
+                inlineData: {
+                    mimeType: arquivo.mimeType,
+                    data: arquivo.data
+                }
+            };
+        });
+}
+
 async function chamarGemini(
     instrucao,
-    schema
+    schema,
+    partesExtras = []
 ) {
     const modelos = [
         {
@@ -443,7 +905,8 @@ async function chamarGemini(
                                 parts: [
                                     {
                                         text: instrucao
-                                    }
+                                    },
+                                    ...partesExtras
                                 ]
                             }
                         ],
