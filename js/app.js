@@ -31,6 +31,7 @@ const transicaoProximo =
 const telaEscolha = document.querySelector("#escolha");
 const telaLogin = document.querySelector("#login");
 const telaCadastro = document.querySelector("#cadastro");
+const telaVinculoFamilia = document.querySelector("#vinculo-familia");
 const aplicativo = document.querySelector("#aplicativo");
 
 const paginaPrincipal =
@@ -196,6 +197,7 @@ function esconderTelasPrincipais() {
     telaEscolha.classList.add("escondido");
     telaLogin.classList.add("escondido");
     telaCadastro.classList.add("escondido");
+    telaVinculoFamilia.classList.add("escondido");
     aplicativo.classList.add("escondido");
 }
 
@@ -298,12 +300,14 @@ function abrirCadastroLimpo() {
     protegerCamposContraPreenchimento(formulario);
     document.querySelector("#erro-cadastro").textContent = "";
     dadosFilho?.classList.add("escondido");
+    document.querySelector("#opcao-familia-aluno")?.classList.remove("escondido");
     mostrarTela(telaCadastro);
 
     window.setTimeout(function () {
         limparCamposDeAcesso(formulario);
         protegerCamposContraPreenchimento(formulario);
         dadosFilho?.classList.add("escondido");
+        document.querySelector("#opcao-familia-aluno")?.classList.remove("escondido");
     }, 250);
 }
 
@@ -451,6 +455,47 @@ document
                 mostrarPaginaPrincipal();
                 conectarClassroom();
             }
+
+            if (botao.dataset.ajudaAcao === "meta") {
+                paginaAnteriorFerramenta = paginaAjuda;
+                mostrarPaginaInterna(paginaNivelMelhora);
+                prepararPainelMetaEvolucao();
+            }
+
+            if (botao.dataset.ajudaAcao === "relatorio") {
+                mostrarPaginaPrincipal();
+                document.querySelector("#painel-responsavel-resumo")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+
+            if (botao.dataset.ajudaAcao === "filhos") {
+                mostrarPaginaPrincipal();
+                document.querySelector("#area-filhos")
+                    ?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        });
+    });
+
+document
+    .querySelectorAll("[data-ajuda-perfil]")
+    .forEach(function (botao) {
+        botao.addEventListener("click", function () {
+            const perfil = botao.dataset.ajudaPerfil;
+
+            document
+                .querySelectorAll("[data-ajuda-perfil]")
+                .forEach(function (opcao) {
+                    opcao.classList.toggle("ativo", opcao === botao);
+                });
+
+            document
+                .querySelectorAll("[data-conteudo-ajuda]")
+                .forEach(function (conteudo) {
+                    conteudo.classList.toggle(
+                        "escondido",
+                        conteudo.dataset.conteudoAjuda !== perfil
+                    );
+                });
         });
     });
 
@@ -469,6 +514,9 @@ const filhoNome =
 const filhoEmail =
     document.querySelector("#filho-email");
 
+const opcaoFamiliaAluno =
+    document.querySelector("#opcao-familia-aluno");
+
 opcoesTipoConta.forEach(function (opcao) {
     opcao.addEventListener("change", function () {
         const responsavel =
@@ -478,6 +526,11 @@ opcoesTipoConta.forEach(function (opcao) {
         dadosFilho.classList.toggle(
             "escondido",
             !responsavel
+        );
+
+        opcaoFamiliaAluno.classList.toggle(
+            "escondido",
+            responsavel
         );
 
         filhoNome.required = responsavel;
@@ -509,6 +562,10 @@ document
         const tipo = document.querySelector(
             'input[name="tipo-conta"]:checked'
         ).value;
+
+        const desejaVincularFamilia =
+            tipo === "Aluno" &&
+            document.querySelector("#aluno-tem-familia").checked;
 
         if (nome.length < 2) {
             mostrarErroCadastro(
@@ -575,6 +632,13 @@ document
 
         salvarUsuarioLocal(usuarioAtual);
 
+        if (desejaVincularFamilia) {
+            document.querySelector("#codigo-vinculo-familia").value = "";
+            document.querySelector("#erro-vinculo-familia").textContent = "";
+            mostrarTela(telaVinculoFamilia);
+            return;
+        }
+
         entrarNoAplicativo();
     });
 
@@ -590,6 +654,90 @@ function gerarCodigo() {
 
     return "PEPI-" + numero;
 }
+
+function normalizarCodigoFamilia(codigo) {
+    return String(codigo || "")
+        .trim()
+        .toUpperCase()
+        .replace(/\s+/g, "");
+}
+
+document
+    .querySelector("#form-vinculo-familia")
+    .addEventListener("submit", function (evento) {
+        evento.preventDefault();
+
+        const campoCodigo = document.querySelector("#codigo-vinculo-familia");
+        const areaErro = document.querySelector("#erro-vinculo-familia");
+        const codigo = normalizarCodigoFamilia(campoCodigo.value);
+
+        if (!codigo) {
+            areaErro.textContent = "Digite o código enviado pelo seu responsável.";
+            return;
+        }
+
+        const responsavel = lerUsuariosLocais().find(function (usuario) {
+            if (usuario.tipo !== "Responsável") return false;
+
+            const codigoDaFamilia =
+                normalizarCodigoFamilia(usuario.codigoFamilia);
+            const codigoDeUmFilho = (usuario.filhos || []).some(
+                function (filho) {
+                    return normalizarCodigoFamilia(filho.codigo) === codigo;
+                }
+            );
+
+            return codigoDaFamilia === codigo || codigoDeUmFilho;
+        });
+
+        if (!responsavel) {
+            areaErro.textContent =
+                "Não encontramos esse código neste navegador. Confira o código ou peça ao responsável para abrir a conta neste aparelho.";
+            return;
+        }
+
+        responsavel.filhos = responsavel.filhos || [];
+
+        let filhoVinculado = responsavel.filhos.find(function (filho) {
+            return normalizarCodigoFamilia(filho.codigo) === codigo;
+        });
+
+        if (!filhoVinculado) {
+            filhoVinculado = responsavel.filhos.find(function (filho) {
+                return normalizarEmail(filho.email) ===
+                    normalizarEmail(usuarioAtual.email);
+            });
+        }
+
+        if (filhoVinculado) {
+            filhoVinculado.nome = usuarioAtual.nome;
+            filhoVinculado.email = usuarioAtual.email;
+            usuarioAtual.codigoAluno =
+                filhoVinculado.codigo || usuarioAtual.codigoAluno;
+        } else {
+            filhoVinculado = {
+                nome: usuarioAtual.nome,
+                email: usuarioAtual.email,
+                codigo: usuarioAtual.codigoAluno || gerarCodigo()
+            };
+            responsavel.filhos.push(filhoVinculado);
+            usuarioAtual.codigoAluno = filhoVinculado.codigo;
+        }
+
+        usuarioAtual.responsavelEmail = responsavel.email;
+        usuarioAtual.familiaCodigoVinculado = responsavel.codigoFamilia || codigo;
+        usuarioAtual.vinculoFamiliaAtivo = true;
+
+        salvarUsuarioLocal(responsavel);
+        salvarUsuarioLocal(usuarioAtual);
+        entrarNoAplicativo();
+    });
+
+document
+    .querySelector("#pular-vinculo-familia")
+    .addEventListener("click", function () {
+        entrarNoAplicativo();
+    });
 
 /* LOGIN */
 
