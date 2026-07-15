@@ -315,6 +315,22 @@
                     </label>
                 </div>
 
+                <!-- VÍNCULO DO ALUNO COM A FAMÍLIA -->
+                <section id="opcao-familia-aluno" class="opcao-familia-aluno">
+                    <div>
+                        <span aria-hidden="true">👨‍👩‍👧‍👦</span>
+                        <div>
+                            <strong>Sua família já usa a Maltéria?</strong>
+                            <p>Depois do cadastro, use o código enviado pelo seu responsável para entrar na família.</p>
+                        </div>
+                    </div>
+
+                    <label class="controle-familia-aluno" for="aluno-tem-familia">
+                        <input id="aluno-tem-familia" type="checkbox">
+                        <span>Sim, quero usar o código da minha família</span>
+                    </label>
+                </section>
+
                 <!-- VÍNCULO DO PRIMEIRO FILHO -->
                 <section
                     id="dados-filho"
@@ -375,6 +391,46 @@
             <button class="voltar botao-link">
                 ← Voltar
             </button>
+        </section>
+    </main>
+
+    <!-- VINCULAR ALUNO À FAMÍLIA -->
+    <main id="vinculo-familia" class="pagina-autenticacao escondido">
+        <section class="cartao formulario cartao-vinculo-familia">
+            <div class="logo">
+                <span>M</span>
+                <strong>MALTÉRIA</strong>
+            </div>
+
+            <span class="icone-vinculo-familia" aria-hidden="true">🔗</span>
+            <h1>Entrar na sua família</h1>
+            <p class="texto-vinculo-familia">
+                Digite o código que aparece na conta do seu responsável. Assim, sua conta ficará na lista de filhos acompanhados por ele.
+            </p>
+
+            <form id="form-vinculo-familia" autocomplete="off">
+                <label for="codigo-vinculo-familia">Código da família ou do aluno</label>
+                <input
+                    id="codigo-vinculo-familia"
+                    name="malteria-codigo-familia"
+                    type="text"
+                    inputmode="text"
+                    autocomplete="off"
+                    placeholder="Exemplo: PEPI-4821"
+                    required
+                >
+
+                <button class="botao-principal" type="submit">Vincular minha conta</button>
+                <p id="erro-vinculo-familia" class="erro" aria-live="polite"></p>
+            </form>
+
+            <button id="pular-vinculo-familia" class="botao-link pular-vinculo-familia" type="button">
+                Fazer isso depois
+            </button>
+
+            <small class="aviso-vinculo-local">
+                Nesta versão de teste, as duas contas precisam estar cadastradas neste mesmo navegador. Quando o banco de dados for criado, o vínculo funcionará em aparelhos diferentes.
+            </small>
         </section>
     </main>
 
@@ -660,15 +716,133 @@
                     </div>
                 </div>
 
-                <div class="grade-ajuda">
-                    <article class="cartao-ajuda"><span>🚀</span><h2>Primeiros passos</h2><p>Cadastre sua conta, entre na Maltéria e conecte a conta escolar do Google.</p></article>
-                    <article class="cartao-ajuda"><span>🎓</span><h2>Google Classroom</h2><p>Use “Conectar ao Classroom” no cabeçalho para carregar turmas, materiais e atividades.</p><button class="botao-secundario acao-ajuda" data-ajuda-acao="classroom" type="button">Conectar ou atualizar</button></article>
-                    <article class="cartao-ajuda"><span>🔎</span><h2>Pesquisa inteligente</h2><p>Escolha a matéria e o período. A resposta será criada com o conteúdo encontrado.</p><button class="botao-secundario acao-ajuda" data-ajuda-acao="pesquisa" type="button">Abrir pesquisa</button></article>
-                    <article class="cartao-ajuda"><span>🧠</span><h2>Explicações e slides</h2><p>Entre em uma matéria e escolha Explicações para criar resumo, cópia, revisão e slides.</p></article>
-                    <article class="cartao-ajuda"><span>📝</span><h2>Atividades e simulados</h2><p>Confira tarefas reais do Classroom e pratique com simulados produzidos a partir do material.</p></article>
-                    <article class="cartao-ajuda"><span>👨‍👩‍👧‍👦</span><h2>Conta de responsável</h2><p>Adicione filhos, selecione quem deseja acompanhar e veja matérias e próximos prazos.</p></article>
-                    <article class="cartao-ajuda"><span>📎</span><h2>Uploads</h2><p>Adicione fotos, textos, exercícios e provas antigas dentro da matéria correta.</p></article>
-                    <article class="cartao-ajuda"><span>🛠️</span><h2>Algo não funcionou?</h2><p>Atualize a página, reconecte o Classroom e confira se selecionou a conta escolar correta.</p></article>
+                <section class="ajuda-escolha-perfil" aria-labelledby="titulo-ajuda-perfil">
+                    <div>
+                        <small>COMECE POR AQUI</small>
+                        <h2 id="titulo-ajuda-perfil">Quem está usando a Maltéria?</h2>
+                        <p>Escolha uma opção para ver as instruções mais importantes primeiro.</p>
+                    </div>
+                    <div class="botoes-perfil-ajuda" role="group" aria-label="Escolher perfil da ajuda">
+                        <button class="botao-perfil-ajuda ativo" data-ajuda-perfil="responsavel" type="button">👨‍👩‍👧‍👦 Sou responsável</button>
+                        <button class="botao-perfil-ajuda" data-ajuda-perfil="aluno" type="button">🎒 Sou aluno</button>
+                    </div>
+                </section>
+
+                <section class="guia-rapido-ajuda" data-conteudo-ajuda="responsavel">
+                    <div class="titulo-secao-ajuda">
+                        <small>GUIA RÁPIDO DO RESPONSÁVEL</small>
+                        <h2>Organize os estudos em seis passos</h2>
+                    </div>
+                    <ol class="passos-ajuda">
+                        <li><strong>Crie a conta de responsável.</strong><span>Cadastre o primeiro filho ou adicione outros depois.</span></li>
+                        <li><strong>Selecione o filho.</strong><span>Confirme no topo qual criança está sendo acompanhada.</span></li>
+                        <li><strong>Conecte a conta escolar.</strong><span>Use o Google Classroom do filho, não o Gmail pessoal.</span></li>
+                        <li><strong>Veja o que precisa ser entregue.</strong><span>Informe o dia de hoje, a data que deseja preparar e o período da busca.</span></li>
+                        <li><strong>Pesquise e pratique.</strong><span>Use materiais reais para explicações, revisões, listas e simulados.</span></li>
+                        <li><strong>Acompanhe sem pressionar.</strong><span>Defina uma meta, envie o boletim e observe a evolução ao longo do bimestre.</span></li>
+                    </ol>
+                </section>
+
+                <section class="guia-rapido-ajuda escondido" data-conteudo-ajuda="aluno">
+                    <div class="titulo-secao-ajuda">
+                        <small>GUIA RÁPIDO DO ALUNO</small>
+                        <h2>Comece a estudar em cinco passos</h2>
+                    </div>
+                    <ol class="passos-ajuda">
+                        <li><strong>Crie sua conta.</strong><span>Se sua família já usa a Maltéria, marque essa opção e informe o código.</span></li>
+                        <li><strong>Conecte seu Classroom.</strong><span>Escolha a conta escolar que contém suas turmas.</span></li>
+                        <li><strong>Abra uma matéria.</strong><span>Veja atividades, uploads, explicações e opções de prática.</span></li>
+                        <li><strong>Faça uma pesquisa.</strong><span>Escolha a matéria, o período e o formato da resposta.</span></li>
+                        <li><strong>Pratique aos poucos.</strong><span>Use listas, quiz e simulados com dificuldade gradual.</span></li>
+                    </ol>
+                </section>
+
+                <div class="grade-ajuda grade-ajuda-detalhada">
+                    <details class="cartao-ajuda" open>
+                        <summary><span>🔎</span><div><small>PASSO A PASSO</small><h2>Como funciona a pesquisa?</h2></div></summary>
+                        <div class="conteudo-cartao-ajuda">
+                            <ol>
+                                <li>Escolha uma matéria ou selecione todas.</li>
+                                <li>Escolha o formato: texto, tópicos, tabela ou slides.</li>
+                                <li>Marque <strong>Sem data</strong> para usar todo o conteúdo disponível, ou informe o período desejado.</li>
+                                <li>Escreva claramente o que deseja saber e toque em <strong>Pesquisar nos materiais</strong>.</li>
+                            </ol>
+                            <p>A Maltéria procura atividades, materiais, anexos e uploads. A Agenda ajuda a localizar datas; o conteúdo didático vem do Classroom e dos arquivos da matéria.</p>
+                            <p><strong>Pesquisas antigas:</strong> ficam na barra esquerda e podem ser abertas novamente.</p>
+                            <button class="botao-secundario acao-ajuda" data-ajuda-acao="pesquisa" type="button">Abrir pesquisa</button>
+                        </div>
+                    </details>
+
+                    <details class="cartao-ajuda">
+                        <summary><span>🎯</span><div><small>SEM PRESSÃO</small><h2>Como funciona a meta?</h2></div></summary>
+                        <div class="conteudo-cartao-ajuda">
+                            <ul>
+                                <li><strong>Média atual:</strong> a nota já alcançada no bimestre.</li>
+                                <li><strong>Meta desejada:</strong> um objetivo possível para orientar o estudo.</li>
+                                <li><strong>Escala:</strong> informe se a escola usa 10, 20, 100 ou outra pontuação.</li>
+                                <li><strong>Regra da escola:</strong> descreva pesos de provas, testes e trabalhos quando souber.</li>
+                            </ul>
+                            <p>O boletim e as avaliações ajudam a identificar prioridades. A porcentagem exibida é uma estimativa educacional, não uma promessa de nota.</p>
+                            <button class="botao-secundario acao-ajuda" data-ajuda-acao="meta" type="button">Ver meta e evolução</button>
+                        </div>
+                    </details>
+
+                    <details class="cartao-ajuda" data-conteudo-ajuda="responsavel">
+                        <summary><span>📋</span><div><small>VISÃO DO RESPONSÁVEL</small><h2>O que precisa ser entregue?</h2></div></summary>
+                        <div class="conteudo-cartao-ajuda">
+                            <ul>
+                                <li><strong>Em que dia estou?</strong> é a data em que o responsável está fazendo a consulta.</li>
+                                <li><strong>Qual dia quero preparar?</strong> é o dia das aulas ou entregas que deseja organizar.</li>
+                                <li><strong>Procurar nos últimos:</strong> define quantas semanas de avisos antigos serão examinadas.</li>
+                            </ul>
+                            <p>A Maltéria tenta interpretar expressões como “para amanhã” e “para a próxima aula” usando a data do aviso e o horário semanal. Itens em “precisa confirmar” devem ser conferidos pela família.</p>
+                            <button class="botao-secundario acao-ajuda" data-ajuda-acao="relatorio" type="button">Ver relatório do responsável</button>
+                        </div>
+                    </details>
+
+                    <details class="cartao-ajuda">
+                        <summary><span>🎓</span><div><small>CONTA ESCOLAR</small><h2>Google Classroom</h2></div></summary>
+                        <div class="conteudo-cartao-ajuda">
+                            <p>Conecte a conta escolar que possui as turmas. A Maltéria carrega matérias, atividades, materiais e anexos autorizados.</p>
+                            <ul>
+                                <li>Se aparecerem turmas erradas, reconecte e escolha a conta escolar correta.</li>
+                                <li>Algumas escolas exigem autorização do administrador.</li>
+                                <li>O botão do cabeçalho mostra quando o Classroom já está conectado.</li>
+                            </ul>
+                            <button class="botao-secundario acao-ajuda" data-ajuda-acao="classroom" type="button">Conectar ou atualizar</button>
+                        </div>
+                    </details>
+
+                    <details class="cartao-ajuda" data-conteudo-ajuda="responsavel">
+                        <summary><span>👨‍👩‍👧‍👦</span><div><small>FAMÍLIA</small><h2>Filhos e código de vínculo</h2></div></summary>
+                        <div class="conteudo-cartao-ajuda">
+                            <p>O responsável pode cadastrar vários filhos e selecionar qual deseja acompanhar. O aluno também pode escolher “Minha família já usa a Maltéria” durante o cadastro e digitar o código exibido na conta do responsável.</p>
+                            <p><strong>Importante:</strong> enquanto o Supabase não estiver pronto, o vínculo entre contas funciona somente neste navegador.</p>
+                            <button class="botao-secundario acao-ajuda" data-ajuda-acao="filhos" type="button">Selecionar ou adicionar filho</button>
+                        </div>
+                    </details>
+
+                    <details class="cartao-ajuda">
+                        <summary><span>🧠</span><div><small>ESTUDAR</small><h2>Explicações, slides e prática</h2></div></summary>
+                        <div class="conteudo-cartao-ajuda">
+                            <p>Abra uma matéria e escolha Explicações para gerar texto, tópicos, cópia, revisão ou slides com base no material encontrado. Em Atividades e Central de prática, use listas, quiz e simulados.</p>
+                            <p>Se não houver conteúdo suficiente, envie fotos, PDFs, exercícios ou provas antigas em Uploads.</p>
+                        </div>
+                    </details>
+
+                    <details class="cartao-ajuda">
+                        <summary><span>🛠️</span><div><small>SOLUÇÕES RÁPIDAS</small><h2>Não apareceu nada. O que faço?</h2></div></summary>
+                        <div class="conteudo-cartao-ajuda">
+                            <ol>
+                                <li>Confira se o Classroom está conectado.</li>
+                                <li>Confirme se escolheu a conta escolar correta.</li>
+                                <li>Tente ampliar o período ou marcar “Sem data”.</li>
+                                <li>Confira se escolheu a matéria correta.</li>
+                                <li>Envie o material manualmente em Uploads quando ele não estiver no Classroom.</li>
+                                <li>Se o Google bloquear a conta, a escola pode precisar autorizar o aplicativo.</li>
+                            </ol>
+                        </div>
+                    </details>
                 </div>
             </section>
 
