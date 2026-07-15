@@ -20,13 +20,15 @@ body {
     margin: 0;
     background: var(--fundo);
     color: var(--texto);
-    font-family: Arial, Helvetica, sans-serif;
-}
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+}xxza
 
 button,
 input,
-select {
+select,
+textarea {
     font: inherit;
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
 }
 
 button {
@@ -894,6 +896,9 @@ select:focus {
 .apresentacao h1 {
     margin: 7px 0;
     font-size: 34px;
+    font-weight: 600;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
 }
 
 .apresentacao p {
@@ -1448,6 +1453,228 @@ details.cartao-ajuda {
     .pagina-pesquisa-conteudo,
     .administracao-pagina-conteudo {
         padding: 21px;
+    }
+}
+
+/* IDENTIDADE VISUAL PRÓPRIA DE CADA PÁGINA */
+
+.cabecalho-ferramenta {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    min-height: 150px;
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    background-size: 220% 220%;
+}
+
+.cabecalho-ferramenta > span,
+.cabecalho-ferramenta > div {
+    position: relative;
+    z-index: 3;
+}
+
+.cabecalho-ferramenta > div {
+    max-width: min(680px, 72%);
+}
+
+.cabecalho-ferramenta > span {
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    box-shadow: 0 14px 34px rgba(20, 15, 64, 0.18);
+    backdrop-filter: blur(8px);
+    animation: flutuar-icone-cabecalho 3.2s ease-in-out infinite;
+}
+
+.cabecalho-ferramenta h1,
+.cabecalho-ferramenta small,
+.cabecalho-ferramenta p {
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+}
+
+.cabecalho-ferramenta h1 {
+    font-weight: 700;
+    letter-spacing: -0.035em;
+}
+
+.cabecalho-ferramenta small {
+    font-weight: 600;
+}
+
+.cabecalho-ferramenta::before,
+.cabecalho-ferramenta::after {
+    position: absolute;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.cabecalho-ferramenta::before {
+    content: "";
+    width: 270px;
+    height: 270px;
+    right: -65px;
+    bottom: -145px;
+    border: 2px solid rgba(255, 255, 255, 0.22);
+    border-radius: 50%;
+}
+
+.cabecalho-ferramenta::after {
+    right: 54px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: clamp(42px, 6vw, 76px);
+    letter-spacing: 12px;
+    filter: drop-shadow(0 16px 22px rgba(22, 14, 71, 0.18));
+}
+
+#pagina-pesquisa .cabecalho-ferramenta {
+    background:
+        radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.28), transparent 24%),
+        linear-gradient(120deg, #087fbb, #13b7d1 48%, #5fa5ff);
+    box-shadow: 0 24px 55px rgba(8, 137, 184, 0.28);
+    animation: onda-pesquisa 7s ease-in-out infinite alternate;
+}
+
+#pagina-pesquisa .cabecalho-ferramenta::after {
+    content: "🔎  📚";
+    animation: deslizar-pesquisa 4s ease-in-out infinite;
+}
+
+#pagina-ajuda .ajuda-cabecalho {
+    background:
+        radial-gradient(circle at 80% 18%, rgba(255, 255, 255, 0.32), transparent 24%),
+        linear-gradient(120deg, #ef6c42, #ff9e45 48%, #ffcb3d);
+    box-shadow: 0 24px 55px rgba(235, 116, 51, 0.28);
+    animation: brilho-ajuda 6s ease-in-out infinite alternate;
+}
+
+#pagina-ajuda .ajuda-cabecalho::after {
+    content: "💡  🧭";
+    animation: flutuar-ajuda 3.3s ease-in-out infinite;
+}
+
+#pagina-nivel-melhora .nivel-melhora-cabecalho {
+    background:
+        radial-gradient(circle at 76% 18%, rgba(255, 255, 255, 0.3), transparent 23%),
+        linear-gradient(120deg, #159b7a, #25c59d 50%, #20bde2);
+    box-shadow: 0 24px 55px rgba(20, 159, 133, 0.28);
+    animation: crescer-meta 6s ease-in-out infinite alternate;
+}
+
+#pagina-nivel-melhora .nivel-melhora-cabecalho::after {
+    content: "🎯  📈";
+    animation: pulsar-meta 2.8s ease-in-out infinite;
+}
+
+#pagina-pratica .cabecalho-ferramenta.pratica-cabecalho {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    padding: 34px 38px;
+    background:
+        radial-gradient(circle at 20% 18%, rgba(255, 255, 255, 0.25), transparent 24%),
+        linear-gradient(120deg, #5120d5, #7c43ff 48%, #f752a2);
+    box-shadow: 0 24px 55px rgba(109, 51, 218, 0.3);
+    animation: energia-pratica 6s ease-in-out infinite alternate;
+}
+
+#pagina-pratica .cabecalho-ferramenta.pratica-cabecalho::after {
+    content: "🧠  ✏️";
+    color: initial;
+    animation: orbitar-pratica 4s ease-in-out infinite;
+}
+
+#pagina-administracao .administracao-cabecalho {
+    background:
+        radial-gradient(circle at 78% 18%, rgba(255, 216, 88, 0.25), transparent 24%),
+        linear-gradient(120deg, #181441, #39227d 52%, #7150ce);
+    box-shadow: 0 24px 55px rgba(28, 21, 74, 0.34);
+    animation: luz-administracao 7s ease-in-out infinite alternate;
+}
+
+#pagina-administracao .administracao-cabecalho::after {
+    content: "♛  ✦";
+    color: #ffe28a;
+    animation: coroar-administracao 3.4s ease-in-out infinite;
+}
+
+@keyframes flutuar-icone-cabecalho {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50% { transform: translateY(-7px) rotate(2deg); }
+}
+
+@keyframes onda-pesquisa {
+    from { background-position: 0% 45%; }
+    to { background-position: 100% 55%; }
+}
+
+@keyframes deslizar-pesquisa {
+    0%, 100% { transform: translateY(-50%) translateX(0) rotate(-3deg); }
+    50% { transform: translateY(-56%) translateX(-10px) rotate(3deg); }
+}
+
+@keyframes brilho-ajuda {
+    from { filter: saturate(0.95); }
+    to { filter: saturate(1.18) brightness(1.04); }
+}
+
+@keyframes flutuar-ajuda {
+    0%, 100% { transform: translateY(-50%) rotate(-5deg) scale(1); }
+    50% { transform: translateY(-62%) rotate(5deg) scale(1.06); }
+}
+
+@keyframes crescer-meta {
+    from { background-position: 0% 50%; }
+    to { background-position: 100% 50%; }
+}
+
+@keyframes pulsar-meta {
+    0%, 100% { transform: translateY(-50%) scale(1); }
+    50% { transform: translateY(-50%) scale(1.1); }
+}
+
+@keyframes energia-pratica {
+    from { background-position: 0% 50%; }
+    to { background-position: 100% 50%; }
+}
+
+@keyframes orbitar-pratica {
+    0%, 100% { transform: translateY(-50%) rotate(-4deg); }
+    50% { transform: translateY(-58%) rotate(5deg) scale(1.08); }
+}
+
+@keyframes luz-administracao {
+    from { background-position: 0% 50%; }
+    to { background-position: 100% 50%; }
+}
+
+@keyframes coroar-administracao {
+    0%, 100% { transform: translateY(-50%) rotate(-3deg); opacity: 0.82; }
+    50% { transform: translateY(-58%) rotate(3deg); opacity: 1; }
+}
+
+@media (max-width: 760px) {
+    .cabecalho-ferramenta > div {
+        max-width: 100%;
+    }
+
+    .cabecalho-ferramenta::after {
+        right: 12px;
+        top: 16px;
+        transform: none;
+        font-size: 32px;
+        opacity: 0.32;
+    }
+
+    #pagina-pratica .cabecalho-ferramenta.pratica-cabecalho {
+        align-items: flex-start;
+        padding: 26px 22px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cabecalho-ferramenta,
+    .cabecalho-ferramenta > span,
+    .cabecalho-ferramenta::after {
+        animation: none !important;
     }
 }
 /* PESQUISA INTELIGENTE */
@@ -3963,7 +4190,15 @@ body {
 .grade-configuracao-simuladao label {
     display: grid;
     gap: 7px;
-    font-weight: 800;
+    min-width: 0;
+    font-weight: 500;
+}
+
+.grade-configuracao-simuladao select {
+    min-width: 0;
+    padding-right: 30px;
+    font-size: 0.88rem;
+    font-weight: 400;
 }
 
 .resumo-meta-bimestral {
@@ -4005,12 +4240,13 @@ body {
 .materias-simuladao {
     border: 1px solid #d9d0ff;
     border-radius: 16px;
-    padding: 16px;
+    padding: 22px 24px 24px;
 }
 
 .materias-simuladao legend {
     padding: 0 8px;
-    font-weight: 900;
+    font-weight: 600;
+    line-height: 1.4;
 }
 
 #lista-materias-simuladao {
@@ -4048,8 +4284,22 @@ body {
 
 .acoes-materias-simuladao {
     display: flex;
-    justify-content: flex-end;
-    margin: 0 0 12px;
+    align-items: flex-start;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 14px;
+    margin: 12px 0 22px;
+    padding: 0 6px;
+    text-align: left;
+}
+
+.acoes-materias-simuladao small {
+    display: block;
+    margin: 0;
+    color: var(--texto-claro);
+    font-size: 0.9rem;
+    font-weight: 400;
+    line-height: 1.55;
 }
 
 .recomendacao-simuladao {
