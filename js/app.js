@@ -43,8 +43,14 @@ function adicionarEnfeitesVisiveisNasPaginas() {
         const camada = document.createElement("div");
         camada.className = "enfeites-visiveis-pagina";
         camada.setAttribute("aria-hidden", "true");
+        camada.style.cssText = "position:absolute;inset:0;z-index:4;overflow:hidden;pointer-events:none";
+        const posicoes = [
+            "top:9%;left:1.5%", "top:12%;right:1.5%",
+            "top:39%;left:2.5%", "top:43%;right:2%",
+            "top:70%;left:1%", "top:74%;right:2.5%"
+        ];
         camada.innerHTML = emojis.map(function (emoji, indice) {
-            return `<span style="--ordem-enfeite:${indice}">${emoji}</span>`;
+            return `<span style="--ordem-enfeite:${indice};position:absolute;${posicoes[indice]};display:grid;width:62px;height:62px;place-items:center;border:2px solid rgba(255,255,255,.78);border-radius:22px;background:rgba(255,255,255,.82);box-shadow:0 12px 30px rgba(82,49,190,.20);font-size:34px;opacity:.82">${emoji}</span>`;
         }).join("");
         pagina.prepend(camada);
     });
