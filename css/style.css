@@ -1240,7 +1240,7 @@ select:focus {
     letter-spacing: 10vw;
     opacity: 0.075;
     pointer-events: none;
-    animation: flutuar-enfeites-pagina 9s ease-in-out infinite alternate;
+    display: none;
 }
 
 #pagina-pesquisa::before { content: "🔎 📚 ✨ 🧠 🔎 📖 ✨"; }
@@ -1268,7 +1268,57 @@ select:focus {
     letter-spacing: 8vw;
     opacity: 0.06;
     pointer-events: none;
-    animation: flutuar-enfeites-pagina 10s ease-in-out infinite alternate;
+    display: none;
+}
+
+.enfeites-visiveis-pagina {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.enfeites-visiveis-pagina span {
+    position: absolute;
+    display: grid;
+    width: clamp(52px, 5vw, 74px);
+    height: clamp(52px, 5vw, 74px);
+    place-items: center;
+    border: 2px solid rgba(255, 255, 255, 0.78);
+    border-radius: 24px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(237, 230, 255, 0.7));
+    box-shadow: 0 12px 30px rgba(82, 49, 190, 0.2);
+    font-size: clamp(27px, 3vw, 42px);
+    opacity: 0.82;
+    filter: saturate(1.18);
+    animation: flutuar-enfeite-visivel 4.8s ease-in-out infinite alternate;
+    animation-delay: calc(var(--ordem-enfeite) * -0.55s);
+}
+
+.enfeites-visiveis-pagina span:nth-child(1) { top: 9%; left: 1.5%; transform: rotate(-9deg); }
+.enfeites-visiveis-pagina span:nth-child(2) { top: 12%; right: 1.5%; transform: rotate(8deg); }
+.enfeites-visiveis-pagina span:nth-child(3) { top: 39%; left: 2.5%; transform: rotate(7deg); }
+.enfeites-visiveis-pagina span:nth-child(4) { top: 43%; right: 2%; transform: rotate(-8deg); }
+.enfeites-visiveis-pagina span:nth-child(5) { top: 70%; left: 1%; transform: rotate(-5deg); }
+.enfeites-visiveis-pagina span:nth-child(6) { top: 74%; right: 2.5%; transform: rotate(6deg); }
+
+@keyframes flutuar-enfeite-visivel {
+    from { translate: 0 0; }
+    to { translate: 0 -13px; }
+}
+
+@media (max-width: 850px) {
+    .enfeites-visiveis-pagina span {
+        width: 46px;
+        height: 46px;
+        border-radius: 16px;
+        font-size: 25px;
+        opacity: 0.68;
+    }
+
+    .enfeites-visiveis-pagina span:nth-child(odd) { left: 4px; }
+    .enfeites-visiveis-pagina span:nth-child(even) { right: 4px; }
 }
 
 @keyframes flutuar-enfeites-pagina {
