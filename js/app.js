@@ -23,6 +23,7 @@ let estudoGerado = null;
 let periodoEstudoAtual = null;
 let uploadsDaSessao = [];
 let arquivosPdfParaIA = [];
+const metasBimestraisDaSessao = new Map();
 const animacaoMalteria =
     document.querySelector("#animacao-malteria");
 const telaBoasVindas = document.querySelector("#boas-vindas");
@@ -96,28 +97,30 @@ function encerrarAberturaMalteria() {
     }, 650);
 }
 
-document.body.classList.add("intro-ativa");
-
-animacaoMalteria.addEventListener(
-    "click",
-    encerrarAberturaMalteria
-);
-
-animacaoMalteria.addEventListener("keydown", function (evento) {
-    if (evento.key === "Enter" || evento.key === " ") {
-        evento.preventDefault();
-        encerrarAberturaMalteria();
-    }
-});
-
 const reduzirMovimento = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
 ).matches;
 
-window.setTimeout(
-    encerrarAberturaMalteria,
-    reduzirMovimento ? 900 : 4800
-);
+if (!animacaoMalteria.classList.contains("escondido")) {
+    document.body.classList.add("intro-ativa");
+
+    animacaoMalteria.addEventListener(
+        "click",
+        encerrarAberturaMalteria
+    );
+
+    animacaoMalteria.addEventListener("keydown", function (evento) {
+        if (evento.key === "Enter" || evento.key === " ") {
+            evento.preventDefault();
+            encerrarAberturaMalteria();
+        }
+    });
+
+    window.setTimeout(
+        encerrarAberturaMalteria,
+        reduzirMovimento ? 900 : 4800
+    );
+}
 
 function normalizarEmail(email) {
     return String(email || "")
@@ -1647,9 +1650,6 @@ function desenharOpcoesDoEstudo() {
                 🎧 Ouvir
             </button>
 
-            <button data-estudo="lista">
-                🖨️ Lista para fazer à mão
-            </button>
         </div>
 
         <div id="conteudo-estudo"></div>
@@ -1702,11 +1702,6 @@ function abrirFormatoDeEstudo(formato) {
                 </div>
             </div>
         `;
-    }
-
-    if (formato === "lista") {
-        desenharListaImpressa(area);
-        return;
     }
 
     if (formato === "slides") {
@@ -2365,231 +2360,85 @@ function desenharUploadsDaMateria() {
 /* SIMULADO */
 
 async function mostrarSimulado() {
-    if (!estudoGerado) {
-        areaMateria.innerHTML = `
-            <h2>Criando o simulado...</h2>
-
-            <p>
-                Lendo os materiais da disciplina.
-            </p>
-        `;
-
-        try {
-            estudoGerado =
-                await gerarEstudoDaMateria();
-        } catch (erro) {
-            const mensagem =
-                traduzirErroDaInteligencia(
-                    erro.message
-                );
-
-            areaMateria.innerHTML = `
-                <h2>
-                    Não foi possível criar o simulado
-                </h2>
-
-                <p>
-                    ${protegerTexto(mensagem)}
-                </p>
-
-                <button
-                    id="tentar-novamente-simulado"
-                    class="botao-principal"
-                >
-                    Tentar novamente
-                </button>
-            `;
-
-            document.querySelector(
-                "#tentar-novamente-simulado"
-            ).addEventListener(
-                "click",
-                mostrarSimulado
-            );
-
-            return;
-        }
-    }
-
-    let questaoAtual = 0;
-    let pontos = 0;
-
-    function desenharQuestao() {
-        const questao =
-            estudoGerado.simulado[
-                questaoAtual
-            ];
-
-        const alternativas =
-            questao.alternativas
-                .map(function (
-                    alternativa,
-                    indice
-                ) {
-                    return `
-                        <button
-                            class="alternativa"
-                            data-indice="${indice}"
-                        >
-                            ${protegerTexto(
-                                alternativa
-                            )}
-                        </button>
-                    `;
-                })
-                .join("");
-
-        areaMateria.innerHTML = `
-            <h2>
-                Simulado de
-                ${protegerTexto(
-                    materiaAtual.name
-                )}
-            </h2>
-
-            <p>
-                Questão ${questaoAtual + 1}
-                de ${estudoGerado.simulado.length}
-            </p>
-
-            <h3>
-                ${protegerTexto(
-                    questao.pergunta
-                )}
-            </h3>
-
-            ${alternativas}
-
-            <div id="retorno-questao"></div>
-        `;
-
-        document
-            .querySelectorAll(".alternativa")
-            .forEach(function (botao) {
-                botao.addEventListener(
-                    "click",
-                    function () {
-                        responderQuestao(
-                            Number(
-                                botao.dataset.indice
-                            )
-                        );
-                    }
-                );
-            });
-    }
-
-    function responderQuestao(indice) {
-        const questao =
-            estudoGerado.simulado[
-                questaoAtual
-            ];
-
-        const acertou =
-            indice === questao.correta;
-
-        if (acertou) {
-            pontos++;
-        }
-
-        document
-            .querySelectorAll(".alternativa")
-            .forEach(function (
-                botao,
-                indiceBotao
-            ) {
-                botao.disabled = true;
-
-                if (
-                    indiceBotao ===
-                    questao.correta
-                ) {
-                    botao.classList.add(
-                        "correta"
-                    );
-                } else if (
-                    indiceBotao === indice
-                ) {
-                    botao.classList.add(
-                        "errada"
-                    );
-                }
-            });
-
-        document.querySelector(
-            "#retorno-questao"
-        ).innerHTML = `
-            <div class="arquivo">
-                <strong>
-                    ${
-                        acertou
-                            ? "✅ Acertou!"
-                            : "💡 Vamos revisar."
-                    }
-                </strong>
-
-                <p>
-                    ${protegerTexto(
-                        questao.explicacao
-                    )}
-                </p>
-
-                <button
-                    id="proxima-questao"
-                    class="botao-principal"
-                >
-                    ${
-                        questaoAtual + 1 <
-                        estudoGerado.simulado.length
-                            ? "Próxima questão"
-                            : "Ver resultado"
-                    }
-                </button>
+    areaMateria.innerHTML = `
+        <section class="caixa configurador-simulado-materia">
+            <h2>Simulado de ${protegerTexto(materiaAtual.name)}</h2>
+            <p>Escolha como deseja responder. As questões serão criadas somente com os materiais desta matéria.</p>
+            <div class="grade-configuracao-simuladao">
+                <label>Tipo de questão
+                    <select id="modalidade-simulado-materia">
+                        <option value="objetiva" selected>Objetivas: marcar alternativa</option>
+                        <option value="discursiva">Discursivas: escrever resposta</option>
+                    </select>
+                </label>
+                <label>Quantidade de questões
+                    <input id="quantidade-simulado-materia" type="number" min="5" max="75" value="10" inputmode="numeric">
+                </label>
+                <label>Nível
+                    <select id="dificuldade-simulado-materia">
+                        <option value="gradual" selected>Gradual</option>
+                        <option value="reforco">Reforço</option>
+                        <option value="desafio">Desafio</option>
+                    </select>
+                </label>
             </div>
-        `;
+            <button id="criar-simulado-materia" class="botao-principal" type="button">Criar simulado</button>
+            <div id="status-simulado-materia" class="status-pesquisa" aria-live="polite"></div>
+            <section id="resultado-simulado-materia" class="resultado-simuladao escondido"></section>
+        </section>
+    `;
 
-        document.querySelector(
-            "#proxima-questao"
-        ).addEventListener(
-            "click",
-            function () {
-                questaoAtual++;
+    document.querySelector("#criar-simulado-materia").addEventListener(
+        "click",
+        criarSimuladoDaMateria
+    );
+}
 
-                if (
-                    questaoAtual <
-                    estudoGerado.simulado.length
-                ) {
-                    desenharQuestao();
-                } else {
-                    registrarPraticaLocal({
-                        tipo: "simulado",
-                        materia: materiaAtual?.name || "Matéria",
-                        periodo: periodoEstudoAtual?.nome || "período atual",
-                        acertos: pontos,
-                        total: estudoGerado.simulado.length,
-                        minutos: Math.max(10, estudoGerado.simulado.length * 2)
-                    });
+async function criarSimuladoDaMateria() {
+    const status = document.querySelector("#status-simulado-materia");
+    const area = document.querySelector("#resultado-simulado-materia");
+    const botao = document.querySelector("#criar-simulado-materia");
+    const modalidade = document.querySelector("#modalidade-simulado-materia").value;
+    const quantidade = limitarQuantidadeQuestoes(
+        document.querySelector("#quantidade-simulado-materia").value
+    );
+    const dificuldade = document.querySelector("#dificuldade-simulado-materia").value;
+    const fim = periodoEstudoAtual?.fim || dataParaCampo(new Date());
+    const inicioPadrao = new Date(fim + "T12:00:00");
+    inicioPadrao.setDate(inicioPadrao.getDate() - 13);
+    const inicio = periodoEstudoAtual?.inicio || dataParaCampo(inicioPadrao);
 
-                    areaMateria.innerHTML = `
-                        <h2>Resultado</h2>
+    botao.disabled = true;
+    area.classList.add("escondido");
+    status.textContent = "Lendo os materiais da disciplina...";
 
-                        <p>
-                            Você acertou
-                            ${pontos} de
-                            ${estudoGerado.simulado.length}.
-                        </p>
+    try {
+        const conteudo = await obterConteudoSimuladao([materiaAtual], inicio, fim);
+        status.textContent = "Criando " + quantidade + " questões em partes, para manter a qualidade...";
+        const dados = await gerarQuestoesEmLotes({
+            tipo: "simulado",
+            materia: materiaAtual.name,
+            titulo: "Simulado de " + materiaAtual.name,
+            conteudo: conteudo,
+            dificuldade: dificuldade,
+            modalidade: modalidade,
+            mapaDificuldade: { [materiaAtual.name]: dificuldade }
+        }, quantidade);
 
-                        <p>
-                            Este resultado ajuda a escolher a próxima prática.
-                            Ele não é uma nota nem uma cobrança.
-                        </p>
-                    `;
-                }
-            }
-        );
+        desenharSimuladaoInterativo(dados, {
+            area: area,
+            dias: 14,
+            modalidade: modalidade,
+            tipoRegistro: "simulado",
+            materias: [materiaAtual.name]
+        });
+        status.textContent = "Simulado pronto. Faça no seu ritmo.";
+    } catch (erro) {
+        console.error(erro);
+        status.textContent = traduzirErroDaInteligencia(erro.message);
+    } finally {
+        botao.disabled = false;
     }
-
-    desenharQuestao();
 }
 
 function traduzirErroDaInteligencia(mensagemOriginal) {
@@ -4499,37 +4348,20 @@ document
     .querySelector("#atualizar-relatorio-responsavel")
     .addEventListener("click", carregarRelatorioResponsavel);
 
-let dataReferenciaRelatorioFoiEditada = false;
-
-dataReferenciaRelatorioResponsavel.addEventListener("change", function () {
-    dataReferenciaRelatorioFoiEditada = true;
-});
-
-dataRelatorioResponsavel.addEventListener("change", function () {
-    if (
-        !dataReferenciaRelatorioFoiEditada &&
-        dataRelatorioResponsavel.value
-    ) {
-        const vespera = new Date(
-            dataRelatorioResponsavel.value + "T12:00:00"
-        );
-        vespera.setDate(vespera.getDate() - 1);
-        dataReferenciaRelatorioResponsavel.value =
-            dataParaCampo(vespera);
-    }
-});
-
 function prepararRelatorioResponsavel() {
-    if (!dataReferenciaRelatorioResponsavel.value) {
-        dataReferenciaRelatorioResponsavel.value =
-            dataParaCampo(new Date());
-    }
+    dataReferenciaRelatorioResponsavel.value = dataParaCampo(new Date());
 
     if (!dataRelatorioResponsavel.value) {
-        const amanha = new Date();
-        amanha.setDate(amanha.getDate() + 1);
-        dataRelatorioResponsavel.value = dataParaCampo(amanha);
+        dataRelatorioResponsavel.value = dataParaCampo(proximoDiaLetivo(new Date()));
     }
+}
+
+function proximoDiaLetivo(data) {
+    const proximo = new Date(data);
+    do {
+        proximo.setDate(proximo.getDate() + 1);
+    } while (proximo.getDay() === 0 || proximo.getDay() === 6);
+    return proximo;
 }
 
 async function carregarRelatorioResponsavel() {
@@ -4540,9 +4372,9 @@ async function carregarRelatorioResponsavel() {
     const botao = document.querySelector("#atualizar-relatorio-responsavel");
     const dataAlvo = dataRelatorioResponsavel.value;
     const dataReferencia = dataReferenciaRelatorioResponsavel.value;
-    const dias = Number(
-        document.querySelector("#horizonte-relatorio-responsavel").value
-    ) || 21;
+    const horizonte = document.querySelector("#horizonte-relatorio-responsavel").value;
+    const semPeriodoEspecifico = horizonte === "sem_periodo";
+    const dias = semPeriodoEspecifico ? 365 : (Number(horizonte) || 21);
 
     if (!tokenClassroom) {
         status.textContent = "Conecte a conta Google do aluno para consultar a Agenda e o Classroom.";
@@ -4550,7 +4382,7 @@ async function carregarRelatorioResponsavel() {
     }
 
     if (!dataAlvo || !dataReferencia) {
-        status.textContent = "Informe o dia de referência e o dia que deseja preparar.";
+        status.textContent = "Escolha a data para a qual deseja consultar os deveres.";
         return;
     }
 
@@ -4598,6 +4430,7 @@ async function carregarRelatorioResponsavel() {
                 dataInicio: dataInicio,
                 dataReferencia: dataReferencia,
                 dataAlvo: dataAlvo,
+                semPeriodoEspecifico: semPeriodoEspecifico,
                 conteudo: (
                     "=== DATAS DA CONSULTA ===\n" +
                     "Dia em que o responsável está: " + dataReferencia +
@@ -5895,6 +5728,17 @@ document
     .querySelector("#quantidade-simuladao")
     .addEventListener("change", atualizarRecomendacaoSimuladao);
 
+[
+    "#bimestre-meta",
+    "#media-atual-meta",
+    "#media-desejada-meta",
+    "#escala-meta",
+    "#regras-nota-meta"
+].forEach(function (seletor) {
+    document.querySelector(seletor).addEventListener("input", salvarRascunhoMetaBimestral);
+    document.querySelector(seletor).addEventListener("change", salvarRascunhoMetaBimestral);
+});
+
 function chaveAnaliseEvolucao() {
     const conta = usuarioAtual?.email
         ? normalizarEmail(usuarioAtual.email)
@@ -5915,6 +5759,22 @@ function prepararPainelMetaEvolucao() {
     restaurarMetaBimestral();
     desenharEstatisticasPratica();
     preencherMateriasSimuladao();
+}
+
+function salvarRascunhoMetaBimestral() {
+    const rascunho = {
+        bimestre: document.querySelector("#bimestre-meta").value,
+        mediaAtual: document.querySelector("#media-atual-meta").value,
+        mediaDesejada: document.querySelector("#media-desejada-meta").value,
+        escala: document.querySelector("#escala-meta").value,
+        regras: document.querySelector("#regras-nota-meta").value,
+        salva: false
+    };
+    metasBimestraisDaSessao.set(chaveMetaDaSessao(), rascunho);
+}
+
+function chaveMetaDaSessao() {
+    return normalizarEmail(usuarioAtual?.email || "visitante");
 }
 
 function salvarMetaBimestral() {
@@ -5953,28 +5813,21 @@ function salvarMetaBimestral() {
         atualizadaEm: new Date().toISOString()
     };
 
-    localStorage.setItem(
-        chaveDadosEvolucao("metaBimestral"),
-        JSON.stringify(meta)
-    );
+    meta.salva = true;
+    metasBimestraisDaSessao.set(chaveMetaDaSessao(), meta);
 
     desenharResumoMeta(meta);
 }
 
 function restaurarMetaBimestral() {
-    let meta = null;
-
-    try {
-        meta = JSON.parse(
-            localStorage.getItem(
-                chaveDadosEvolucao("metaBimestral")
-            ) || "null"
-        );
-    } catch (erro) {
-        meta = null;
-    }
+    const meta = metasBimestraisDaSessao.get(chaveMetaDaSessao()) || null;
 
     if (!meta) {
+        document.querySelector("#bimestre-meta").value = "1";
+        document.querySelector("#media-atual-meta").value = "";
+        document.querySelector("#media-desejada-meta").value = "";
+        document.querySelector("#escala-meta").value = "";
+        document.querySelector("#regras-nota-meta").value = "";
         document.querySelector("#resumo-meta-bimestral").innerHTML = `
             <strong>Comece pela meta, não pela cobrança.</strong>
             <span>Quando o boletim for enviado, a Maltéria poderá revisar esta meta conforme a escala real da escola.</span>
@@ -5987,7 +5840,9 @@ function restaurarMetaBimestral() {
     document.querySelector("#media-desejada-meta").value = meta.mediaDesejada;
     document.querySelector("#escala-meta").value = meta.escala;
     document.querySelector("#regras-nota-meta").value = meta.regras || "";
-    desenharResumoMeta(meta);
+    if (meta.salva) {
+        desenharResumoMeta(meta);
+    }
 }
 
 function desenharResumoMeta(meta) {
@@ -6168,12 +6023,48 @@ function configuracaoDoSimuladao(materias) {
                 : estrategia;
     });
 
-    const escolha = document.querySelector("#quantidade-simuladao").value;
-    const quantidade = escolha === "auto"
-        ? Math.min(50, Math.max(5, materias.length * 5))
-        : Math.min(50, Math.max(5, Number(escolha) || 10));
+    const quantidade = limitarQuantidadeQuestoes(
+        document.querySelector("#quantidade-simuladao").value
+    );
 
     return { estrategia: estrategia, mapa: mapa, quantidade: quantidade };
+}
+
+function limitarQuantidadeQuestoes(valor) {
+    return Math.min(75, Math.max(5, Math.round(Number(valor) || 5)));
+}
+
+async function gerarQuestoesEmLotes(payload, quantidadeTotal) {
+    const questoes = [];
+    const orientacoes = [];
+    const tamanhoDoLote = 20;
+
+    while (questoes.length < quantidadeTotal) {
+        const quantidade = Math.min(tamanhoDoLote, quantidadeTotal - questoes.length);
+        const resposta = await fetch(ENDERECO_IA, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...payload, quantidade: quantidade })
+        });
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+            throw new Error(dados.erro || "Não foi possível criar as questões.");
+        }
+
+        const novas = Array.isArray(dados.questoes) ? dados.questoes : [];
+        if (novas.length === 0) {
+            throw new Error("A IA não conseguiu criar questões com os materiais encontrados.");
+        }
+
+        questoes.push(...novas.slice(0, quantidade));
+        if (dados.orientacao) orientacoes.push(dados.orientacao);
+    }
+
+    return {
+        questoes: questoes.slice(0, quantidadeTotal),
+        orientacao: orientacoes[0] || "Use o resultado para escolher o que revisar."
+    };
 }
 
 function rotuloNivelSimuladao(nivel) {
@@ -6232,6 +6123,7 @@ async function criarSimuladaoGeral() {
     const dias = Number(document.querySelector("#periodo-simuladao").value) || 14;
     const configuracao = configuracaoDoSimuladao(materias);
     const dificuldade = configuracao.estrategia;
+    const modalidade = document.querySelector("#modalidade-simuladao").value;
     const fim = new Date();
     const inicio = new Date();
     inicio.setDate(inicio.getDate() - (dias - 1));
@@ -6249,28 +6141,21 @@ async function criarSimuladaoGeral() {
 
         status.textContent = "Criando " + configuracao.quantidade + " questões com níveis ajustados por matéria...";
 
-        const resposta = await fetch(ENDERECO_IA, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                tipo: "simuladao",
-                materia: materias.map(function (item) { return item.name; }).join(", "),
-                titulo: "Simuladão dos últimos " + dias + " dias",
-                conteudo: conteudo,
-                dificuldade: dificuldade,
-                quantidade: configuracao.quantidade,
-                mapaDificuldade: configuracao.mapa
-            })
-        });
-        const dados = await resposta.json();
-
-        if (!resposta.ok) {
-            throw new Error(dados.erro || "Não foi possível criar o simuladão.");
-        }
+        const dados = await gerarQuestoesEmLotes({
+            tipo: "simuladao",
+            materia: materias.map(function (item) { return item.name; }).join(", "),
+            titulo: "Simuladão dos últimos " + dias + " dias",
+            conteudo: conteudo,
+            dificuldade: dificuldade,
+            modalidade: modalidade,
+            mapaDificuldade: configuracao.mapa
+        }, configuracao.quantidade);
 
         desenharSimuladaoInterativo(dados, {
             dias: dias,
             dificuldade: dificuldade,
+            modalidade: modalidade,
+            tipoRegistro: "simuladao",
             materias: materias.map(function (item) { return item.name; })
         });
         status.textContent = "Simuladão pronto. Faça no seu ritmo.";
@@ -6323,8 +6208,9 @@ async function obterConteudoSimuladao(materias, inicio, fim) {
 }
 
 function desenharSimuladaoInterativo(dados, configuracao) {
-    const area = document.querySelector("#resultado-simuladao");
+    const area = configuracao.area || document.querySelector("#resultado-simuladao");
     const questoes = Array.isArray(dados.questoes) ? dados.questoes : [];
+    const discursiva = configuracao.modalidade === "discursiva";
 
     if (questoes.length === 0) {
         throw new Error("A IA não conseguiu preparar questões com os materiais encontrados.");
@@ -6335,26 +6221,63 @@ function desenharSimuladaoInterativo(dados, configuracao) {
 
     function desenhar() {
         const questao = questoes[atual];
+        const campoResposta = discursiva
+            ? `
+                <label class="resposta-discursiva">
+                    Sua resposta
+                    <textarea id="resposta-discursiva-simuladao" rows="7" placeholder="Escreva seu raciocínio antes de conferir a resposta orientadora."></textarea>
+                </label>
+                <button id="conferir-discursiva-simuladao" class="botao-principal" type="button">Conferir resposta orientadora</button>
+            `
+            : `
+                <div class="alternativas-simuladao">
+                    ${(questao.alternativas || []).map(function (alternativa, indice) {
+                        return `<button class="alternativa" data-indice="${indice}" type="button">${protegerTexto(alternativa)}</button>`;
+                    }).join("")}
+                </div>
+            `;
+
         area.innerHTML = `
             <div class="cabecalho-questao-simuladao">
                 <span>${protegerTexto(questao.materia || "Simuladão")}</span>
                 <small>Questão ${atual + 1} de ${questoes.length} · ${protegerTexto(questao.nivel || "progressiva")}</small>
             </div>
             <h3>${protegerTexto(questao.pergunta)}</h3>
-            <div class="alternativas-simuladao">
-                ${(questao.alternativas || []).map(function (alternativa, indice) {
-                    return `<button class="alternativa" data-indice="${indice}" type="button">${protegerTexto(alternativa)}</button>`;
-                }).join("")}
-            </div>
+            ${campoResposta}
             <div id="retorno-simuladao"></div>
         `;
         area.classList.remove("escondido");
 
-        area.querySelectorAll(".alternativa").forEach(function (botao) {
-            botao.addEventListener("click", function () {
-                responder(Number(botao.dataset.indice));
+        if (discursiva) {
+            area.querySelector("#conferir-discursiva-simuladao").addEventListener("click", function () {
+                const resposta = area.querySelector("#resposta-discursiva-simuladao").value.trim();
+                if (!resposta) {
+                    area.querySelector("#retorno-simuladao").textContent = "Escreva sua tentativa antes de conferir.";
+                    return;
+                }
+                mostrarRetornoDiscursivo(questao);
             });
-        });
+        } else {
+            area.querySelectorAll(".alternativa").forEach(function (botao) {
+                botao.addEventListener("click", function () {
+                    responder(Number(botao.dataset.indice));
+                });
+            });
+        }
+    }
+
+    function mostrarRetornoDiscursivo(questao) {
+        area.querySelector("#resposta-discursiva-simuladao").disabled = true;
+        area.querySelector("#conferir-discursiva-simuladao").disabled = true;
+        area.querySelector("#retorno-simuladao").innerHTML = `
+            <div class="arquivo">
+                <strong>📝 Resposta orientadora</strong>
+                <p>${protegerTexto(questao.respostaModelo || questao.explicacao || "Compare sua resposta com os materiais usados no simulado.")}</p>
+                <p>${protegerTexto(questao.explicacao || "")}</p>
+                <button id="avancar-simuladao" class="botao-principal" type="button">${atual + 1 < questoes.length ? "Próxima questão" : "Concluir"}</button>
+            </div>
+        `;
+        prepararAvanco();
     }
 
     function responder(indice) {
@@ -6368,7 +6291,7 @@ function desenharSimuladaoInterativo(dados, configuracao) {
             else if (indiceBotao === indice) botao.classList.add("errada");
         });
 
-        document.querySelector("#retorno-simuladao").innerHTML = `
+        area.querySelector("#retorno-simuladao").innerHTML = `
             <div class="arquivo">
                 <strong>${acertou ? "✅ Boa estratégia!" : "💡 Esta é uma oportunidade de revisão."}</strong>
                 <p>${protegerTexto(questao.explicacao || "")}</p>
@@ -6376,7 +6299,11 @@ function desenharSimuladaoInterativo(dados, configuracao) {
             </div>
         `;
 
-        document.querySelector("#avancar-simuladao").addEventListener("click", function () {
+        prepararAvanco();
+    }
+
+    function prepararAvanco() {
+        area.querySelector("#avancar-simuladao").addEventListener("click", function () {
             atual++;
             if (atual < questoes.length) {
                 desenhar();
@@ -6384,17 +6311,21 @@ function desenharSimuladaoInterativo(dados, configuracao) {
             }
 
             registrarPraticaLocal({
-                tipo: "simuladao",
+                tipo: configuracao.tipoRegistro || "simuladao",
                 materia: configuracao.materias.join(", "),
                 periodo: "últimos " + configuracao.dias + " dias",
                 acertos: pontos,
-                total: questoes.length,
+                total: discursiva ? 0 : questoes.length,
+                questoesConcluidas: questoes.length,
+                avaliavel: !discursiva,
                 minutos: Math.max(20, questoes.length * 2)
             });
 
             area.innerHTML = `
                 <h2>Prática concluída</h2>
-                <p>Você acertou <strong>${pontos} de ${questoes.length}</strong> questões.</p>
+                <p>${discursiva
+                    ? `Você respondeu <strong>${questoes.length}</strong> questões discursivas e conferiu as respostas orientadoras.`
+                    : `Você acertou <strong>${pontos} de ${questoes.length}</strong> questões.`}</p>
                 <p>${protegerTexto(dados.orientacao || "Use o resultado para escolher o que revisar. Não se trata de uma nota escolar.")}</p>
             `;
         });
