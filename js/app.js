@@ -24,6 +24,33 @@ let periodoEstudoAtual = null;
 let uploadsDaSessao = [];
 let arquivosPdfParaIA = [];
 const metasBimestraisDaSessao = new Map();
+
+function adicionarEnfeitesVisiveisNasPaginas() {
+    const configuracoes = {
+        "#pagina-principal": ["📚", "✏️", "🧠", "✨", "🎓", "📐"],
+        "#pagina-materia": ["📖", "📝", "💡", "🔎", "⭐", "🎒"],
+        "#pagina-pesquisa": ["🔎", "📚", "💭", "✨", "🧠", "📝"],
+        "#pagina-ajuda": ["💡", "🧭", "❓", "📘", "🗺️", "✨"],
+        "#pagina-nivel-melhora": ["🎯", "📈", "🌱", "🏆", "⭐", "📊"],
+        "#pagina-pratica": ["✏️", "🧠", "📝", "🏆", "📚", "🎲"],
+        "#pagina-administracao": ["⚙️", "👑", "📊", "🔐", "📚", "✨"]
+    };
+
+    Object.entries(configuracoes).forEach(function ([seletor, emojis]) {
+        const pagina = document.querySelector(seletor);
+        if (!pagina || pagina.querySelector(".enfeites-visiveis-pagina")) return;
+
+        const camada = document.createElement("div");
+        camada.className = "enfeites-visiveis-pagina";
+        camada.setAttribute("aria-hidden", "true");
+        camada.innerHTML = emojis.map(function (emoji, indice) {
+            return `<span style="--ordem-enfeite:${indice}">${emoji}</span>`;
+        }).join("");
+        pagina.prepend(camada);
+    });
+}
+
+adicionarEnfeitesVisiveisNasPaginas();
 const animacaoMalteria =
     document.querySelector("#animacao-malteria");
 const telaBoasVindas = document.querySelector("#boas-vindas");
