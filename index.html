@@ -562,19 +562,16 @@
                     <div class="cabecalho-relatorio-responsavel">
                         <div>
                             <span class="rotulo-destaque">VISÃO DO RESPONSÁVEL</span>
-                            <h2>O que precisa ser entregue?</h2>
-                            <p>A Maltéria procura avisos antigos e calcula a data real de entrega.</p>
+                            <h2>Deveres de casa para</h2>
+                            <p>Escolha o dia. A Maltéria procura avisos antigos e calcula a data real de entrega.</p>
                         </div>
                         <span class="icone-relatorio-responsavel">📋</span>
                     </div>
 
                     <div class="filtros-relatorio-responsavel">
-                        <label for="data-referencia-relatorio-responsavel">
-                            Em que dia estou?
-                            <input id="data-referencia-relatorio-responsavel" type="date">
-                        </label>
+                        <input id="data-referencia-relatorio-responsavel" type="hidden">
                         <label for="data-relatorio-responsavel">
-                            Qual dia quero preparar?
+                            Deveres de casa para
                             <input id="data-relatorio-responsavel" type="date">
                         </label>
                         <label for="horizonte-relatorio-responsavel">
@@ -585,6 +582,7 @@
                                 <option value="28">4 semanas</option>
                                 <option value="42">6 semanas</option>
                                 <option value="56">8 semanas</option>
+                                <option value="sem_periodo">Sem período específico</option>
                             </select>
                         </label>
                         <button id="atualizar-relatorio-responsavel" class="botao-principal" type="button">↻ Atualizar relatório</button>
@@ -800,12 +798,13 @@
                     </details>
 
                     <details class="cartao-ajuda" data-conteudo-ajuda="responsavel">
-                        <summary><span>📋</span><div><small>VISÃO DO RESPONSÁVEL</small><h2>O que precisa ser entregue?</h2></div></summary>
+                        <summary><span>📋</span><div><small>VISÃO DO RESPONSÁVEL</small><h2>Deveres de casa para</h2></div></summary>
                         <div class="conteudo-cartao-ajuda">
                             <ul>
-                                <li><strong>Em que dia estou?</strong> é a data em que o responsável está fazendo a consulta.</li>
-                                <li><strong>Qual dia quero preparar?</strong> é o dia das aulas ou entregas que deseja organizar.</li>
+                                <li>A Maltéria identifica automaticamente a data de hoje.</li>
+                                <li><strong>Deveres de casa para:</strong> é o dia das aulas ou entregas que deseja organizar.</li>
                                 <li><strong>Procurar nos últimos:</strong> define quantas semanas de avisos antigos serão examinadas.</li>
+                                <li><strong>Sem período específico:</strong> procura em todo o histórico disponível quando você não sabe quando o professor avisou.</li>
                             </ul>
                             <p>A Maltéria tenta interpretar expressões como “para amanhã” e “para a próxima aula” usando a data do aviso e o horário semanal. Itens em “precisa confirmar” devem ser conferidos pela família.</p>
                             <button class="botao-secundario acao-ajuda" data-ajuda-acao="relatorio" type="button">Ver relatório do responsável</button>
@@ -984,15 +983,14 @@
                                 <option value="desafio">Desafio no nível das listas</option>
                             </select>
                         </label>
-                        <label>Quantidade de questões
-                            <select id="quantidade-simuladao">
-                                <option value="auto" selected>5 por matéria</option>
-                                <option value="10">10 questões</option>
-                                <option value="20">20 questões</option>
-                                <option value="30">30 questões</option>
-                                <option value="40">40 questões</option>
-                                <option value="50">50 questões</option>
+                        <label>Tipo de questão
+                            <select id="modalidade-simuladao">
+                                <option value="objetiva" selected>Objetivas: marcar alternativa</option>
+                                <option value="discursiva">Discursivas: escrever resposta</option>
                             </select>
+                        </label>
+                        <label>Quantidade de questões
+                            <input id="quantidade-simuladao" type="number" min="5" max="75" value="20" inputmode="numeric">
                         </label>
                     </div>
 
