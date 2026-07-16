@@ -5158,9 +5158,7 @@ body {
 }
 
 .animacao-malteria .intro-barras-estudo {
-    z-index: 3;
-    width: min(700px, 82vw);
-    height: 330px;
+    display: none !important;
 }
 
 .intro-emojis-flutuantes {
