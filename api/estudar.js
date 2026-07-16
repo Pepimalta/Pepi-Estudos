@@ -68,11 +68,14 @@ export default async function handler(req, res) {
             dataInicial,
             dataFinal,
             dataAlvo,
+            dataReferencia,
+            semPeriodoEspecifico,
             conteudo,
             objetivo,
             arquivos,
             dificuldade,
             quantidade,
+            modalidade,
             mapaDificuldade
         } = req.body || {};
 
@@ -103,18 +106,21 @@ export default async function handler(req, res) {
             return await criarRelatorioResponsavel(res, {
                 dataInicio,
                 dataAlvo,
+                dataReferencia,
+                semPeriodoEspecifico,
                 conteudo: conteudoLimitado,
                 arquivos
             });
         }
 
-        if (tipo === "simuladao") {
+        if (tipo === "simuladao" || tipo === "simulado") {
             return await criarSimuladao(res, {
                 materia,
                 titulo,
                 conteudo: conteudoLimitado,
                 dificuldade: dificuldade || "gradual",
-                quantidade: Math.min(50, Math.max(5, Number(quantidade) || 15)),
+                quantidade: Math.min(75, Math.max(5, Number(quantidade) || 15)),
+                modalidade: modalidade === "discursiva" ? "discursiva" : "objetiva",
                 mapaDificuldade: mapaDificuldade || {}
             });
         }
@@ -159,6 +165,7 @@ export default async function handler(req, res) {
 }
 
 async function criarSimuladao(res, dados) {
+    const discursiva = dados.modalidade === "discursiva";
     const instrucao = `
 Você é a professora virtual do aplicativo Maltéria.
 Crie um simulado interdisciplinar usando SOMENTE os materiais fornecidos.
@@ -167,6 +174,7 @@ MATÉRIAS: ${dados.materia}
 PERÍODO: ${dados.titulo || "período selecionado"}
 DIFICULDADE: ${dados.dificuldade}
 QUANTIDADE SOLICITADA: ${dados.quantidade}
+TIPO DE QUESTÃO: ${discursiva ? "DISCURSIVA, PARA O ALUNO ESCREVER" : "OBJETIVA, PARA MARCAR ALTERNATIVA"}
 NÍVEL POR MATÉRIA: ${JSON.stringify(dados.mapaDificuldade)}
 
 MATERIAIS:
@@ -182,7 +190,9 @@ REGRAS:
 - Em "gradual", comece com compreensão, avance para aplicação e termine com desafios.
 - Em "reforço", priorize fundamentos e exemplos semelhantes aos materiais.
 - Em "desafio", aumente o raciocínio sem cobrar conteúdo externo.
-- Cada questão deve ter exatamente quatro alternativas e apenas uma correta.
+- ${discursiva
+        ? "Cada questão deve exigir resposta escrita. Não crie alternativas. Inclua uma respostaModelo completa para conferência."
+        : "Cada questão deve ter exatamente quatro alternativas e apenas uma correta. Inclua também uma respostaModelo curta."}
 - Informe a matéria e o nível de cada questão.
 - Explique a resposta com clareza e sem tom punitivo.
 - O nível deve acompanhar uma escola tradicional e exigente, mas ser apropriado à idade.
@@ -204,9 +214,10 @@ REGRAS:
                         pergunta: { type: "STRING" },
                         alternativas: { type: "ARRAY", items: { type: "STRING" } },
                         correta: { type: "INTEGER" },
+                        respostaModelo: { type: "STRING" },
                         explicacao: { type: "STRING" }
                     },
-                    required: ["materia", "nivel", "pergunta", "alternativas", "correta", "explicacao"]
+                    required: ["materia", "nivel", "pergunta", "respostaModelo", "explicacao"]
                 }
             }
         },
@@ -230,6 +241,7 @@ Você é a assistente educacional da visão do responsável no aplicativo Malté
 DATA-ALVO DO RELATÓRIO: ${dados.dataAlvo}
 DATA DE REFERÊNCIA (DIA EM QUE O RESPONSÁVEL ESTÁ): ${dados.dataReferencia || "não informada"}
 INÍCIO DA JANELA RETROATIVA: ${dados.dataInicio || "não informado"}
+MODO DE BUSCA: ${dados.semPeriodoEspecifico ? "SEM PERÍODO ESPECÍFICO; examine todo o histórico recebido" : "JANELA RETROATIVA SELECIONADA"}
 
 DADOS DA AGENDA, CLASSROOM E POSSÍVEL HORÁRIO:
 ${dados.conteudo}
@@ -667,8 +679,10 @@ REGRAS:
 - Só informe que o material está incompleto quando o TOTAL DE FONTES for zero
   ou quando as fontes realmente não contiverem os dados essenciais para explicar.
   Nesse caso, diga claramente o que faltou, em uma observação curta no final.
-- A explicação deve ser uma aula completa, com aproximadamente 700 a
-  1.200 palavras quando o material permitir. Não faça apenas um resumo.
+- A explicação deve ser uma aula completa, com aproximadamente 900 a
+  1.500 palavras quando o material permitir. Não faça apenas um resumo.
+- A explicação deve conter no mínimo 30 linhas ou parágrafos não vazios,
+  cada um desenvolvendo uma ideia compreensível. Não junte tudo em um bloco único.
 - Divida a explicação em: objetivo da aula, conceitos fundamentais,
   desenvolvimento passo a passo, exemplos resolvidos, erros comuns,
   aplicação prática e resumo final.
@@ -676,7 +690,9 @@ REGRAS:
 - Inclua pelo menos dois exemplos explicados, quando o material permitir.
 - Explique cálculos passo a passo quando existirem, sem pular operações.
 - A cópia guiada deve ser um conteúdo pronto para o aluno escrever no
-  caderno, com aproximadamente 500 a 900 palavras quando houver conteúdo.
+  caderno, com aproximadamente 600 a 1.000 palavras quando houver conteúdo.
+- A cópia guiada deve conter no mínimo 20 linhas não vazias e conectadas,
+  com uma ideia completa por linha ou pequeno parágrafo.
 - Organize a cópia em: título, assunto da aula, definições, regras ou
   fórmulas, explicação organizada, exemplos e resumo para memorizar.
 - Não escreva uma cópia formada por frases soltas ou ideias sem conexão.
@@ -690,7 +706,9 @@ REGRAS:
   por uma professora dinâmica e apoiado nos slides. Não transforme os
   tópicos em leitura: comente, conecte ideias, faça analogias, resolva
   exemplos e explique por que cada etapa importa.
-- O podcast deve ter de 12 a 20 blocos curtos. Alterne principalmente a
+- O podcast deve durar no mínimo 10 minutos em velocidade normal de fala.
+  Para isso, produza aproximadamente 1.300 a 1.700 palavras e de 24 a 36 blocos.
+  Não entregue um áudio curto nem apenas uma introdução. Alterne principalmente a
   PROFESSORA com participações breves de estudantes fictícios, como LIA,
   JOÃO ou TURMA. Os estudantes podem responder uma pergunta, levantar uma
   dúvida comum ou tentar um raciocínio; a professora retoma e esclarece.
@@ -707,19 +725,7 @@ REGRAS:
 - Revise gramática, concordância, letras maiúsculas e pontuação de todos
   os formatos antes de responder.
 - A revisão deve ter entre 12 e 18 pontos importantes.
-- O simulado deve ter 10 questões.
-- Cada questão deve ter exatamente 4 alternativas.
-- A alternativa correta deve ser um número de 0 até 3.
-- Explique por que a resposta está correta.
 - Não use informações externas ao material.
-- Crie também uma lista tradicional para o aluno resolver à mão.
-- A lista deve ter de 12 a 20 questões, com progressão de dificuldade,
-  espaço sugerido para resolução e variedade adequada à matéria.
-- Priorize questões discursivas, cálculos, produção escrita, interpretação,
-  organização de raciocínio e treino semelhante às folhas escolares.
-- Em Inglês, inclua vocabulário, compreensão, formação de frases e produção escrita.
-- A lista não deve depender de clicar em alternativas no computador.
-- Crie um gabarito separado, com resposta e explicação breve de cada questão.
 - Use analogias simples e exemplos ligados à vida da criança quando isso ajudar,
   sem infantilizar nem reduzir o nível escolar.
 
@@ -798,76 +804,6 @@ Responda somente em JSON válido.
                 items: {
                     type: "STRING"
                 }
-            },
-
-            simulado: {
-                type: "ARRAY",
-
-                items: {
-                    type: "OBJECT",
-
-                    properties: {
-                        pergunta: {
-                            type: "STRING"
-                        },
-
-                        alternativas: {
-                            type: "ARRAY",
-
-                            items: {
-                                type: "STRING"
-                            }
-                        },
-
-                        correta: {
-                            type: "INTEGER"
-                        },
-
-                        explicacao: {
-                            type: "STRING"
-                        }
-                    },
-
-                    required: [
-                        "pergunta",
-                        "alternativas",
-                        "correta",
-                        "explicacao"
-                    ]
-                }
-            },
-
-            listaImpressa: {
-                type: "OBJECT",
-                properties: {
-                    titulo: { type: "STRING" },
-                    orientacoes: { type: "STRING" },
-                    questoes: {
-                        type: "ARRAY",
-                        items: {
-                            type: "OBJECT",
-                            properties: {
-                                numero: { type: "INTEGER" },
-                                enunciado: { type: "STRING" },
-                                espacoLinhas: { type: "INTEGER" }
-                            },
-                            required: ["numero", "enunciado", "espacoLinhas"]
-                        }
-                    },
-                    gabarito: {
-                        type: "ARRAY",
-                        items: {
-                            type: "OBJECT",
-                            properties: {
-                                numero: { type: "INTEGER" },
-                                resposta: { type: "STRING" },
-                                explicacao: { type: "STRING" }
-                            },
-                            required: ["numero", "resposta", "explicacao"]
-                        }
-                    }
-                },
-                required: ["titulo", "orientacoes", "questoes", "gabarito"]
             }
         },
 
@@ -877,9 +813,7 @@ Responda somente em JSON válido.
             "roteiroAudio",
             "podcastAudio",
             "slides",
-            "revisao",
-            "simulado",
-            "listaImpressa"
+            "revisao"
         ]
     };
 
@@ -889,7 +823,79 @@ Responda somente em JSON válido.
         prepararPartesDeArquivos(dados.arquivos)
     );
 
+    resultado.explicacao = organizarTextoEmLinhas(resultado.explicacao, 30);
+    resultado.copia = organizarTextoEmLinhas(resultado.copia, 20);
+    await completarPodcastSeNecessario(resultado, dados.materia);
+
     return res.status(200).json(resultado);
+}
+
+async function completarPodcastSeNecessario(resultado, materia) {
+    const blocos = Array.isArray(resultado.podcastAudio) ? resultado.podcastAudio : [];
+    const palavrasAtuais = blocos
+        .map(function (bloco) { return String(bloco.texto || ""); })
+        .join(" ")
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean).length;
+
+    if (palavrasAtuais >= 1400) return;
+
+    const faltam = Math.max(500, 1500 - palavrasAtuais);
+    const complemento = await chamarGemini(`
+Continue o podcast educativo de ${materia} abaixo sem repetir as falas existentes.
+Produza aproximadamente ${faltam} palavras adicionais em português brasileiro.
+A professora deve continuar explicando com exemplos, analogias, perguntas e breves
+participações de estudantes fictícios. Termine com recapitulação e checagem.
+Responda somente em JSON válido.
+
+PODCAST JÁ EXISTENTE:
+${blocos.map(function (bloco) {
+        return (bloco.personagem || "PROFESSORA") + ": " + (bloco.texto || "");
+    }).join("\n").slice(-14000)}
+`, {
+        type: "OBJECT",
+        properties: {
+            podcastAudio: {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        personagem: { type: "STRING" },
+                        texto: { type: "STRING" },
+                        intencao: { type: "STRING" }
+                    },
+                    required: ["personagem", "texto", "intencao"]
+                }
+            }
+        },
+        required: ["podcastAudio"]
+    });
+
+    resultado.podcastAudio = blocos.concat(
+        Array.isArray(complemento.podcastAudio) ? complemento.podcastAudio : []
+    );
+}
+
+function organizarTextoEmLinhas(texto, minimo) {
+    const original = String(texto || "").trim();
+    if (!original) return original;
+
+    let partes = original
+        .split(/\n+|(?<=[.!?])\s+/u)
+        .map(function (parte) { return parte.trim(); })
+        .filter(Boolean);
+
+    if (partes.length < minimo) {
+        const palavras = original.replace(/\s+/g, " ").split(" ");
+        const tamanho = Math.max(5, Math.ceil(palavras.length / minimo));
+        partes = [];
+        for (let indice = 0; indice < palavras.length; indice += tamanho) {
+            partes.push(palavras.slice(indice, indice + tamanho).join(" "));
+        }
+    }
+
+    return partes.join("\n");
 }
 
 function prepararPartesDeArquivos(arquivos) {
