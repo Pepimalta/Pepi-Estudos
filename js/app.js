@@ -136,6 +136,7 @@ function encerrarAberturaMalteria() {
     window.setTimeout(function () {
         animacaoMalteria.classList.add("escondido");
         document.body.classList.remove("intro-ativa");
+        mostrarTela(telaBoasVindas);
     }, 650);
 }
 
