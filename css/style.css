@@ -3724,6 +3724,56 @@ body {
 .modal-trocar-senha label { display: grid; gap: 7px; font-weight: 800; }
 .modal-trocar-senha input { width: 100%; }
 
+.campo-senha-com-botao {
+    position: relative;
+    width: 100%;
+}
+
+.campo-senha-com-botao input {
+    width: 100%;
+    padding-right: 52px;
+}
+
+.campo-senha-com-botao button {
+    position: absolute;
+    top: 50%;
+    right: 7px;
+    width: 38px;
+    height: 38px;
+    border: 0;
+    border-radius: 10px;
+    background: #f1edff;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+.esqueci-senha {
+    display: block;
+    margin: 12px auto 0;
+}
+
+.senha-protegida-conta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin: 18px 0;
+    border: 1px solid #ded6ff;
+    border-radius: 15px;
+    padding: 14px;
+    background: #f8f6ff;
+    text-align: left;
+}
+
+.senha-protegida-conta div {
+    display: grid;
+    gap: 3px;
+}
+
+.senha-protegida-conta small { color: var(--roxo); font-weight: 900; }
+.senha-protegida-conta strong { letter-spacing: 2px; }
+.senha-protegida-conta span { color: var(--cinza); font-size: 12px; }
+
 .usuario-administracao small {
     color: var(--roxo);
     font-weight: 900;
