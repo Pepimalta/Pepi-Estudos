@@ -25,7 +25,7 @@
     <!-- ANIMAÇÃO DE ABERTURA DA MARCA -->
     <div
         id="animacao-malteria"
-        class="animacao-malteria"
+        class="animacao-malteria escondido"
         role="button"
         tabindex="0"
         aria-label="Animação de abertura da Maltéria. Clique para pular."
@@ -69,7 +69,7 @@
     </div>
 
     <!-- BOAS-VINDAS ANTES DA APRESENTAÇÃO -->
-    <main id="boas-vindas" class="boas-vindas escondido">
+    <main id="boas-vindas" class="boas-vindas">
         <div class="boas-vindas-forma" aria-hidden="true">
             <span>📚</span>
             <span>✦</span>
@@ -116,7 +116,7 @@
     </div>
 
     <!-- APRESENTAÇÃO E ESCOLHA INICIAL -->
-    <main id="escolha" class="pagina-inicial">
+    <main id="escolha" class="pagina-inicial escondido">
         <header class="entrada-cabecalho">
             <div class="logo">
                 <span>M</span>
@@ -1098,6 +1098,9 @@
         defer
     ></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/banco-config.js"></script>
+    <script src="js/banco.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
