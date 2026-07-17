@@ -1062,7 +1062,11 @@
                 </div>
 
                 <section class="caixa administracao-pagina-conteudo">
-                    <p class="administracao-aviso">Por enquanto, aparecem aqui as contas cadastradas neste navegador. Quando o banco de dados for conectado, esta página mostrará todos os usuários da Maltéria.</p>
+                    <div class="administracao-barra">
+                        <p class="administracao-aviso">Contas cadastradas no banco da Maltéria. Senhas antigas nunca são exibidas; quando necessário, gere uma senha temporária de uso único.</p>
+                        <button id="atualizar-usuarios-administracao" class="botao-secundario" type="button">↻ Atualizar usuários</button>
+                    </div>
+                    <div id="resumo-usuarios-administracao" class="resumo-administracao" aria-live="polite"></div>
                     <div id="lista-usuarios-administracao" class="lista-usuarios-administracao"></div>
                 </section>
             </section>
@@ -1089,6 +1093,31 @@
             <button id="sair" class="botao-sair">
                 Sair da conta
             </button>
+        </section>
+    </div>
+
+    <div id="modal-senha-temporaria" class="fundo-modal escondido">
+        <section class="cartao modal modal-senha-temporaria" role="dialog" aria-modal="true" aria-labelledby="titulo-senha-temporaria">
+            <button id="fechar-senha-temporaria" class="fechar" type="button">×</button>
+            <span class="icone-modal-administracao">🔑</span>
+            <h2 id="titulo-senha-temporaria">Senha temporária criada</h2>
+            <p>Copie agora. Por segurança, ela não poderá ser consultada novamente.</p>
+            <output id="valor-senha-temporaria" class="valor-senha-temporaria"></output>
+            <button id="copiar-senha-temporaria" class="botao-principal" type="button">Copiar senha temporária</button>
+        </section>
+    </div>
+
+    <div id="modal-trocar-senha" class="fundo-modal escondido">
+        <section class="cartao modal modal-trocar-senha" role="dialog" aria-modal="true" aria-labelledby="titulo-trocar-senha">
+            <span class="icone-modal-administracao">🛡️</span>
+            <h2 id="titulo-trocar-senha">Crie sua nova senha</h2>
+            <p>Você entrou com uma senha temporária. Troque-a antes de continuar.</p>
+            <form id="form-trocar-senha-obrigatoria" autocomplete="off">
+                <label>Nova senha<input id="nova-senha-obrigatoria" type="password" minlength="8" required autocomplete="new-password"></label>
+                <label>Confirmar nova senha<input id="confirmar-senha-obrigatoria" type="password" minlength="8" required autocomplete="new-password"></label>
+                <p id="erro-trocar-senha" class="erro-formulario" aria-live="polite"></p>
+                <button class="botao-principal" type="submit">Salvar nova senha</button>
+            </form>
         </section>
     </div>
 
