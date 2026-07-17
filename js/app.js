@@ -811,6 +811,17 @@ document
 
 /* LOGIN */
 
+let modoTrocaSenha = "obrigatoria";
+
+function abrirModalTrocaSenha(titulo, descricao, modo) {
+    modoTrocaSenha = modo || "conta";
+    document.querySelector("#titulo-trocar-senha").textContent = titulo;
+    document.querySelector("#modal-trocar-senha > section > p").textContent = descricao;
+    document.querySelector("#erro-trocar-senha").textContent = "";
+    document.querySelector("#form-trocar-senha-obrigatoria").reset();
+    document.querySelector("#modal-trocar-senha").classList.remove("escondido");
+}
+
 document
     .querySelector("#form-login")
     .addEventListener("submit", async function (evento) {
@@ -850,7 +861,11 @@ document
 
                 salvarUsuarioLocal(usuarioAtual);
                 if (perfil.precisaTrocarSenha) {
-                    document.querySelector("#modal-trocar-senha").classList.remove("escondido");
+                    abrirModalTrocaSenha(
+                        "Crie sua nova senha",
+                        "Você entrou com uma senha temporária. Troque-a antes de continuar.",
+                        "obrigatoria"
+                    );
                 } else {
                     entrarNoAplicativo();
                 }
@@ -921,7 +936,15 @@ document
             await window.MalteriaBanco.trocarSenhaObrigatoria(novaSenha);
             document.querySelector("#modal-trocar-senha").classList.add("escondido");
             this.reset();
-            entrarNoAplicativo();
+            if (modoTrocaSenha === "recuperacao") {
+                await window.MalteriaBanco.sair();
+                usuarioAtual = null;
+                abrirLoginLimpo();
+                document.querySelector("#erro-login").textContent =
+                    "Senha alterada. Entre usando sua nova senha.";
+            } else {
+                entrarNoAplicativo();
+            }
         } catch (falha) {
             erro.textContent = falha.message || "Não foi possível trocar a senha.";
         } finally {
@@ -930,10 +953,36 @@ document
     });
 
 window.addEventListener("malteria:recuperar-senha", function () {
-    document.querySelector("#titulo-trocar-senha").textContent = "Redefina sua senha";
-    document.querySelector("#modal-trocar-senha p").textContent =
-        "Digite uma nova senha segura para recuperar o acesso à sua conta.";
-    document.querySelector("#modal-trocar-senha").classList.remove("escondido");
+    abrirModalTrocaSenha(
+        "Redefina sua senha",
+        "Digite uma nova senha segura para recuperar o acesso à sua conta.",
+        "recuperacao"
+    );
+});
+
+document.querySelector("#mostrar-senha-login").addEventListener("click", function () {
+    const campo = document.querySelector("#login-senha");
+    campo.readOnly = false;
+    campo.type = campo.type === "password" ? "text" : "password";
+    this.textContent = campo.type === "password" ? "👁️" : "🙈";
+});
+
+document.querySelector("#esqueci-senha-login").addEventListener("click", async function () {
+    const email = document.querySelector("#login-email").value.trim();
+    const mensagem = document.querySelector("#erro-login");
+    if (!email || !email.includes("@")) {
+        mensagem.textContent = "Digite primeiro o e-mail da conta que deseja recuperar.";
+        return;
+    }
+    this.disabled = true;
+    try {
+        await window.MalteriaBanco.enviarRedefinicaoSenha(email);
+        mensagem.textContent = "Enviamos um link de recuperação para " + email + ".";
+    } catch (erro) {
+        mensagem.textContent = erro.message || "Não foi possível enviar o link de recuperação.";
+    } finally {
+        this.disabled = false;
+    }
 });
 
 function mostrarErroLogin(mensagem) {
@@ -6991,6 +7040,17 @@ document
     .querySelector("#fechar-conta")
     .addEventListener("click", function () {
         modalConta.classList.add("escondido");
+    });
+
+document
+    .querySelector("#alterar-minha-senha")
+    .addEventListener("click", function () {
+        modalConta.classList.add("escondido");
+        abrirModalTrocaSenha(
+            "Alterar minha senha",
+            "Crie uma nova senha com pelo menos 8 caracteres. A senha atual continuará protegida e não será exibida.",
+            "conta"
+        );
     });
 
 document
