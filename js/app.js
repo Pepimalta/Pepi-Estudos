@@ -3352,7 +3352,7 @@ async function obterEventosAgenda(
             "/events" +
             "?singleEvents=true" +
             "&orderBy=startTime" +
-            "&maxResults=100" +
+            "&maxResults=2500" +
             "&timeMin=" +
             encodeURIComponent(inicio) +
             "&timeMax=" +
@@ -3434,7 +3434,13 @@ async function obterEventosAgenda(
                         emailGoogleConectado,
 
                     calendarioId:
-                        calendario.id || ""
+                        calendario.id || "",
+
+                    calendarioOriginal:
+                        calendario.summary || "",
+
+                    calendarioEscolar:
+                        calendarioDaAgendaPareceEscolar(calendario)
                 });
             }
         );
@@ -4416,8 +4422,7 @@ async function carregarRelatorioResponsavel() {
     const dataAlvo = dataRelatorioResponsavel.value;
     const dataReferencia = dataReferenciaRelatorioResponsavel.value;
     const horizonte = document.querySelector("#horizonte-relatorio-responsavel").value;
-    const semPeriodoEspecifico = horizonte === "sem_periodo";
-    const dias = semPeriodoEspecifico ? 365 : (Number(horizonte) || 21);
+    const dias = Number(horizonte) || 14;
 
     if (!tokenClassroom) {
         status.textContent = "Conecte a conta Google do aluno para consultar a Agenda e o Classroom.";
@@ -4457,10 +4462,18 @@ async function carregarRelatorioResponsavel() {
                 "Data em que aparece: " + dataParaCampo(item.data) + "\n" +
                 "Dia da semana do registro: " + nomeDoDiaDaSemana(item.data) + "\n" +
                 "Calendário/matéria: " + item.materia + "\n" +
+                "Nome original do calendário: " +
+                    (item.calendarioOriginal || item.materia) + "\n" +
                 "Título: " + item.titulo + "\n" +
-                "Descrição: " + (item.descricao || "Sem descrição")
+                "Descrição: " + (item.descricao || "Sem descrição") + "\n" +
+                "Pista de prazo calculada no navegador: " +
+                    pistaLocalDeEntrega(item)
             );
         }).join("\n\n");
+
+        const turmasOficiais = turmasClassroom.map(function (turma) {
+            return turma.name + (turma.section ? " — " + turma.section : "");
+        }).join(" | ");
 
         status.textContent = "Interpretando as datas reais de entrega...";
 
@@ -4473,7 +4486,6 @@ async function carregarRelatorioResponsavel() {
                 dataInicio: dataInicio,
                 dataReferencia: dataReferencia,
                 dataAlvo: dataAlvo,
-                semPeriodoEspecifico: semPeriodoEspecifico,
                 conteudo: (
                     "=== DATAS DA CONSULTA ===\n" +
                     "Dia em que o responsável está: " + dataReferencia +
@@ -4482,6 +4494,8 @@ async function carregarRelatorioResponsavel() {
                     " (" + nomeDoDiaDaSemana(new Date(dataAlvo + "T12:00:00")) + ")\n\n" +
                     "=== AGENDA NO PERÍODO ===\n" +
                     (conteudoAgenda || "Nenhum registro escolar encontrado.") +
+                    "\n\n=== TURMAS OFICIAIS DO CLASSROOM ===\n" +
+                    (turmasOficiais || "Nenhuma turma oficial carregada.") +
                     "\n\n=== CLASSROOM E HORÁRIO ===\n" +
                     contextoClassroom +
                     "\n\n=== HORÁRIO CONFIRMADO EM CONSULTA ANTERIOR ===\n" +
@@ -4555,6 +4569,38 @@ function nomeDoDiaDaSemana(data) {
         "pt-BR",
         { weekday: "long" }
     );
+}
+
+function pistaLocalDeEntrega(item) {
+    const texto = normalizarPesquisa(
+        (item.titulo || "") + " " + (item.descricao || "")
+    );
+    const dataRegistro = new Date(item.data);
+    const dataCalculada = new Date(dataRegistro);
+
+    if (/\bdepois de amanha\b/.test(texto)) {
+        dataCalculada.setDate(dataCalculada.getDate() + 2);
+        return "depois de amanhã = " + dataParaCampo(dataCalculada);
+    }
+
+    if (/\b(?:para|pra|p) amanha\b/.test(texto)) {
+        dataCalculada.setDate(dataCalculada.getDate() + 1);
+        return "para amanhã = " + dataParaCampo(dataCalculada);
+    }
+
+    if (/\bproxima aula\b/.test(texto)) {
+        return "próxima aula; cruzar obrigatoriamente com o horário semanal";
+    }
+
+    const dataEscrita = texto.match(
+        /\b(?:dia\s*)?(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{2,4}))?\b/
+    );
+
+    if (dataEscrita) {
+        return "data escrita no aviso: " + dataEscrita[0];
+    }
+
+    return "nenhuma data explícita; verificar o texto e o horário da matéria";
 }
 
 async function obterContextoResponsavelClassroom(dataInicio, dataAlvo) {
@@ -4880,16 +4926,39 @@ campoDataAtividades.addEventListener("change", function () {
     }
 });
 
+function calendarioDaAgendaPareceEscolar(calendario) {
+    const texto = normalizarPesquisa(
+        (calendario.summary || "") + " " + (calendario.description || "")
+    );
+
+    const padraoTurmaOuMateria =
+        /\b(?:red|mat|cie|cien|his|geo|ing|port|lp|relig|comp)\s*[-–]?\s*\d{1,2}\s*[a-z]\b/;
+
+    const correspondeATurma = turmasClassroom.some(function (turma) {
+        return palavrasImportantes(turma.name).some(function (palavra) {
+            return palavra.length >= 3 && texto.includes(palavra);
+        });
+    });
+
+    return correspondeATurma ||
+        padraoTurmaOuMateria.test(texto) ||
+        /\b(?:turma|ano|classroom|colegio|escola|materia|aula)\b/.test(texto);
+}
+
 function eventoDaAgendaPareceEscolar(evento) {
     const texto = normalizarPesquisa(
-        evento.materia + " " + evento.titulo + " " + evento.descricao
+        evento.materia + " " +
+        (evento.calendarioOriginal || "") + " " +
+        evento.titulo + " " + evento.descricao
     );
 
     const termosEscolares = [
         "classroom", "escola", "colegio", "aula", "materia",
         "atividade", "dever", "tarefa", "trabalho", "prova",
         "avaliacao", "teste", "exercicio", "lista", "entrega",
-        "seminario", "projeto", "estudar", "estudo", "revisao"
+        "seminario", "projeto", "estudar", "estudo", "revisao",
+        "para casa", "para amanha", "proxima aula", "pagina",
+        "folha", "livro", "caderno", "red 6", "mat 6", "cie 6"
     ];
 
     const correspondeATurma = turmasClassroom.some(function (turma) {
@@ -4898,7 +4967,8 @@ function eventoDaAgendaPareceEscolar(evento) {
         });
     });
 
-    return correspondeATurma || termosEscolares.some(function (termo) {
+    return evento.calendarioEscolar ||
+        correspondeATurma || termosEscolares.some(function (termo) {
         return texto.includes(termo);
     });
 }
