@@ -58,7 +58,44 @@
         const perfil = await perfilAtual();
         await carregarEstado();
         iniciarSincronizacao();
-        return perfil;
+        return Object.assign({}, perfil, {
+            precisaTrocarSenha: Boolean(
+                resposta.data.user &&
+                resposta.data.user.user_metadata &&
+                resposta.data.user.user_metadata.precisa_trocar_senha
+            )
+        });
+    }
+
+    async function tokenAcesso() {
+        if (!cliente) return "";
+        const resposta = await cliente.auth.getSession();
+        if (resposta.error) throw resposta.error;
+        return resposta.data.session ? resposta.data.session.access_token : "";
+    }
+
+    async function enviarRedefinicaoSenha(email) {
+        if (!cliente) throw new Error("Banco de dados não configurado.");
+        const resposta = await cliente.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin
+        });
+        if (resposta.error) throw resposta.error;
+    }
+
+    async function trocarSenhaObrigatoria(novaSenha) {
+        if (!cliente) throw new Error("Banco de dados não configurado.");
+        const usuarioResposta = await cliente.auth.getUser();
+        if (usuarioResposta.error) throw usuarioResposta.error;
+        const metadados = Object.assign(
+            {},
+            usuarioResposta.data.user && usuarioResposta.data.user.user_metadata,
+            { precisa_trocar_senha: false }
+        );
+        const resposta = await cliente.auth.updateUser({
+            password: novaSenha,
+            data: metadados
+        });
+        if (resposta.error) throw resposta.error;
     }
 
     async function sair() {
@@ -116,6 +153,14 @@
         salvarEstado().catch(function () {});
     });
 
+    if (cliente) {
+        cliente.auth.onAuthStateChange(function (evento) {
+            if (evento === "PASSWORD_RECOVERY") {
+                window.dispatchEvent(new CustomEvent("malteria:recuperar-senha"));
+            }
+        });
+    }
+
     window.MalteriaBanco = {
         configurado: configurado,
         cliente: cliente,
@@ -123,6 +168,9 @@
         entrar: entrar,
         sair: sair,
         perfilAtual: perfilAtual,
+        tokenAcesso: tokenAcesso,
+        enviarRedefinicaoSenha: enviarRedefinicaoSenha,
+        trocarSenhaObrigatoria: trocarSenhaObrigatoria,
         carregarEstado: carregarEstado,
         salvarEstado: salvarEstado,
         iniciarSincronizacao: iniciarSincronizacao
