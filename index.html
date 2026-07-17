@@ -243,19 +243,26 @@
 
                 <label for="login-senha">Senha</label>
 
-                <input
-                    id="login-senha"
-                    name="malteria-login-senha"
-                    type="password"
-                    autocomplete="new-password"
-                    readonly
-                    data-lpignore="true"
-                    data-form-type="other"
-                    required
-                >
+                <div class="campo-senha-com-botao">
+                    <input
+                        id="login-senha"
+                        name="malteria-login-senha"
+                        type="password"
+                        autocomplete="new-password"
+                        readonly
+                        data-lpignore="true"
+                        data-form-type="other"
+                        required
+                    >
+                    <button id="mostrar-senha-login" type="button" aria-label="Mostrar ou esconder senha">👁️</button>
+                </div>
 
                 <button class="botao-principal">
                     Entrar
+                </button>
+
+                <button id="esqueci-senha-login" class="botao-link esqueci-senha" type="button">
+                    Esqueci minha senha
                 </button>
 
                 <p id="erro-login" class="erro"></p>
@@ -1089,6 +1096,15 @@
             <p id="conta-email"></p>
             <p id="conta-tipo"></p>
             <p id="codigo-familia"></p>
+
+            <div class="senha-protegida-conta">
+                <div>
+                    <small>SENHA</small>
+                    <strong>••••••••</strong>
+                    <span>Protegida e impossível de consultar</span>
+                </div>
+                <button id="alterar-minha-senha" class="botao-secundario" type="button">Alterar minha senha</button>
+            </div>
 
             <button id="sair" class="botao-sair">
                 Sair da conta
