@@ -849,7 +849,11 @@ document
                 });
 
                 salvarUsuarioLocal(usuarioAtual);
-                entrarNoAplicativo();
+                if (perfil.precisaTrocarSenha) {
+                    document.querySelector("#modal-trocar-senha").classList.remove("escondido");
+                } else {
+                    entrarNoAplicativo();
+                }
                 return;
             } catch (erro) {
                 mostrarErroLogin(
@@ -894,6 +898,43 @@ document
 
         entrarNoAplicativo();
     });
+
+document
+    .querySelector("#form-trocar-senha-obrigatoria")
+    .addEventListener("submit", async function (evento) {
+        evento.preventDefault();
+        const novaSenha = document.querySelector("#nova-senha-obrigatoria").value;
+        const confirmacao = document.querySelector("#confirmar-senha-obrigatoria").value;
+        const erro = document.querySelector("#erro-trocar-senha");
+        erro.textContent = "";
+        if (novaSenha.length < 8) {
+            erro.textContent = "A nova senha precisa ter pelo menos 8 caracteres.";
+            return;
+        }
+        if (novaSenha !== confirmacao) {
+            erro.textContent = "As duas senhas precisam ser iguais.";
+            return;
+        }
+        const botao = this.querySelector("button[type=submit]");
+        botao.disabled = true;
+        try {
+            await window.MalteriaBanco.trocarSenhaObrigatoria(novaSenha);
+            document.querySelector("#modal-trocar-senha").classList.add("escondido");
+            this.reset();
+            entrarNoAplicativo();
+        } catch (falha) {
+            erro.textContent = falha.message || "Não foi possível trocar a senha.";
+        } finally {
+            botao.disabled = false;
+        }
+    });
+
+window.addEventListener("malteria:recuperar-senha", function () {
+    document.querySelector("#titulo-trocar-senha").textContent = "Redefina sua senha";
+    document.querySelector("#modal-trocar-senha p").textContent =
+        "Digite uma nova senha segura para recuperar o acesso à sua conta.";
+    document.querySelector("#modal-trocar-senha").classList.remove("escondido");
+});
 
 function mostrarErroLogin(mensagem) {
     document.querySelector(
@@ -5770,6 +5811,14 @@ function formatarNegritoSeguro(texto) {
 
 const listaUsuariosAdministracao =
     document.querySelector("#lista-usuarios-administracao");
+const resumoUsuariosAdministracao =
+    document.querySelector("#resumo-usuarios-administracao");
+const botaoAtualizarUsuariosAdministracao =
+    document.querySelector("#atualizar-usuarios-administracao");
+const modalSenhaTemporaria =
+    document.querySelector("#modal-senha-temporaria");
+const valorSenhaTemporaria =
+    document.querySelector("#valor-senha-temporaria");
 
 function contasEscolaresDoUsuario(usuario) {
     if (
@@ -5786,16 +5835,56 @@ function contasEscolaresDoUsuario(usuario) {
     return usuario.email ? [usuario.email] : [];
 }
 
-function desenharUsuariosAdministracao() {
+function textoDataAdministracao(valor) {
+    if (!valor) return "Nunca";
+    const data = new Date(valor);
+    return Number.isNaN(data.getTime())
+        ? "Não informado"
+        : data.toLocaleString("pt-BR");
+}
+
+function criarListaAdministracao(titulo, valores, vazio) {
+    const bloco = document.createElement("div");
+    const rotulo = document.createElement("small");
+    const lista = document.createElement("ul");
+    rotulo.textContent = titulo;
+    (valores && valores.length ? valores : [vazio]).forEach(function (valor) {
+        const item = document.createElement("li");
+        item.textContent = valor;
+        lista.appendChild(item);
+    });
+    bloco.append(rotulo, lista);
+    return bloco;
+}
+
+function criarBotaoAdministracao(texto, acao, usuario, classe) {
+    const botao = document.createElement("button");
+    botao.type = "button";
+    botao.textContent = texto;
+    botao.dataset.acaoAdmin = acao;
+    botao.dataset.usuarioId = usuario.id;
+    botao.dataset.usuarioEmail = usuario.email || "";
+    botao.className = "botao-admin " + (classe || "");
+    if (usuario.email && normalizarEmail(usuario.email) === EMAIL_DONO_MALTERIA) {
+        if (["bloquear", "desbloquear", "excluir"].includes(acao)) botao.disabled = true;
+    }
+    return botao;
+}
+
+function renderizarUsuariosAdministracao(usuarios, origemBanco) {
     listaUsuariosAdministracao.innerHTML = "";
-
-    const usuarios = lerUsuariosLocais();
-
     if (usuarios.length === 0) {
         const vazio = document.createElement("p");
-        vazio.textContent = "Nenhuma conta encontrada neste navegador.";
+        vazio.textContent = "Nenhuma conta encontrada.";
         listaUsuariosAdministracao.appendChild(vazio);
         return;
+    }
+
+    if (resumoUsuariosAdministracao) {
+        const ativos = usuarios.filter(function (item) { return item.status === "Ativa"; }).length;
+        const bloqueados = usuarios.filter(function (item) { return item.status === "Bloqueada"; }).length;
+        resumoUsuariosAdministracao.textContent =
+            usuarios.length + " usuários • " + ativos + " ativos • " + bloqueados + " bloqueados";
     }
 
     usuarios.forEach(function (usuario) {
@@ -5804,42 +5893,136 @@ function desenharUsuariosAdministracao() {
         const nome = document.createElement("strong");
         const tipo = document.createElement("span");
         const email = document.createElement("p");
-        const tituloEscolar = document.createElement("small");
-        const listaEscolar = document.createElement("ul");
+        const metadados = document.createElement("div");
+        const acoes = document.createElement("div");
 
         cartao.className = "usuario-administracao";
         cabecalho.className = "usuario-administracao-cabecalho";
         nome.textContent = usuario.nome || "Usuário sem nome";
-        tipo.textContent = usuarioEhDono(usuario)
+        tipo.textContent = usuario.papel === "superadmin" || usuarioEhDono(usuario)
             ? "Dono"
             : usuario.tipo || "Conta";
         email.textContent = usuario.email || "E-mail não informado";
-        tituloEscolar.textContent = "CONTAS ESCOLARES";
+        metadados.className = "usuario-administracao-metadados";
+        metadados.innerHTML =
+            "<span><b>Status:</b> " + protegerTexto(usuario.status || "Local") + "</span>" +
+            "<span><b>Último acesso:</b> " + protegerTexto(textoDataAdministracao(usuario.ultimoAcesso)) + "</span>" +
+            "<span><b>Criada em:</b> " + protegerTexto(textoDataAdministracao(usuario.criadoEm)) + "</span>";
+        acoes.className = "usuario-administracao-acoes";
 
-        contasEscolaresDoUsuario(usuario).forEach(
-            function (contaEscolar) {
-                const item = document.createElement("li");
-                item.textContent = contaEscolar;
-                listaEscolar.appendChild(item);
-            }
-        );
-
-        if (listaEscolar.children.length === 0) {
-            const item = document.createElement("li");
-            item.textContent = "Nenhuma conta escolar informada";
-            listaEscolar.appendChild(item);
+        if (origemBanco) {
+            acoes.append(
+                criarBotaoAdministracao("🔑 Gerar senha temporária", "senha_temporaria", usuario, "primario"),
+                criarBotaoAdministracao("✉️ Enviar redefinição", "redefinir", usuario),
+                criarBotaoAdministracao(
+                    usuario.status === "Bloqueada" ? "✅ Desbloquear" : "⛔ Bloquear",
+                    usuario.status === "Bloqueada" ? "desbloquear" : "bloquear",
+                    usuario
+                ),
+                criarBotaoAdministracao("🗑️ Excluir", "excluir", usuario, "perigo")
+            );
         }
 
         cabecalho.append(nome, tipo);
         cartao.append(
             cabecalho,
             email,
-            tituloEscolar,
-            listaEscolar
+            metadados,
+            criarListaAdministracao(
+                "CLASSROOM CONECTADO",
+                usuario.classroom || contasEscolaresDoUsuario(usuario),
+                "Nenhuma conta Classroom conectada"
+            ),
+            criarListaAdministracao(
+                "VÍNCULOS FAMILIARES",
+                usuario.vinculos || [],
+                "Nenhum vínculo familiar ativo"
+            ),
+            acoes
         );
         listaUsuariosAdministracao.appendChild(cartao);
     });
 }
+
+async function requisicaoAdministracao(metodo, corpo) {
+    if (!window.MalteriaBanco || !window.MalteriaBanco.configurado) {
+        throw new Error("O banco de dados ainda não está conectado.");
+    }
+    const token = await window.MalteriaBanco.tokenAcesso();
+    if (!token) throw new Error("Faça login novamente para abrir a administração.");
+    const resposta = await fetch("/api/admin-usuarios", {
+        method: metodo,
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + token
+        },
+        body: corpo ? JSON.stringify(corpo) : undefined
+    });
+    const dados = await resposta.json().catch(function () { return {}; });
+    if (!resposta.ok) throw new Error(dados.erro || "Não foi possível concluir a operação.");
+    return dados;
+}
+
+async function desenharUsuariosAdministracao() {
+    listaUsuariosAdministracao.innerHTML = "<p class=\"carregando-administracao\">Carregando usuários do banco...</p>";
+    if (resumoUsuariosAdministracao) resumoUsuariosAdministracao.textContent = "";
+    try {
+        const dados = await requisicaoAdministracao("GET");
+        renderizarUsuariosAdministracao(dados.usuarios || [], true);
+    } catch (erro) {
+        const usuarios = lerUsuariosLocais();
+        renderizarUsuariosAdministracao(usuarios, false);
+        const aviso = document.createElement("p");
+        aviso.className = "erro-administracao";
+        aviso.textContent = erro.message + " Exibindo apenas os dados locais.";
+        listaUsuariosAdministracao.prepend(aviso);
+    }
+}
+
+async function executarAcaoAdministracao(botao) {
+    const acao = botao.dataset.acaoAdmin;
+    const id = botao.dataset.usuarioId;
+    const email = botao.dataset.usuarioEmail;
+    if (acao === "excluir" && !window.confirm("Excluir definitivamente a conta de " + email + "?")) return;
+    if (acao === "bloquear" && !window.confirm("Bloquear o acesso de " + email + "?")) return;
+    botao.disabled = true;
+    try {
+        if (acao === "redefinir") {
+            await window.MalteriaBanco.enviarRedefinicaoSenha(email);
+            window.alert("E-mail de redefinição enviado para " + email + ".");
+        } else {
+            const dados = await requisicaoAdministracao("POST", { acao: acao, usuarioId: id });
+            if (acao === "senha_temporaria") {
+                valorSenhaTemporaria.textContent = dados.senhaTemporaria;
+                modalSenhaTemporaria.classList.remove("escondido");
+            }
+            await desenharUsuariosAdministracao();
+        }
+    } catch (erro) {
+        window.alert(erro.message);
+    } finally {
+        botao.disabled = false;
+    }
+}
+
+listaUsuariosAdministracao.addEventListener("click", function (evento) {
+    const botao = evento.target.closest("[data-acao-admin]");
+    if (botao) executarAcaoAdministracao(botao);
+});
+
+if (botaoAtualizarUsuariosAdministracao) {
+    botaoAtualizarUsuariosAdministracao.addEventListener("click", desenharUsuariosAdministracao);
+}
+
+document.querySelector("#fechar-senha-temporaria").addEventListener("click", function () {
+    valorSenhaTemporaria.textContent = "";
+    modalSenhaTemporaria.classList.add("escondido");
+});
+
+document.querySelector("#copiar-senha-temporaria").addEventListener("click", async function () {
+    await navigator.clipboard.writeText(valorSenhaTemporaria.textContent);
+    this.textContent = "✓ Senha copiada";
+});
 
 /* NÍVEL DE MELHORA */
 
