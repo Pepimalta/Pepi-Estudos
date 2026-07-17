@@ -30,14 +30,27 @@
         if (!cliente) return null;
         const usuarioResposta = await cliente.auth.getUser();
         if (usuarioResposta.error) throw usuarioResposta.error;
-        if (!usuarioResposta.data.user) return null;
+        const usuarioAuth = usuarioResposta.data.user;
+        if (!usuarioAuth) return null;
         const resposta = await cliente
             .from("perfis")
             .select("id,nome,email,tipo,papel")
-            .eq("id", usuarioResposta.data.user.id)
-            .single();
+            .eq("id", usuarioAuth.id)
+            .maybeSingle();
         if (resposta.error) throw resposta.error;
-        return resposta.data;
+        if (resposta.data) return resposta.data;
+
+        const metadados = usuarioAuth.user_metadata || {};
+        return {
+            id: usuarioAuth.id,
+            nome: metadados.nome || String(usuarioAuth.email || "").split("@")[0] || "Usuário",
+            email: usuarioAuth.email || "",
+            tipo: metadados.tipo === "Responsável" ? "Responsável" : "Aluno",
+            papel: String(usuarioAuth.email || "").toLowerCase() === "pepimalti@gmail.com"
+                ? "superadmin"
+                : "usuario",
+            perfilPendente: true
+        };
     }
 
     async function cadastrar(usuario, senha) {
