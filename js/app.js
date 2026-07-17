@@ -217,7 +217,11 @@ function salvarUsuarioLocal(usuario) {
         return normalizarEmail(item.email) === email;
     });
 
-    usuario.administrador = usuarioEhDono(usuario);
+    if (usuario.bancoConectado) {
+        usuario.administrador = usuario.administrador === true;
+    } else {
+        usuario.administrador = usuarioEhDono(usuario);
+    }
 
     if (indice >= 0) {
         usuarios[indice] = usuario;
@@ -588,7 +592,7 @@ opcoesTipoConta.forEach(function (opcao) {
 
 document
     .querySelector("#form-cadastro")
-    .addEventListener("submit", function (evento) {
+    .addEventListener("submit", async function (evento) {
         evento.preventDefault();
 
         const nome = document
@@ -629,7 +633,11 @@ document
             return;
         }
 
-        const emailJaCadastrado =
+        const bancoAtivo = Boolean(
+            window.MalteriaBanco && window.MalteriaBanco.configurado
+        );
+
+        const emailJaCadastrado = !bancoAtivo &&
             lerUsuariosLocais().some(
                 function (usuario) {
                     return normalizarEmail(
@@ -649,7 +657,7 @@ document
         usuarioAtual = {
             nome: nome,
             email: email,
-            senha: senha,
+            senha: bancoAtivo ? undefined : senha,
             tipo: tipo,
             filhos: []
         };
@@ -674,6 +682,22 @@ document
         } else {
             usuarioAtual.codigoAluno =
                 gerarCodigo();
+        }
+
+        if (bancoAtivo) {
+            try {
+                const usuarioBanco = await window.MalteriaBanco.cadastrar(
+                    usuarioAtual,
+                    senha
+                );
+                usuarioAtual.id = usuarioBanco && usuarioBanco.id;
+                usuarioAtual.bancoConectado = true;
+            } catch (erro) {
+                mostrarErroCadastro(
+                    erro.message || "Não foi possível criar a conta."
+                );
+                return;
+            }
         }
 
         salvarUsuarioLocal(usuarioAtual);
@@ -710,7 +734,7 @@ function normalizarCodigoFamilia(codigo) {
 
 document
     .querySelector("#form-vinculo-familia")
-    .addEventListener("submit", function (evento) {
+    .addEventListener("submit", async function (evento) {
         evento.preventDefault();
 
         const campoCodigo = document.querySelector("#codigo-vinculo-familia");
@@ -789,7 +813,7 @@ document
 
 document
     .querySelector("#form-login")
-    .addEventListener("submit", function (evento) {
+    .addEventListener("submit", async function (evento) {
         evento.preventDefault();
 
         const email = document
@@ -800,6 +824,40 @@ document
         const senha = document
             .querySelector("#login-senha")
             .value;
+
+        const bancoAtivo = Boolean(
+            window.MalteriaBanco && window.MalteriaBanco.configurado
+        );
+
+        if (bancoAtivo) {
+            try {
+                const perfil = await window.MalteriaBanco.entrar(email, senha);
+                const usuarioLocal = lerUsuariosLocais().find(
+                    function (usuario) {
+                        return normalizarEmail(usuario.email) ===
+                            normalizarEmail(email);
+                    }
+                ) || {};
+
+                usuarioAtual = Object.assign({}, usuarioLocal, {
+                    id: perfil.id,
+                    nome: perfil.nome,
+                    email: perfil.email,
+                    tipo: perfil.tipo,
+                    administrador: perfil.papel === "superadmin",
+                    bancoConectado: true
+                });
+
+                salvarUsuarioLocal(usuarioAtual);
+                entrarNoAplicativo();
+                return;
+            } catch (erro) {
+                mostrarErroLogin(
+                    erro.message || "E-mail ou senha incorretos."
+                );
+                return;
+            }
+        }
 
         const usuarioSalvo = lerUsuariosLocais().find(
             function (usuario) {
@@ -848,8 +906,10 @@ function mostrarErroLogin(mensagem) {
 function entrarNoAplicativo() {
     mostrarTela(aplicativo);
 
-    usuarioAtual.administrador =
-        usuarioEhDono(usuarioAtual);
+    if (!usuarioAtual.bancoConectado) {
+        usuarioAtual.administrador =
+            usuarioEhDono(usuarioAtual);
+    }
 
     salvarUsuarioLocal(usuarioAtual);
     desenharHistoricoPesquisas();
@@ -6752,7 +6812,15 @@ document
 
 document
     .querySelector("#sair")
-    .addEventListener("click", function () {
+    .addEventListener("click", async function () {
+        if (window.MalteriaBanco && window.MalteriaBanco.configurado) {
+            try {
+                await window.MalteriaBanco.sair();
+            } catch (erro) {
+                console.error("Não foi possível encerrar a sessão do banco.", erro);
+            }
+        }
+
         usuarioAtual = null;
         tokenClassroom = "";
         clienteClassroom = null;
