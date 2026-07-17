@@ -3592,6 +3592,25 @@ body {
     line-height: 1.5;
 }
 
+.administracao-barra {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.administracao-barra .administracao-aviso {
+    flex: 1 1 480px;
+    margin: 0;
+}
+
+.resumo-administracao {
+    margin-top: 18px;
+    color: var(--roxo);
+    font-weight: 800;
+}
+
 .lista-usuarios-administracao {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3624,10 +3643,86 @@ body {
 }
 
 .usuario-administracao p {
-    margin: 10px 0 17px;
+    margin: 10px 0 14px;
     color: var(--cinza);
     overflow-wrap: anywhere;
 }
+
+.usuario-administracao-metadados {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 16px;
+    padding: 11px 12px;
+    border-radius: 12px;
+    background: #faf8ff;
+    color: var(--cinza);
+    font-size: 13px;
+}
+
+.usuario-administracao > div + div,
+.usuario-administracao > p + div {
+    margin-top: 13px;
+}
+
+.usuario-administracao-acoes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 17px !important;
+}
+
+.botao-admin {
+    min-height: 40px;
+    border: 1px solid #dcd4ff;
+    border-radius: 11px;
+    padding: 8px 10px;
+    background: white;
+    color: var(--texto);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.botao-admin:hover { transform: translateY(-1px); border-color: var(--roxo); }
+.botao-admin.primario { background: #eee9ff; color: var(--roxo); }
+.botao-admin.perigo { color: #b42318; border-color: #fecaca; }
+.botao-admin:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+.erro-administracao {
+    grid-column: 1 / -1;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    padding: 12px;
+    background: #fff1f2;
+    color: #b42318 !important;
+}
+
+.modal-senha-temporaria,
+.modal-trocar-senha {
+    max-width: 470px;
+    text-align: center;
+}
+
+.icone-modal-administracao { display: block; font-size: 42px; margin-bottom: 8px; }
+.valor-senha-temporaria {
+    display: block;
+    margin: 20px 0;
+    border: 2px dashed #a58cff;
+    border-radius: 14px;
+    padding: 15px;
+    background: #f7f4ff;
+    color: var(--roxo-escuro);
+    font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    overflow-wrap: anywhere;
+}
+
+.modal-trocar-senha form { display: grid; gap: 14px; margin-top: 18px; text-align: left; }
+.modal-trocar-senha label { display: grid; gap: 7px; font-weight: 800; }
+.modal-trocar-senha input { width: 100%; }
 
 .usuario-administracao small {
     color: var(--roxo);
@@ -3678,6 +3773,7 @@ body {
     .painel-pesquisa { padding: 24px 18px 100px; }
     .periodo-pesquisa { grid-template-columns: 1fr; }
     .lista-usuarios-administracao { grid-template-columns: 1fr; }
+    .usuario-administracao-acoes { grid-template-columns: 1fr; }
     .apresentacao::after { display: none; }
     .conteudo { margin-bottom: 110px; }
 }
