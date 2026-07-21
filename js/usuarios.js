@@ -3,10 +3,23 @@ import crypto from "node:crypto";
 const EMAIL_DONO = "pepimalti@gmail.com";
 
 function configuracao() {
-    const url = String(process.env.SUPABASE_URL || "").replace(/\/$/, "");
-    const chave = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
-    if (!url || !chave) {
-        throw new Error("Configure SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY na Vercel.");
+    const url = String(
+        process.env.SUPABASE_URL ||
+        process.env.NEXT_PUBLIC_SUPABASE_URL ||
+        "https://nyrryhhalbtuvquufzsm.supabase.co"
+    ).replace(/\/$/, "");
+    const chave =
+        process.env.SUPABASE_SERVICE_ROLE_KEY ||
+        process.env.SUPABASE_SECRET_KEY ||
+        process.env.SUPABASE_SERVICE_KEY ||
+        "";
+    if (!chave) {
+        const erro = new Error(
+            "A chave secreta do Supabase não chegou à função da Vercel. " +
+            "Use SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_SECRET_KEY e faça uma nova implantação."
+        );
+        erro.status = 503;
+        throw erro;
     }
     return { url, chave };
 }
