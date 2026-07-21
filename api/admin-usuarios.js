@@ -12,11 +12,20 @@ function configuracao() {
         process.env.SUPABASE_SERVICE_ROLE_KEY ||
         process.env.SUPABASE_SECRET_KEY ||
         process.env.SUPABASE_SERVICE_KEY ||
+        process.env.SB_SECRET_KEY ||
         "";
     if (!chave) {
         const erro = new Error(
-            "A chave secreta do Supabase não chegou à função da Vercel. " +
-            "Use SUPABASE_SERVICE_ROLE_KEY ou SUPABASE_SECRET_KEY e faça uma nova implantação."
+            "Falta a chave secreta do Supabase na Vercel. Crie SUPABASE_SECRET_KEY " +
+            "com a chave sb_secret_... do projeto e reimplante em Produção."
+        );
+        erro.status = 503;
+        throw erro;
+    }
+    if (/^sb_publishable_/i.test(chave)) {
+        const erro = new Error(
+            "SUPABASE_SECRET_KEY recebeu a chave pública sb_publishable_.... " +
+            "Use a chave secreta sb_secret_... do Supabase e reimplante em Produção."
         );
         erro.status = 503;
         throw erro;
