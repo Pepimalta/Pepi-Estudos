@@ -8,12 +8,13 @@ function configuracao() {
         process.env.NEXT_PUBLIC_SUPABASE_URL ||
         "https://nyrryhhalbtuvquufzsm.supabase.co"
     ).replace(/\/$/, "");
-    const chave =
+    const chave = String(
         process.env.SUPABASE_SERVICE_ROLE_KEY ||
         process.env.SUPABASE_SECRET_KEY ||
         process.env.SUPABASE_SERVICE_KEY ||
         process.env.SB_SECRET_KEY ||
-        "";
+        ""
+    ).trim();
     if (!chave) {
         const erro = new Error(
             "Falta a chave secreta do Supabase na Vercel. Crie SUPABASE_SECRET_KEY " +
@@ -26,6 +27,15 @@ function configuracao() {
         const erro = new Error(
             "SUPABASE_SECRET_KEY recebeu a chave pública sb_publishable_.... " +
             "Use a chave secreta sb_secret_... do Supabase e reimplante em Produção."
+        );
+        erro.status = 503;
+        throw erro;
+    }
+    if (/[\u2022\u25CF\u25E6\u00B7*]/.test(chave) || /[^\x20-\x7E]/.test(chave)) {
+        const erro = new Error(
+            "A chave secreta do Supabase salva na Vercel estÃ¡ mascarada. " +
+            "Apague o valor com pontinhos e cole a chave verdadeira sb_secret_...; " +
+            "depois salve e reimplante em ProduÃ§Ã£o."
         );
         erro.status = 503;
         throw erro;
