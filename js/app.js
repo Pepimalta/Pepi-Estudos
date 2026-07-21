@@ -28,6 +28,9 @@ const metasBimestraisDaSessao = new Map();
 function adicionarEnfeitesVisiveisNasPaginas() {
     const configuracoes = {
         "#pagina-principal": ["📚", "✏️", "🧠", "✨", "🎓", "📐", "🔬", "🌎", "💡", "🎒"],
+        "#pagina-agenda": ["📅", "⏰", "📌", "✅", "🗓️", "✏️", "🎒", "🔔", "📚", "🌟"],
+        "#pagina-materias": ["📚", "📐", "🧪", "🌎", "✍️", "🔬", "🎓", "📖", "🧠", "✨"],
+        "#pagina-redacoes": ["✍️", "📖", "📝", "💭", "✨", "📚", "🪶", "💡", "🎭", "⭐"],
         "#pagina-materia": ["📖", "📝", "💡", "🔎", "⭐", "🎒", "📏", "🧪", "🖍️", "🏆"],
         "#pagina-pesquisa": ["🔎", "📚", "💭", "✨", "🧠", "📝", "🗂️", "📌", "💡", "📖"],
         "#pagina-ajuda": ["💡", "🧭", "❓", "📘", "🗺️", "✨", "🛟", "🔎", "📌", "🤝"],
@@ -79,6 +82,15 @@ const aplicativo = document.querySelector("#aplicativo");
 
 const paginaPrincipal =
     document.querySelector("#pagina-principal");
+
+const paginaAgenda =
+    document.querySelector("#pagina-agenda");
+
+const paginaMaterias =
+    document.querySelector("#pagina-materias");
+
+const paginaRedacoes =
+    document.querySelector("#pagina-redacoes");
 
 const paginaMateria =
     document.querySelector("#pagina-materia");
@@ -389,6 +401,9 @@ document
 
 const paginasInternas = [
     paginaPrincipal,
+    paginaAgenda,
+    paginaMaterias,
+    paginaRedacoes,
     paginaMateria,
     paginaPesquisa,
     paginaAjuda,
@@ -1428,7 +1443,27 @@ function abrirMateria(materia) {
 }
 
 function mostrarPaginaPrincipal() {
+    const titulo = document.querySelector("#titulo-principal");
+    if (titulo) {
+        const nome = usuarioAtual?.nome?.trim();
+        titulo.textContent = nome
+            ? "Olá, " + nome + "!"
+            : "Bem-vindo à Maltéria!";
+    }
     mostrarPaginaInterna(paginaPrincipal);
+}
+
+function mostrarPaginaAgenda() {
+    mostrarPaginaInterna(paginaAgenda);
+}
+
+function mostrarPaginaMaterias() {
+    mostrarPaginaInterna(paginaMaterias);
+}
+
+function mostrarPaginaRedacoes() {
+    preencherMateriasRedacao();
+    mostrarPaginaInterna(paginaRedacoes);
 }
 
 document
@@ -1446,10 +1481,32 @@ document
     );
 
 document
+    .querySelector("#abrir-agenda-lateral")
+    .addEventListener("click", mostrarPaginaAgenda);
+
+document
+    .querySelector("#abrir-materias-lateral")
+    .addEventListener("click", mostrarPaginaMaterias);
+
+document
+    .querySelector("#abrir-redacoes-lateral")
+    .addEventListener("click", mostrarPaginaRedacoes);
+
+document.querySelectorAll("[data-atalho-pagina]").forEach(function (botao) {
+    botao.addEventListener("click", function () {
+        const destino = botao.dataset.atalhoPagina;
+        if (destino === "agenda") mostrarPaginaAgenda();
+        if (destino === "materias") mostrarPaginaMaterias();
+        if (destino === "redacoes") mostrarPaginaRedacoes();
+        if (destino === "pesquisa") abrirNovaPesquisa();
+    });
+});
+
+document
     .querySelector("#voltar-materias")
     .addEventListener(
         "click",
-        mostrarPaginaPrincipal
+        mostrarPaginaMaterias
     );
 
 /* MENU DA MATÉRIA */
@@ -2985,6 +3042,179 @@ async function pesquisarMateriais() {
     }
 }
 
+/* OFICINA DE REDAÇÃO */
+
+function materiasDeRedacaoDisponiveis() {
+    const turmas = Array.isArray(turmasClassroom) ? turmasClassroom : [];
+    const redacao = turmas.filter(function (turma) {
+        const nome = normalizarPesquisa(turma.name || "");
+        return /redacao|producao textual|oficina de texto/.test(nome);
+    });
+
+    if (redacao.length) return redacao;
+
+    return turmas.filter(function (turma) {
+        const nome = normalizarPesquisa(turma.name || "");
+        return /lingua portuguesa|portugues/.test(nome);
+    });
+}
+
+function preencherMateriasRedacao() {
+    const seletor = document.querySelector("#materia-redacao");
+    if (!seletor) return;
+
+    const valorAnterior = seletor.value;
+    const materias = materiasDeRedacaoDisponiveis();
+
+    if (!materias.length) {
+        seletor.innerHTML = '<option value="">Conecte o Classroom para localizar Redação</option>';
+        return;
+    }
+
+    seletor.innerHTML = materias.map(function (turma) {
+        return '<option value="' + protegerTexto(String(turma.id)) + '">' +
+            protegerTexto(turma.name) + '</option>';
+    }).join("");
+
+    if (materias.some(function (turma) { return String(turma.id) === valorAnterior; })) {
+        seletor.value = valorAnterior;
+    }
+}
+
+function periodoDaPropostaRedacao() {
+    const modo = document.querySelector("#modo-periodo-redacao").value;
+    const hoje = new Date();
+
+    if (modo === "data") {
+        const data = document.querySelector("#data-redacao").value;
+        return data ? { inicio: data, fim: data } : null;
+    }
+
+    const dias = Number(modo) || 14;
+    const inicio = new Date(hoje);
+    inicio.setDate(inicio.getDate() - dias + 1);
+    return {
+        inicio: dataParaCampo(inicio),
+        fim: dataParaCampo(hoje)
+    };
+}
+
+async function gerarPropostaRedacao() {
+    const materiaId = document.querySelector("#materia-redacao").value;
+    const genero = document.querySelector("#genero-redacao").value;
+    const status = document.querySelector("#status-redacao");
+    const area = document.querySelector("#resultado-redacao");
+    const botao = document.querySelector("#gerar-proposta-redacao");
+    const periodo = periodoDaPropostaRedacao();
+    const turma = materiasDeRedacaoDisponiveis().find(function (item) {
+        return String(item.id) === String(materiaId);
+    });
+
+    area.classList.add("escondido");
+    area.innerHTML = "";
+
+    if (!tokenClassroom) {
+        status.textContent = "Conecte a conta escolar ao Classroom primeiro.";
+        return;
+    }
+    if (!turma) {
+        status.textContent = "Não encontrei a matéria de Redação nessa conta.";
+        return;
+    }
+    if (!periodo) {
+        status.textContent = "Escolha a data da aula que deseja usar.";
+        return;
+    }
+
+    botao.disabled = true;
+    botao.textContent = "Lendo as folhas de Redação...";
+    status.textContent = "Procurando materiais e atividades da matéria escolhida...";
+    arquivosPdfParaIA = [];
+
+    try {
+        const resultado = await obterMateriaisDoPeriodo(
+            turma,
+            periodo.inicio,
+            periodo.fim,
+            "todos"
+        );
+
+        if (!resultado.fontes.length && !resultado.conteudo.trim()) {
+            throw new Error("Não encontrei folhas ou atividades de Redação nesse período.");
+        }
+
+        const generoPedido = genero === "automatico"
+            ? "Identifique nos materiais qual gênero textual está sendo estudado."
+            : "O gênero obrigatório é " + genero + ".";
+
+        const pergunta = [
+            "Analise os materiais de Redação fornecidos.",
+            generoPedido,
+            "Crie UMA proposta inédita de redação no mesmo nível e estilo das folhas da escola.",
+            "Não escreva a redação pelo aluno e não forneça um texto pronto.",
+            "Organize a resposta nestas partes: gênero identificado, tema, situação de escrita, instruções, elementos obrigatórios, tamanho sugerido e lista de conferência.",
+            "Se for fábula, peça personagens, conflito, desfecho e moral, respeitando o que estiver nas folhas.",
+            "Use linguagem clara para uma criança, mas mantenha o nível de exigência da escola."
+        ].join(" ");
+
+        status.textContent = "Criando uma proposta baseada no que foi estudado...";
+        const resposta = await fetch(ENDERECO_IA, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                tipo: "pesquisa",
+                materia: turma.name,
+                pergunta: pergunta,
+                formato: "texto",
+                semData: false,
+                dataInicial: periodo.inicio,
+                dataFinal: periodo.fim,
+                conteudo: resultado.conteudo.slice(0, 60000),
+                arquivos: arquivosPdfParaIA
+            })
+        });
+        const dados = await resposta.json();
+        if (!resposta.ok) {
+            throw new Error(dados.erro || "Não foi possível criar a proposta.");
+        }
+
+        area.innerHTML =
+            '<div class="proposta-redacao-topo"><span>✍️</span><div><small>PROPOSTA CRIADA A PARTIR DAS AULAS</small><h2>' +
+            protegerTexto(turma.name) +
+            '</h2><p>' + protegerTexto(formatarDataCampo(periodo.inicio)) +
+            (periodo.inicio === periodo.fim ? "" : " até " + protegerTexto(formatarDataCampo(periodo.fim))) +
+            '</p></div></div><div class="texto-proposta-redacao">' +
+            formatarTexto(dados.resposta || "A proposta não foi retornada.") +
+            '</div><p class="lembrete-redacao">💡 A Maltéria cria o desafio; a redação é escrita por você.</p>';
+        area.classList.remove("escondido");
+        status.textContent = resultado.fontes.length +
+            (resultado.fontes.length === 1 ? " material usado." : " materiais usados.");
+    } catch (erro) {
+        console.error(erro);
+        status.textContent = traduzirErroDaInteligencia(erro.message);
+    } finally {
+        botao.disabled = false;
+        botao.textContent = "✨ Criar proposta de redação";
+    }
+}
+
+const modoPeriodoRedacao = document.querySelector("#modo-periodo-redacao");
+if (modoPeriodoRedacao) {
+    modoPeriodoRedacao.addEventListener("change", function () {
+        document.querySelector("#campo-data-redacao").classList.toggle(
+            "escondido",
+            modoPeriodoRedacao.value !== "data"
+        );
+    });
+}
+
+const dataRedacao = document.querySelector("#data-redacao");
+if (dataRedacao && !dataRedacao.value) dataRedacao.value = dataParaCampo(new Date());
+
+document
+    .querySelector("#gerar-proposta-redacao")
+    .addEventListener("click", gerarPropostaRedacao);
+
 /* HISTÓRICO DE PESQUISAS */
 
 function chaveHistoricoPesquisas() {
@@ -4205,6 +4435,7 @@ function desenharTurmasClassroom(turmas) {
     );
 
     desenharMaterias(materiasReais);
+    preencherMateriasRedacao();
 }
 
 function prepararClienteClassroom() {
@@ -6008,7 +6239,19 @@ async function requisicaoAdministracao(metodo, corpo) {
         body: corpo ? JSON.stringify(corpo) : undefined
     });
     const dados = await resposta.json().catch(function () { return {}; });
-    if (!resposta.ok) throw new Error(dados.erro || "Não foi possível concluir a operação.");
+    if (!resposta.ok) {
+        let mensagem = dados.erro || "Não foi possível concluir a operação.";
+        if (resposta.status === 404) {
+            mensagem = "A API administrativa ainda não foi publicada. Crie o arquivo api/admin-usuarios.js no GitHub e aguarde a Vercel reimplantar.";
+        } else if (resposta.status === 401) {
+            mensagem = "Sua sessão expirou. Saia da conta e entre novamente.";
+        } else if (resposta.status === 403) {
+            mensagem = "Esta conta não foi reconhecida como Super Administrador no banco.";
+        } else if (resposta.status === 500 || resposta.status === 503) {
+            mensagem = dados.erro || "A chave secreta do banco não chegou à função da Vercel. Confira a variável e faça uma nova implantação sem cache.";
+        }
+        throw new Error(mensagem);
+    }
     return dados;
 }
 
@@ -6928,6 +7171,7 @@ async function comprimirImagemEvolucao(arquivo) {
 function desenharAnaliseEvolucao(dados) {
     const area = document.querySelector("#resultado-evolucao");
     const indice = Math.max(0, Math.min(100, Number(dados.indicePotencial) || 0));
+    const confianca = protegerTexto(dados.confianca || "Não informada");
     const materias = Array.isArray(dados.materiasPrioritarias)
         ? dados.materiasPrioritarias
         : [];
@@ -6937,19 +7181,50 @@ function desenharAnaliseEvolucao(dados) {
         <div class="painel-indice-evolucao">
             <div class="circulo-evolucao" style="--indice-evolucao: ${indice * 3.6}deg">
                 <strong>${indice}%</strong>
-                <span>potencial estimado</span>
+                <span>oportunidade de evolução</span>
             </div>
             <div>
-                <small>NÍVEL RECOMENDADO</small>
+                <small>ESTIMATIVA DO PLANO DE ESTUDOS</small>
+                <h2>Há espaço para evoluir — e isso é uma boa notícia</h2>
+                <p class="explicacao-percentual-evolucao">
+                    Os ${indice}% não medem sua inteligência, capacidade ou valor pessoal.
+                    Eles representam quanto a Maltéria estima que organização, explicações
+                    e prática direcionada podem ajudar neste momento.
+                </p>
+                <small>NÍVEL INICIAL RECOMENDADO</small>
                 <h2>${protegerTexto(dados.nivelDificuldade || "Intermediário")}</h2>
                 <p>${protegerTexto(dados.resumo || "")}</p>
             </div>
         </div>
 
-        <p class="mensagem-formal-evolucao">${protegerTexto(
-            dados.mensagemFormal ||
-            `Com o uso consistente da Maltéria, seu potencial estimado de evolução é de ${indice}%. O aplicativo oferece organização e prática; o resultado final também depende da sua dedicação.`
-        )}</p>
+        <section class="como-ler-evolucao">
+            <h3>🔎 Como interpretar este resultado</h3>
+            <div>
+                <article>
+                    <strong>O que significa</strong>
+                    <p>É uma estimativa da oportunidade de melhora encontrada nos materiais analisados.</p>
+                </article>
+                <article>
+                    <strong>O que não significa</strong>
+                    <p>Não é nota de inteligência, diagnóstico, promessa de resultado nem limite do aluno.</p>
+                </article>
+                <article>
+                    <strong>Base da análise</strong>
+                    <p>Boletim, provas, listas ou folhas que foram enviados. Confiança da análise: ${confianca}.</p>
+                </article>
+                <article>
+                    <strong>O que acontece depois</strong>
+                    <p>A estimativa muda quando entram novos boletins, atividades e resultados de estudo.</p>
+                </article>
+            </div>
+        </section>
+
+        <p class="mensagem-formal-evolucao">
+            A Maltéria encontrou uma oportunidade estimada de evolução de ${indice}% com
+            um plano consistente. A plataforma ajuda com organização, explicações e prática;
+            o progresso real acontece gradualmente e também depende da participação do aluno,
+            do tempo disponível e do acompanhamento escolar.
+        </p>
 
         <div class="grade-diagnostico-evolucao">
             <article>
@@ -6993,7 +7268,11 @@ function desenharAnaliseEvolucao(dados) {
         </section>
 
         <p class="aviso-indice-evolucao">
-            Este índice é uma estimativa educacional criada a partir dos documentos enviados. Ele não garante aumento equivalente nas notas e deve ser revisto quando houver um novo boletim.
+            <strong>Importante:</strong> esta porcentagem não representa “quanto o aluno é
+            inteligente” nem significa que falta uma parte de sua capacidade. É apenas uma
+            estimativa educacional de oportunidade, criada a partir dos documentos enviados.
+            Ela não garante aumento equivalente nas notas e deve ser recalculada quando houver
+            um novo boletim ou novas avaliações.
         </p>
     `;
 
