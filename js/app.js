@@ -48,13 +48,20 @@ function adicionarEnfeitesVisiveisNasPaginas() {
         camada.setAttribute("aria-hidden", "true");
         camada.style.cssText = "position:absolute;inset:0;z-index:1;overflow:hidden;pointer-events:none";
         const posicoes = [
-            "top:7%;left:1%", "top:7%;right:1%",
-            "top:25%;left:2%", "top:25%;right:2%",
-            "top:43%;left:.8%", "top:43%;right:.8%",
-            "top:61%;left:2%", "top:61%;right:2%",
-            "top:79%;left:1%", "top:79%;right:1%"
+            "top:22%;left:-78px", "top:22%;right:-78px",
+            "top:38%;left:-68px", "top:38%;right:-68px",
+            "top:54%;left:-82px", "top:54%;right:-82px",
+            "top:70%;left:-68px", "top:70%;right:-68px",
+            "top:86%;left:-78px", "top:86%;right:-78px"
         ];
-        camada.innerHTML = emojis.map(function (emoji, indice) {
+        const iconeDoCabecalho = pagina
+            .querySelector(".cabecalho-ferramenta > span")
+            ?.textContent.trim();
+        const emojisSemRepeticao = emojis.filter(function (emoji, indice) {
+            return emoji !== iconeDoCabecalho && emojis.indexOf(emoji) === indice;
+        });
+
+        camada.innerHTML = emojisSemRepeticao.map(function (emoji, indice) {
             return `<span style="--ordem-enfeite:${indice};position:absolute;${posicoes[indice]};">${emoji}</span>`;
         }).join("");
 
@@ -6248,7 +6255,7 @@ async function requisicaoAdministracao(metodo, corpo) {
         } else if (resposta.status === 403) {
             mensagem = "Esta conta não foi reconhecida como Super Administrador no banco.";
         } else if (resposta.status === 500 || resposta.status === 503) {
-            mensagem = dados.erro || "A chave secreta do banco não chegou à função da Vercel. Confira a variável e faça uma nova implantação sem cache.";
+            mensagem = dados.erro || "A Super Administração ainda não recebeu a chave secreta do Supabase na Vercel. Configure SUPABASE_SECRET_KEY com a chave sb_secret_... e reimplante em Produção.";
         }
         throw new Error(mensagem);
     }
