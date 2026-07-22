@@ -579,6 +579,12 @@
 
                 <section class="atalhos-inicio" aria-label="Atalhos principais">
                     <button type="button" data-atalho-pagina="agenda"><span>📅</span><strong>Agenda</strong><small>Veja deveres, entregas e o que preparar.</small></button>
+                    <button type="button" data-atalho-pagina="materias"><span>📚</span><strong>Matérias</strong><small>Abra suas turmas, materiais e atividades.</small></button>
+                    <button type="button" data-atalho-pagina="redacoes"><span>✍️</span><strong>Redações</strong><small>Receba uma proposta e envie seu texto para correção.</small></button>
+                    <button type="button" data-atalho-pagina="meta"><span>↗️</span><strong>Meta e evolução</strong><small>Acompanhe sua meta sem transformar o estudo em pressão.</small></button>
+                    <button type="button" data-atalho-pagina="simulados"><span>🎯</span><strong>Simulados</strong><small>Escolha matérias, período, formato e quantidade.</small></button>
+                    <button type="button" data-atalho-pagina="pesquisa"><span>🔎</span><strong>Nova pesquisa</strong><small>Tire uma dúvida usando os materiais do Classroom.</small></button>
+                    <button type="button" data-atalho-pagina="ajuda"><span>❓</span><strong>Ajuda</strong><small>Aprenda como cada parte da Maltéria funciona.</small></button>
                 </section>
             </section>
 
@@ -736,6 +742,21 @@
                     <button id="gerar-proposta-redacao" class="botao-principal" type="button">✨ Criar proposta de redação</button>
                     <p id="status-redacao" class="status-pesquisa" aria-live="polite"></p>
                     <section id="resultado-redacao" class="resultado-redacao escondido"></section>
+
+                    <section class="correcao-redacao">
+                        <div>
+                            <small>CORREÇÃO DA MALTÉRIA</small>
+                            <h2>Envie sua redação para corrigir</h2>
+                            <p>Cole o texto abaixo ou envie uma foto/PDF. A Maltéria apontará acertos, melhorias e uma orientação de reescrita.</p>
+                        </div>
+                        <label for="texto-correcao-redacao">Texto da redação</label>
+                        <textarea id="texto-correcao-redacao" rows="12" placeholder="Cole ou digite sua redação aqui..."></textarea>
+                        <label for="arquivo-correcao-redacao">Ou envie uma foto ou PDF</label>
+                        <input id="arquivo-correcao-redacao" type="file" accept="image/jpeg,image/png,image/webp,application/pdf">
+                        <button id="corrigir-redacao" class="botao-principal" type="button">✨ Corrigir minha redação</button>
+                        <p id="status-correcao-redacao" class="status-pesquisa" aria-live="polite"></p>
+                        <section id="resultado-correcao-redacao" class="resultado-redacao escondido"></section>
+                    </section>
                 </section>
             </section>
 
@@ -1091,6 +1112,9 @@
                                 <option value="30">Últimos 30 dias</option>
                             </select>
                         </label>
+                        <label>Data específica (opcional)
+                            <input id="data-simuladao" type="date">
+                        </label>
                         <label>Estratégia geral
                             <select id="dificuldade-simuladao">
                                 <option value="inteligente" selected>Maltéria decide</option>
@@ -1103,6 +1127,7 @@
                             <select id="modalidade-simuladao">
                                 <option value="objetiva" selected>Objetivas: marcar alternativa</option>
                                 <option value="discursiva">Discursivas: escrever resposta</option>
+                                <option value="manual">Lista para fazer à mão</option>
                             </select>
                         </label>
                         <label>Quantidade de questões
@@ -1140,12 +1165,6 @@
                     </div>
                 </div>
 
-                <section class="grade-formatos-pratica">
-                    <article><span>📝</span><strong>Quiz interativo</strong><p>Correção e explicação logo após cada resposta.</p></article>
-                    <article><span>🖨️</span><strong>Lista para fazer à mão</strong><p>Folha tradicional com espaço de resolução e gabarito separado.</p></article>
-                    <article><span>🎯</span><strong>Simuladão por período</strong><p>Uma ou várias matérias, com nível manual ou recomendado.</p></article>
-                </section>
-
                 <div id="central-pratica-conteudo"></div>
             </section>
 
@@ -1164,7 +1183,10 @@
                 <section class="caixa administracao-pagina-conteudo">
                     <div class="administracao-barra">
                         <p class="administracao-aviso">Contas cadastradas no banco da Maltéria. Senhas antigas nunca são exibidas; quando necessário, gere uma senha temporária de uso único.</p>
-                        <button id="atualizar-usuarios-administracao" class="botao-secundario" type="button">↻ Atualizar usuários</button>
+                        <div class="administracao-acoes-topo">
+                            <button id="criar-usuario-administracao" class="botao-principal" type="button">＋ Criar conta</button>
+                            <button id="atualizar-usuarios-administracao" class="botao-secundario" type="button">↻ Atualizar usuários</button>
+                        </div>
                     </div>
                     <div id="resumo-usuarios-administracao" class="resumo-administracao" aria-live="polite"></div>
                     <div id="lista-usuarios-administracao" class="lista-usuarios-administracao"></div>
@@ -1213,6 +1235,30 @@
             <p>Copie agora. Por segurança, ela não poderá ser consultada novamente.</p>
             <output id="valor-senha-temporaria" class="valor-senha-temporaria"></output>
             <button id="copiar-senha-temporaria" class="botao-principal" type="button">Copiar senha temporária</button>
+        </section>
+    </div>
+
+    <div id="modal-criar-usuario" class="fundo-modal escondido">
+        <section class="cartao modal" role="dialog" aria-modal="true" aria-labelledby="titulo-criar-usuario">
+            <button id="fechar-criar-usuario" class="fechar" type="button">×</button>
+            <h2 id="titulo-criar-usuario">Criar nova conta</h2>
+            <form id="form-criar-usuario-administracao" autocomplete="off">
+                <label>Nome<input id="admin-novo-nome" required></label>
+                <label>E-mail<input id="admin-novo-email" type="email" required autocomplete="off"></label>
+                <label>Tipo de conta
+                    <select id="admin-novo-tipo"><option>Aluno</option><option>Responsável</option></select>
+                </label>
+                <p id="erro-criar-usuario" class="erro-formulario" aria-live="polite"></p>
+                <button class="botao-principal" type="submit">Criar e gerar senha temporária</button>
+            </form>
+        </section>
+    </div>
+
+    <div id="modal-dados-usuario" class="fundo-modal escondido">
+        <section class="cartao modal" role="dialog" aria-modal="true" aria-labelledby="titulo-dados-usuario">
+            <button id="fechar-dados-usuario" class="fechar" type="button">×</button>
+            <h2 id="titulo-dados-usuario">Dados da conta</h2>
+            <div id="conteudo-dados-usuario" class="conteudo-dados-usuario"></div>
         </section>
     </div>
 
