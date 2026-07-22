@@ -1361,7 +1361,7 @@ select:focus {
     position: absolute;
     inset: 0;
     z-index: 1;
-    overflow: hidden;
+    overflow: visible !important;
     pointer-events: none;
 }
 
@@ -1418,6 +1418,9 @@ select:focus {
 }
 
 #pagina-principal > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
+#pagina-agenda > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
+#pagina-materias > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
+#pagina-redacoes > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
 #pagina-materia > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
 #pagina-pesquisa > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
 #pagina-ajuda > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
@@ -1449,16 +1452,9 @@ select:focus {
 }
 
 @media (max-width: 850px) {
-    .enfeites-visiveis-pagina span {
-        width: 46px;
-        height: 46px;
-        border-radius: 16px;
-        font-size: 25px;
-        opacity: 0.68;
+    .enfeites-visiveis-pagina {
+        display: none;
     }
-
-    .enfeites-visiveis-pagina span:nth-child(odd) { left: 4px; }
-    .enfeites-visiveis-pagina span:nth-child(even) { right: 4px; }
 }
 
 @keyframes flutuar-enfeites-pagina {
@@ -3662,6 +3658,13 @@ body {
     font-weight: 800;
 }
 
+.administracao-acoes-topo {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 14px;
+}
+
 .lista-usuarios-administracao {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3754,6 +3757,40 @@ body {
     max-width: 470px;
     text-align: center;
 }
+
+#form-criar-usuario-administracao {
+    display: grid;
+    gap: 14px;
+    margin-top: 18px;
+    text-align: left;
+}
+
+#form-criar-usuario-administracao label {
+    display: grid;
+    gap: 7px;
+    font-weight: 800;
+}
+
+#form-criar-usuario-administracao input,
+#form-criar-usuario-administracao select { width: 100%; }
+
+.conteudo-dados-usuario {
+    display: grid;
+    gap: 9px;
+    margin-top: 18px;
+}
+
+.conteudo-dados-usuario p {
+    display: grid;
+    grid-template-columns: minmax(120px, 0.7fr) minmax(0, 1.3fr);
+    gap: 12px;
+    margin: 0;
+    border-radius: 12px;
+    padding: 11px 12px;
+    background: #f8f6ff;
+}
+
+.conteudo-dados-usuario span { overflow-wrap: anywhere; }
 
 .icone-modal-administracao { display: block; font-size: 42px; margin-bottom: 8px; }
 .valor-senha-temporaria {
@@ -5505,16 +5542,17 @@ body {
 #abrir-redacoes-lateral { order: 4; }
 #abrir-nivel-melhora { order: 5; }
 #abrir-pratica { order: 6; }
-#abrir-ajuda { order: 7; }
-#abrir-pesquisa { order: 8; }
-.historico-pesquisas-lateral { order: 9; }
-#abrir-administracao { order: 10; }
+#abrir-pesquisa { order: 7; }
+.historico-pesquisas-lateral { order: 8; }
+#abrir-administracao { order: 9; }
+#abrir-ajuda { order: 10; }
 
 .atalhos-inicio {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: center;
     gap: 18px;
-    width: min(900px, 100%);
+    width: min(1040px, 100%);
     margin: 24px auto;
 }
 
@@ -5625,6 +5663,28 @@ body {
 }
 
 .formulario-redacao .botao-principal { width: 100%; }
+
+.correcao-redacao {
+    display: grid;
+    gap: 12px;
+    margin-top: 30px;
+    padding-top: 26px;
+    border-top: 2px solid #eee3ff;
+}
+
+.correcao-redacao h2,
+.correcao-redacao p { margin: 4px 0; }
+.correcao-redacao small { color: #6b3cff; font-weight: 800; letter-spacing: .08em; }
+.correcao-redacao textarea {
+    width: 100%;
+    resize: vertical;
+    min-height: 220px;
+    padding: 16px;
+    font: inherit;
+    line-height: 1.65;
+    border: 2px solid #dfd1ff;
+    border-radius: 16px;
+}
 
 .resultado-redacao {
     margin-top: 24px;
