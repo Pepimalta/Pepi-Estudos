@@ -1424,6 +1424,13 @@ function dataParaCampo(data) {
 function abrirMateria(materia) {
     materiaAtual = materia;
 
+    if (usuarioAtual?.email) {
+        localStorage.setItem(
+            "malteriaUltimaMateria:" + normalizarEmail(usuarioAtual.email),
+            JSON.stringify({ id: String(materia.id), name: materia.name })
+        );
+    }
+
     mostrarPaginaInterna(paginaMateria);
 
     document.querySelector(
@@ -1506,6 +1513,9 @@ document.querySelectorAll("[data-atalho-pagina]").forEach(function (botao) {
         if (destino === "materias") mostrarPaginaMaterias();
         if (destino === "redacoes") mostrarPaginaRedacoes();
         if (destino === "pesquisa") abrirNovaPesquisa();
+        if (destino === "meta") document.querySelector("#abrir-nivel-melhora").click();
+        if (destino === "simulados") document.querySelector("#abrir-pratica").click();
+        if (destino === "ajuda") abrirPainelAjuda();
     });
 });
 
@@ -2626,6 +2636,7 @@ async function mostrarSimulado() {
                     <select id="modalidade-simulado-materia">
                         <option value="objetiva" selected>Objetivas: marcar alternativa</option>
                         <option value="discursiva">Discursivas: escrever resposta</option>
+                        <option value="manual">Lista para fazer à mão</option>
                     </select>
                 </label>
                 <label>Quantidade de questões
@@ -2637,6 +2648,9 @@ async function mostrarSimulado() {
                         <option value="reforco">Reforço</option>
                         <option value="desafio">Desafio</option>
                     </select>
+                </label>
+                <label>Data específica (opcional)
+                    <input id="data-simulado-materia" type="date">
                 </label>
             </div>
             <button id="criar-simulado-materia" class="botao-principal" type="button">Criar simulado</button>
@@ -2656,14 +2670,16 @@ async function criarSimuladoDaMateria() {
     const area = document.querySelector("#resultado-simulado-materia");
     const botao = document.querySelector("#criar-simulado-materia");
     const modalidade = document.querySelector("#modalidade-simulado-materia").value;
+    const modalidadeIA = modalidade === "manual" ? "discursiva" : modalidade;
     const quantidade = limitarQuantidadeQuestoes(
         document.querySelector("#quantidade-simulado-materia").value
     );
     const dificuldade = document.querySelector("#dificuldade-simulado-materia").value;
-    const fim = periodoEstudoAtual?.fim || dataParaCampo(new Date());
+    const dataEspecifica = document.querySelector("#data-simulado-materia").value;
+    const fim = dataEspecifica || periodoEstudoAtual?.fim || dataParaCampo(new Date());
     const inicioPadrao = new Date(fim + "T12:00:00");
     inicioPadrao.setDate(inicioPadrao.getDate() - 13);
-    const inicio = periodoEstudoAtual?.inicio || dataParaCampo(inicioPadrao);
+    const inicio = dataEspecifica || periodoEstudoAtual?.inicio || dataParaCampo(inicioPadrao);
 
     botao.disabled = true;
     area.classList.add("escondido");
@@ -2678,17 +2694,27 @@ async function criarSimuladoDaMateria() {
             titulo: "Simulado de " + materiaAtual.name,
             conteudo: conteudo,
             dificuldade: dificuldade,
-            modalidade: modalidade,
+            modalidade: modalidadeIA,
             mapaDificuldade: { [materiaAtual.name]: dificuldade }
         }, quantidade);
 
-        desenharSimuladaoInterativo(dados, {
-            area: area,
-            dias: 14,
-            modalidade: modalidade,
-            tipoRegistro: "simulado",
-            materias: [materiaAtual.name]
-        });
+        if (modalidade === "manual") {
+            desenharListaSimuladoParaImprimir(dados, {
+                area: area,
+                titulo: "Lista de " + materiaAtual.name,
+                materias: [materiaAtual.name],
+                inicio: inicio,
+                fim: fim
+            });
+        } else {
+            desenharSimuladaoInterativo(dados, {
+                area: area,
+                dias: 14,
+                modalidade: modalidade,
+                tipoRegistro: "simulado",
+                materias: [materiaAtual.name]
+            });
+        }
         status.textContent = "Simulado pronto. Faça no seu ritmo.";
     } catch (erro) {
         console.error(erro);
@@ -3223,6 +3249,64 @@ document
     .addEventListener("click", gerarPropostaRedacao);
 
 /* HISTÓRICO DE PESQUISAS */
+
+async function corrigirRedacao() {
+    const texto = document.querySelector("#texto-correcao-redacao").value.trim();
+    const arquivo = document.querySelector("#arquivo-correcao-redacao").files[0];
+    const status = document.querySelector("#status-correcao-redacao");
+    const area = document.querySelector("#resultado-correcao-redacao");
+    const botao = document.querySelector("#corrigir-redacao");
+
+    if (!texto && !arquivo) {
+        status.textContent = "Digite a redação ou envie uma foto/PDF.";
+        return;
+    }
+
+    botao.disabled = true;
+    area.classList.add("escondido");
+    status.textContent = "Lendo sua redação com atenção...";
+
+    try {
+        const arquivos = arquivo
+            ? [await prepararArquivoEvolucao(arquivo, "redacao")]
+            : [];
+        const resposta = await fetch(ENDERECO_IA, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                tipo: "pesquisa",
+                materia: "Redação",
+                formato: "texto",
+                semData: true,
+                pergunta: [
+                    "Atue como uma professora de Redação cuidadosa e adequada para uma criança.",
+                    "Corrija a redação enviada sem humilhar e sem inventar critérios que não aparecem no texto.",
+                    "Organize em: resumo do que entendeu; pontos fortes; ortografia e pontuação; organização das ideias; adequação ao gênero; trechos que precisam melhorar; sugestões práticas; proposta de reescrita.",
+                    "Mostre exemplos curtos de correção, mas não substitua todo o texto do aluno.",
+                    "Ao final, apresente uma lista de conferência para a reescrita."
+                ].join(" "),
+                conteudo: texto,
+                arquivos: arquivos
+            })
+        });
+        const dados = await resposta.json();
+        if (!resposta.ok) throw new Error(dados.erro || "Não foi possível corrigir a redação.");
+
+        area.innerHTML = `
+            <div class="proposta-redacao-topo"><span>📝</span><div><small>CORREÇÃO DA MALTÉRIA</small><h2>Orientações para sua reescrita</h2></div></div>
+            <div class="texto-proposta-redacao">${formatarTexto(dados.resposta || "A correção não foi retornada.")}</div>
+        `;
+        area.classList.remove("escondido");
+        status.textContent = "Correção concluída. Leia as orientações e faça sua própria reescrita.";
+    } catch (erro) {
+        console.error(erro);
+        status.textContent = traduzirErroDaInteligencia(erro.message);
+    } finally {
+        botao.disabled = false;
+    }
+}
+
+document.querySelector("#corrigir-redacao").addEventListener("click", corrigirRedacao);
 
 function chaveHistoricoPesquisas() {
     const conta = usuarioAtual?.email
@@ -4443,6 +4527,20 @@ function desenharTurmasClassroom(turmas) {
 
     desenharMaterias(materiasReais);
     preencherMateriasRedacao();
+
+    if (usuarioAtual?.email) {
+        try {
+            const ultima = JSON.parse(
+                localStorage.getItem("malteriaUltimaMateria:" + normalizarEmail(usuarioAtual.email)) || "null"
+            );
+            const encontrada = materiasReais.find(function (materia) {
+                return String(materia.id) === String(ultima?.id);
+            });
+            if (encontrada) materiaAtual = encontrada;
+        } catch (erro) {
+            localStorage.removeItem("malteriaUltimaMateria:" + normalizarEmail(usuarioAtual.email));
+        }
+    }
 }
 
 function prepararClienteClassroom() {
@@ -4544,6 +4642,27 @@ async function restaurarConexaoClassroom() {
                   ? " turma lembrada. Clique para atualizar."
                   : " turmas lembradas. Clique para atualizar.")
             : "Conta escolar lembrada. Clique para atualizar.";
+
+    tentarRenovarClassroomSilenciosamente();
+}
+
+function tentarRenovarClassroomSilenciosamente(tentativa = 0) {
+    if (!usuarioAtual || tokenClassroom || tentativa > 6) return;
+
+    if (!prepararClienteClassroom()) {
+        setTimeout(function () {
+            tentarRenovarClassroomSilenciosamente(tentativa + 1);
+        }, 700);
+        return;
+    }
+
+    tentativaSilenciosaClassroom = true;
+    try {
+        clienteClassroom.requestAccessToken({ prompt: "" });
+    } catch (erro) {
+        tentativaSilenciosaClassroom = false;
+        textoClassroom.textContent = "Reconectar ao Classroom";
+    }
 }
 
 function conectarClassroom() {
@@ -6106,6 +6225,10 @@ const modalSenhaTemporaria =
     document.querySelector("#modal-senha-temporaria");
 const valorSenhaTemporaria =
     document.querySelector("#valor-senha-temporaria");
+const modalCriarUsuario = document.querySelector("#modal-criar-usuario");
+const modalDadosUsuario = document.querySelector("#modal-dados-usuario");
+const conteudoDadosUsuario = document.querySelector("#conteudo-dados-usuario");
+const usuariosAdministracaoPorChave = new Map();
 
 function contasEscolaresDoUsuario(usuario) {
     if (
@@ -6151,6 +6274,7 @@ function criarBotaoAdministracao(texto, acao, usuario, classe) {
     botao.dataset.acaoAdmin = acao;
     botao.dataset.usuarioId = usuario.id;
     botao.dataset.usuarioEmail = usuario.email || "";
+    botao.dataset.usuarioChave = usuario.id || usuario.email || "";
     botao.className = "botao-admin " + (classe || "");
     if (usuario.email && normalizarEmail(usuario.email) === EMAIL_DONO_MALTERIA) {
         if (["bloquear", "desbloquear", "excluir"].includes(acao)) botao.disabled = true;
@@ -6160,6 +6284,7 @@ function criarBotaoAdministracao(texto, acao, usuario, classe) {
 
 function renderizarUsuariosAdministracao(usuarios, origemBanco) {
     listaUsuariosAdministracao.innerHTML = "";
+    usuariosAdministracaoPorChave.clear();
     if (usuarios.length === 0) {
         const vazio = document.createElement("p");
         vazio.textContent = "Nenhuma conta encontrada.";
@@ -6175,6 +6300,7 @@ function renderizarUsuariosAdministracao(usuarios, origemBanco) {
     }
 
     usuarios.forEach(function (usuario) {
+        usuariosAdministracaoPorChave.set(usuario.id || usuario.email || "", usuario);
         const cartao = document.createElement("article");
         const cabecalho = document.createElement("div");
         const nome = document.createElement("strong");
@@ -6197,10 +6323,14 @@ function renderizarUsuariosAdministracao(usuarios, origemBanco) {
             "<span><b>Criada em:</b> " + protegerTexto(textoDataAdministracao(usuario.criadoEm)) + "</span>";
         acoes.className = "usuario-administracao-acoes";
 
+        acoes.append(
+            criarBotaoAdministracao("👁️ Ver dados", "ver", usuario, "primario"),
+            criarBotaoAdministracao("✉️ Enviar redefinição", "redefinir", usuario)
+        );
+
         if (origemBanco) {
             acoes.append(
                 criarBotaoAdministracao("🔑 Gerar senha temporária", "senha_temporaria", usuario, "primario"),
-                criarBotaoAdministracao("✉️ Enviar redefinição", "redefinir", usuario),
                 criarBotaoAdministracao(
                     usuario.status === "Bloqueada" ? "✅ Desbloquear" : "⛔ Bloquear",
                     usuario.status === "Bloqueada" ? "desbloquear" : "bloquear",
@@ -6282,6 +6412,11 @@ async function executarAcaoAdministracao(botao) {
     const acao = botao.dataset.acaoAdmin;
     const id = botao.dataset.usuarioId;
     const email = botao.dataset.usuarioEmail;
+    if (acao === "ver") {
+        const usuario = usuariosAdministracaoPorChave.get(botao.dataset.usuarioChave);
+        if (usuario) mostrarDadosUsuarioAdministracao(usuario);
+        return;
+    }
     if (acao === "excluir" && !window.confirm("Excluir definitivamente a conta de " + email + "?")) return;
     if (acao === "bloquear" && !window.confirm("Bloquear o acesso de " + email + "?")) return;
     botao.disabled = true;
@@ -6304,6 +6439,31 @@ async function executarAcaoAdministracao(botao) {
     }
 }
 
+function mostrarDadosUsuarioAdministracao(usuario) {
+    conteudoDadosUsuario.innerHTML = "";
+    const linhas = [
+        ["Nome", usuario.nome || "Não informado"],
+        ["E-mail", usuario.email || "Não informado"],
+        ["Tipo de conta", usuario.tipo || "Não informado"],
+        ["Permissão", usuario.papel || "usuário"],
+        ["Status", usuario.status || "Local"],
+        ["Último acesso", textoDataAdministracao(usuario.ultimoAcesso)],
+        ["Conta criada em", textoDataAdministracao(usuario.criadoEm)],
+        ["Classroom", (usuario.classroom || contasEscolaresDoUsuario(usuario)).join(", ") || "Não conectado"],
+        ["Vínculos familiares", (usuario.vinculos || []).join(", ") || "Nenhum vínculo ativo"]
+    ];
+    linhas.forEach(function (linha) {
+        const bloco = document.createElement("p");
+        const rotulo = document.createElement("strong");
+        const valor = document.createElement("span");
+        rotulo.textContent = linha[0];
+        valor.textContent = linha[1];
+        bloco.append(rotulo, valor);
+        conteudoDadosUsuario.appendChild(bloco);
+    });
+    modalDadosUsuario.classList.remove("escondido");
+}
+
 listaUsuariosAdministracao.addEventListener("click", function (evento) {
     const botao = evento.target.closest("[data-acao-admin]");
     if (botao) executarAcaoAdministracao(botao);
@@ -6321,6 +6481,44 @@ document.querySelector("#fechar-senha-temporaria").addEventListener("click", fun
 document.querySelector("#copiar-senha-temporaria").addEventListener("click", async function () {
     await navigator.clipboard.writeText(valorSenhaTemporaria.textContent);
     this.textContent = "✓ Senha copiada";
+});
+
+document.querySelector("#criar-usuario-administracao").addEventListener("click", function () {
+    document.querySelector("#form-criar-usuario-administracao").reset();
+    document.querySelector("#erro-criar-usuario").textContent = "";
+    modalCriarUsuario.classList.remove("escondido");
+});
+
+document.querySelector("#fechar-criar-usuario").addEventListener("click", function () {
+    modalCriarUsuario.classList.add("escondido");
+});
+
+document.querySelector("#fechar-dados-usuario").addEventListener("click", function () {
+    modalDadosUsuario.classList.add("escondido");
+});
+
+document.querySelector("#form-criar-usuario-administracao").addEventListener("submit", async function (evento) {
+    evento.preventDefault();
+    const erroFormulario = document.querySelector("#erro-criar-usuario");
+    const botao = this.querySelector("button[type='submit']");
+    erroFormulario.textContent = "";
+    botao.disabled = true;
+    try {
+        const dados = await requisicaoAdministracao("POST", {
+            acao: "criar",
+            nome: document.querySelector("#admin-novo-nome").value.trim(),
+            email: document.querySelector("#admin-novo-email").value.trim(),
+            tipo: document.querySelector("#admin-novo-tipo").value
+        });
+        modalCriarUsuario.classList.add("escondido");
+        valorSenhaTemporaria.textContent = dados.senhaTemporaria;
+        modalSenhaTemporaria.classList.remove("escondido");
+        await desenharUsuariosAdministracao();
+    } catch (erro) {
+        erroFormulario.textContent = erro.message;
+    } finally {
+        botao.disabled = false;
+    }
 });
 
 /* NÍVEL DE MELHORA */
@@ -6779,9 +6977,11 @@ async function criarSimuladaoGeral() {
     const configuracao = configuracaoDoSimuladao(materias);
     const dificuldade = configuracao.estrategia;
     const modalidade = document.querySelector("#modalidade-simuladao").value;
-    const fim = new Date();
-    const inicio = new Date();
-    inicio.setDate(inicio.getDate() - (dias - 1));
+    const modalidadeIA = modalidade === "manual" ? "discursiva" : modalidade;
+    const dataEspecifica = document.querySelector("#data-simuladao").value;
+    const fim = dataEspecifica ? new Date(dataEspecifica + "T12:00:00") : new Date();
+    const inicio = new Date(fim);
+    if (!dataEspecifica) inicio.setDate(inicio.getDate() - (dias - 1));
 
     botao.disabled = true;
     area.classList.add("escondido");
@@ -6802,17 +7002,27 @@ async function criarSimuladaoGeral() {
             titulo: "Simuladão dos últimos " + dias + " dias",
             conteudo: conteudo,
             dificuldade: dificuldade,
-            modalidade: modalidade,
+            modalidade: modalidadeIA,
             mapaDificuldade: configuracao.mapa
         }, configuracao.quantidade);
 
-        desenharSimuladaoInterativo(dados, {
-            dias: dias,
-            dificuldade: dificuldade,
-            modalidade: modalidade,
-            tipoRegistro: "simuladao",
-            materias: materias.map(function (item) { return item.name; })
-        });
+        if (modalidade === "manual") {
+            desenharListaSimuladoParaImprimir(dados, {
+                area: area,
+                titulo: "Simuladão para fazer à mão",
+                materias: materias.map(function (item) { return item.name; }),
+                inicio: dataParaCampo(inicio),
+                fim: dataParaCampo(fim)
+            });
+        } else {
+            desenharSimuladaoInterativo(dados, {
+                dias: dias,
+                dificuldade: dificuldade,
+                modalidade: modalidade,
+                tipoRegistro: "simuladao",
+                materias: materias.map(function (item) { return item.name; })
+            });
+        }
         status.textContent = "Simuladão pronto. Faça no seu ritmo.";
     } catch (erro) {
         console.error(erro);
@@ -6860,6 +7070,51 @@ async function obterConteudoSimuladao(materias, inicio, fim) {
     }
 
     return texto.slice(0, 60000);
+}
+
+function desenharListaSimuladoParaImprimir(dados, configuracao) {
+    const area = configuracao.area || document.querySelector("#resultado-simuladao");
+    const questoes = Array.isArray(dados.questoes) ? dados.questoes : [];
+    if (!questoes.length) throw new Error("A IA não conseguiu criar a lista solicitada.");
+
+    const enunciados = questoes.map(function (questao, indice) {
+        return `
+            <article class="questao-folha">
+                <p><strong>${indice + 1}.</strong> ${protegerTexto(questao.pergunta || "")}</p>
+                <div class="linhas-resposta" style="--quantidade-linhas: 6"></div>
+            </article>
+        `;
+    }).join("");
+    const gabarito = questoes.map(function (questao, indice) {
+        return `
+            <li><strong>${indice + 1}.</strong> ${protegerTexto(
+                questao.respostaModelo || questao.explicacao || "Consulte o material estudado."
+            )}</li>
+        `;
+    }).join("");
+
+    area.innerHTML = `
+        <div class="acoes-lista-impressa">
+            <p>Faça à mão e abra o gabarito somente depois de terminar.</p>
+            <button class="botao-principal imprimir-simulado-manual" type="button">🖨️ Imprimir ou salvar em PDF</button>
+        </div>
+        <section class="folha-impressa">
+            <header>
+                <span class="marca-folha">MALTÉRIA</span>
+                <h2>${protegerTexto(configuracao.titulo || "Lista de exercícios")}</h2>
+                <p>${protegerTexto(configuracao.materias.join(" • "))}</p>
+                <div class="identificacao-folha"><span>Nome: ____________________________________</span><span>Data: ____/____/________</span></div>
+            </header>
+            <main>${enunciados}</main>
+        </section>
+        <details class="gabarito-lista"><summary>Ver gabarito depois de terminar</summary><ol>${gabarito}</ol></details>
+    `;
+    area.classList.remove("escondido");
+    area.querySelector(".imprimir-simulado-manual").addEventListener("click", function () {
+        document.body.classList.add("imprimindo-lista");
+        window.print();
+        setTimeout(function () { document.body.classList.remove("imprimindo-lista"); }, 500);
+    });
 }
 
 function desenharSimuladaoInterativo(dados, configuracao) {
