@@ -8,35 +8,35 @@ function configuracao() {
         process.env.NEXT_PUBLIC_SUPABASE_URL ||
         "https://nyrryhhalbtuvquufzsm.supabase.co"
     ).replace(/\/$/, "");
-    const chave = String(
-        process.env.SUPABASE_SERVICE_ROLE_KEY ||
-        process.env.SUPABASE_SECRET_KEY ||
-        process.env.SUPABASE_SERVICE_KEY ||
-        process.env.SB_SECRET_KEY ||
-        ""
-    ).trim();
+    const chavesPossiveis = [
+        process.env.SUPABASE_SECRET_KEY,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        process.env.SUPABASE_SERVICE_KEY,
+        process.env.SB_SECRET_KEY
+    ].map((valor) => String(valor || "").trim());
+    const chaveValida = (valor) =>
+        valor &&
+        valor.length >= 30 &&
+        !/^sb_publishable_/i.test(valor) &&
+        !/\.{3}|…/.test(valor) &&
+        !/[\u2022\u25CF\u25E6\u00B7*]/.test(valor) &&
+        !/[^\x20-\x7E]/.test(valor);
+    const chave = chavesPossiveis.find(chaveValida) || "";
     if (!chave) {
-        const erro = new Error(
+        const informada = chavesPossiveis.find(Boolean) || "";
+        let mensagem =
             "Falta a chave secreta do Supabase na Vercel. Crie SUPABASE_SECRET_KEY " +
-            "com a chave sb_secret_... do projeto e reimplante em Produção."
-        );
-        erro.status = 503;
-        throw erro;
-    }
-    if (/^sb_publishable_/i.test(chave)) {
-        const erro = new Error(
-            "SUPABASE_SECRET_KEY recebeu a chave pública sb_publishable_.... " +
-            "Use a chave secreta sb_secret_... do Supabase e reimplante em Produção."
-        );
-        erro.status = 503;
-        throw erro;
-    }
-    if (/[\u2022\u25CF\u25E6\u00B7*]/.test(chave) || /[^\x20-\x7E]/.test(chave)) {
-        const erro = new Error(
-            "A chave secreta do Supabase salva na Vercel estÃ¡ mascarada. " +
-            "Apague o valor com pontinhos e cole a chave verdadeira sb_secret_...; " +
-            "depois salve e reimplante em ProduÃ§Ã£o."
-        );
+            "com a chave secreta completa do projeto e reimplante em Produção.";
+        if (/^sb_publishable_/i.test(informada)) {
+            mensagem =
+                "A variável recebeu a chave pública sb_publishable_. Use a chave secreta " +
+                "sb_secret_ do Supabase e reimplante em Produção.";
+        } else if (informada) {
+            mensagem =
+                "A chave secreta salva na Vercel está incompleta ou mascarada. Apague o valor, " +
+                "cole a chave sb_secret_ completa e reimplante em Produção.";
+        }
+        const erro = new Error(mensagem);
         erro.status = 503;
         throw erro;
     }
@@ -173,6 +173,32 @@ export default async function handler(req, res) {
             return res.status(405).json({ erro: "Método não permitido." });
         }
         const corpo = typeof req.body === "string" ? JSON.parse(req.body) : (req.body || {});
+
+        if (corpo.acao === "criar") {
+            const nome = String(corpo.nome || "").trim();
+            const email = String(corpo.email || "").trim().toLowerCase();
+            const tipo = corpo.tipo === "Responsável" ? "Responsável" : "Aluno";
+            if (nome.length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                return res.status(400).json({ erro: "Informe um nome e um e-mail válidos." });
+            }
+
+            const senhaTemporaria = gerarSenhaTemporaria();
+            const criado = await supabaseFetch("/auth/v1/admin/users", {
+                method: "POST",
+                body: JSON.stringify({
+                    email,
+                    password: senhaTemporaria,
+                    email_confirm: true,
+                    user_metadata: { nome, tipo, precisa_trocar_senha: true }
+                })
+            });
+            return res.status(201).json({
+                ok: true,
+                usuarioId: criado.id,
+                senhaTemporaria
+            });
+        }
+
         const alvo = await obterUsuarioAlvo(corpo.usuarioId);
         const emailAlvo = String(alvo.email || "").toLowerCase();
         const caminho = "/auth/v1/admin/users/" + encodeURIComponent(alvo.id);
