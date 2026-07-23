@@ -31,6 +31,7 @@ function adicionarEnfeitesVisiveisNasPaginas() {
         "#pagina-agenda": ["📅", "⏰", "📌", "✅", "🗓️", "✏️", "🎒", "🔔", "📚", "🌟"],
         "#pagina-materias": ["📚", "📐", "🧪", "🌎", "✍️", "🔬", "🎓", "📖", "🧠", "✨"],
         "#pagina-redacoes": ["✍️", "📖", "📝", "💭", "✨", "📚", "🪶", "💡", "🎭", "⭐"],
+        "#pagina-trabalhos": ["🗂️", "📋", "🎨", "🔬", "📊", "🎤", "📚", "✂️", "📅", "✨"],
         "#pagina-materia": ["📖", "📝", "💡", "🔎", "⭐", "🎒", "📏", "🧪", "🖍️", "🏆"],
         "#pagina-pesquisa": ["🔎", "📚", "💭", "✨", "🧠", "📝", "🗂️", "📌", "💡", "📖"],
         "#pagina-ajuda": ["💡", "🧭", "❓", "📘", "🗺️", "✨", "🛟", "🔎", "📌", "🤝"],
@@ -98,6 +99,9 @@ const paginaMaterias =
 
 const paginaRedacoes =
     document.querySelector("#pagina-redacoes");
+
+const paginaTrabalhos =
+    document.querySelector("#pagina-trabalhos");
 
 const paginaMateria =
     document.querySelector("#pagina-materia");
@@ -419,6 +423,7 @@ const paginasInternas = [
     paginaPrincipal,
     paginaAgenda,
     paginaMaterias,
+    paginaTrabalhos,
     paginaRedacoes,
     paginaMateria,
     paginaPesquisa,
@@ -1508,6 +1513,11 @@ function mostrarPaginaMaterias() {
     mostrarPaginaInterna(paginaMaterias);
 }
 
+function mostrarPaginaTrabalhos() {
+    mostrarPaginaInterna(paginaTrabalhos);
+    prepararPaginaTrabalhos();
+}
+
 function mostrarPaginaRedacoes() {
     preencherMateriasRedacao();
     mostrarPaginaInterna(paginaRedacoes);
@@ -1536,6 +1546,10 @@ document
     .addEventListener("click", mostrarPaginaMaterias);
 
 document
+    .querySelector("#abrir-trabalhos-lateral")
+    .addEventListener("click", mostrarPaginaTrabalhos);
+
+document
     .querySelector("#abrir-redacoes-lateral")
     .addEventListener("click", mostrarPaginaRedacoes);
 
@@ -1545,6 +1559,7 @@ document.querySelectorAll("[data-atalho-pagina]").forEach(function (botao) {
         if (destino === "agenda") mostrarPaginaAgenda();
         if (destino === "materias") mostrarPaginaMaterias();
         if (destino === "redacoes") mostrarPaginaRedacoes();
+        if (destino === "trabalhos") mostrarPaginaTrabalhos();
         if (destino === "pesquisa") abrirNovaPesquisa();
         if (destino === "meta") document.querySelector("#abrir-nivel-melhora").click();
         if (destino === "simulados") document.querySelector("#abrir-pratica").click();
@@ -3107,6 +3122,217 @@ async function pesquisarMateriais() {
             "🔎 Pesquisar nos materiais";
     }
 }
+
+/* TRABALHOS ESCOLARES */
+
+function limitesSugeridosDoBimestre(ano, bimestre) {
+    const limites = {
+        1: ["02-01", "04-30"],
+        2: ["05-01", "07-31"],
+        3: ["08-01", "09-30"],
+        4: ["10-01", "12-20"]
+    };
+    const periodo = limites[Number(bimestre)] || limites[1];
+    return {
+        inicio: ano + "-" + periodo[0],
+        fim: ano + "-" + periodo[1]
+    };
+}
+
+function bimestreSugeridoParaData(data) {
+    const mes = data.getMonth() + 1;
+    if (mes <= 4) return 1;
+    if (mes <= 7) return 2;
+    if (mes <= 9) return 3;
+    return 4;
+}
+
+function atualizarDatasSugeridasDosTrabalhos() {
+    const ano = Number(document.querySelector("#ano-trabalhos").value) || new Date().getFullYear();
+    const bimestre = Number(document.querySelector("#bimestre-trabalhos").value) || 1;
+    const limites = limitesSugeridosDoBimestre(ano, bimestre);
+    document.querySelector("#inicio-trabalhos").value = limites.inicio;
+    document.querySelector("#fim-trabalhos").value = limites.fim;
+}
+
+function prepararPaginaTrabalhos() {
+    const campoAno = document.querySelector("#ano-trabalhos");
+    const campoBimestre = document.querySelector("#bimestre-trabalhos");
+    if (!campoAno.value) {
+        const hoje = new Date();
+        campoAno.value = hoje.getFullYear();
+        campoBimestre.value = String(bimestreSugeridoParaData(hoje));
+        atualizarDatasSugeridasDosTrabalhos();
+    }
+}
+
+function itemPareceTrabalhoEscolar(item) {
+    const texto = normalizarPesquisa(
+        (item.titulo || item.title || item.summary || "") + " " +
+        (item.descricao || item.description || "") + " " +
+        (item.tipo || "")
+    );
+    return /trabalho|projeto|seminario|apresentacao|pesquisa|maquete|cartaz|producao|portfolio|relatorio/.test(texto);
+}
+
+function textoFonteTrabalho(item) {
+    return [
+        "FONTE: " + (item.origem === "agenda" ? "Google Agenda" : "Google Classroom"),
+        "MATÉRIA: " + (item.materia || "Não identificada"),
+        "TÍTULO: " + (item.titulo || "Sem título"),
+        "TIPO: " + (item.tipo || "Trabalho"),
+        "DATA OU PRAZO: " + formatarDataPesquisa(item.prazo || item.data),
+        "DESCRIÇÃO: " + (item.descricao || "Não informada"),
+        "SITUAÇÃO NO CLASSROOM: " + (item.pendente ? "Pendente" : "Sem pendência confirmada")
+    ].join("\n");
+}
+
+function trabalhoBrutoDaFonte(item) {
+    return {
+        titulo: item.titulo || "Trabalho sem título",
+        materia: item.materia || "Não identificada",
+        tipo: item.tipo || "Trabalho",
+        dataEntrega: item.prazo || item.data ? formatarDataPesquisa(item.prazo || item.data) : "Não informada",
+        conteudoCobrado: "Consulte a descrição e os anexos do professor.",
+        oQueFazer: item.descricao || "Instruções não informadas.",
+        situacao: item.pendente ? "Pendente" : "Verificar no Classroom",
+        evidencia: item.origem === "agenda" ? "Google Agenda" : "Google Classroom",
+        link: item.link || ""
+    };
+}
+
+function encontrarLinkDoTrabalho(trabalho, fontes) {
+    const titulo = normalizarPesquisa(trabalho.titulo || "");
+    const fonte = fontes.find(function (item) {
+        const tituloFonte = normalizarPesquisa(item.titulo || "");
+        return titulo && (tituloFonte.includes(titulo) || titulo.includes(tituloFonte));
+    });
+    return fonte && fonte.link || "";
+}
+
+function desenharTabelaTrabalhos(dados, fontes, periodo) {
+    const area = document.querySelector("#resultado-trabalhos");
+    const trabalhos = Array.isArray(dados.trabalhos) ? dados.trabalhos : [];
+    if (!trabalhos.length) {
+        area.innerHTML =
+            "<div class=\"vazio-trabalhos\"><span>🔎</span><h2>Nenhum trabalho identificado</h2>" +
+            "<p>Não encontrei evidência de trabalhos nesse período. Confira as datas ou veja se a conta escolar correta está conectada.</p></div>";
+        area.classList.remove("escondido");
+        return;
+    }
+
+    const linhas = trabalhos.map(function (trabalho) {
+        const link = trabalho.link || encontrarLinkDoTrabalho(trabalho, fontes);
+        return "<tr>" +
+            "<td><strong>" + protegerTexto(trabalho.titulo || "Trabalho") + "</strong><small>" + protegerTexto(trabalho.tipo || "Trabalho") + "</small></td>" +
+            "<td>" + protegerTexto(trabalho.materia || "Não identificada") + "</td>" +
+            "<td>" + protegerTexto(trabalho.dataEntrega || "Não informada") + "</td>" +
+            "<td>" + protegerTexto(trabalho.conteudoCobrado || "Não informado") + "</td>" +
+            "<td>" + protegerTexto(trabalho.oQueFazer || "Não informado") + "</td>" +
+            "<td><span class=\"situacao-trabalho\">" + protegerTexto(trabalho.situacao || "Verificar") + "</span>" +
+            (link ? "<a href=\"" + protegerTexto(link) + "\" target=\"_blank\" rel=\"noopener\">Abrir fonte</a>" : "") + "</td>" +
+        "</tr>";
+    }).join("");
+
+    area.innerHTML =
+        "<div class=\"resumo-trabalhos\"><div><small>VISÃO DO BIMESTRE</small><h2>" + trabalhos.length +
+        (trabalhos.length === 1 ? " trabalho encontrado" : " trabalhos encontrados") + "</h2></div>" +
+        "<p>" + protegerTexto(dados.resumo || ("Período de " + periodo.inicio + " até " + periodo.fim + ".")) + "</p></div>" +
+        "<div class=\"tabela-trabalhos-rolagem\"><table class=\"tabela-trabalhos\"><thead><tr>" +
+        "<th>Trabalho</th><th>Matéria</th><th>Entrega</th><th>O que vai cair</th><th>O que fazer</th><th>Situação</th>" +
+        "</tr></thead><tbody>" + linhas + "</tbody></table></div>" +
+        "<p class=\"nota-trabalhos\">A Maltéria organiza apenas o que encontrou nas fontes. Confirme instruções importantes diretamente com a escola.</p>";
+    area.classList.remove("escondido");
+}
+
+async function atualizarTrabalhosDoBimestre() {
+    const botao = document.querySelector("#atualizar-trabalhos");
+    const status = document.querySelector("#status-trabalhos");
+    const area = document.querySelector("#resultado-trabalhos");
+    const inicio = document.querySelector("#inicio-trabalhos").value;
+    const fim = document.querySelector("#fim-trabalhos").value;
+    const bimestre = document.querySelector("#bimestre-trabalhos").value;
+
+    if (!inicio || !fim || inicio > fim) {
+        status.textContent = "Confira as datas de início e fim do bimestre.";
+        return;
+    }
+    if (!tokenClassroom || !turmasClassroom.length) {
+        status.textContent = "Conecte a conta escolar ao Classroom antes de procurar os trabalhos.";
+        return;
+    }
+
+    botao.disabled = true;
+    botao.textContent = "Lendo o bimestre...";
+    status.textContent = "Procurando trabalhos no Classroom, nos anexos e na Agenda...";
+    area.classList.add("escondido");
+    try {
+        const resultadosClassroom = await Promise.all(turmasClassroom.map(async function (turma) {
+            try {
+                return await obterMateriaisDoPeriodo(turma, inicio, fim, "trabalho");
+            } catch (erro) {
+                console.warn("Trabalhos não carregados em " + turma.name, erro);
+                return { conteudo: "", fontes: [] };
+            }
+        }));
+        let agenda = { conteudo: "", fontes: [] };
+        try {
+            agenda = await obterEventosAgenda(inicio, fim);
+        } catch (erroAgenda) {
+            console.warn("A Agenda não pôde ser consultada; continuando com o Classroom.", erroAgenda);
+        }
+        const fontes = resultadosClassroom.flatMap(function (resultado) { return resultado.fontes; })
+            .concat(agenda.fontes.filter(function (item) {
+                return item.calendarioEscolar && itemPareceTrabalhoEscolar(item);
+            }));
+        const fontesUnicas = Array.from(new Map(fontes.map(function (item) {
+            return [item.chave, item];
+        })).values());
+
+        if (!fontesUnicas.length) {
+            desenharTabelaTrabalhos({ trabalhos: [] }, [], { inicio: inicio, fim: fim });
+            status.textContent = "Busca concluída sem trabalhos identificados.";
+            return;
+        }
+
+        const conteudo = fontesUnicas.map(textoFonteTrabalho).join("\n\n");
+        let dados;
+        try {
+            const resposta = await fetch(ENDERECO_IA, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    tipo: "trabalhos_bimestre",
+                    materia: "Todas as matérias",
+                    titulo: bimestre + "º bimestre",
+                    dataInicio: inicio,
+                    dataFinal: fim,
+                    conteudo: conteudo
+                })
+            });
+            dados = await resposta.json();
+            if (!resposta.ok) throw new Error(dados.erro || "A IA não conseguiu organizar os trabalhos.");
+        } catch (erroIA) {
+            console.warn("Tabela inteligente indisponível; mostrando fontes encontradas.", erroIA);
+            dados = {
+                resumo: "A inteligência não pôde completar a interpretação, mas estas fontes foram identificadas no período.",
+                trabalhos: fontesUnicas.map(trabalhoBrutoDaFonte)
+            };
+        }
+        desenharTabelaTrabalhos(dados, fontesUnicas, { inicio: inicio, fim: fim });
+        status.textContent = "Tabela atualizada com dados do período selecionado.";
+    } catch (erro) {
+        console.error(erro);
+        status.textContent = traduzirErroDaInteligencia(erro.message || "Não foi possível localizar os trabalhos.");
+    } finally {
+        botao.disabled = false;
+        botao.textContent = "✨ Identificar trabalhos do bimestre";
+    }
+}
+
+document.querySelector("#bimestre-trabalhos").addEventListener("change", atualizarDatasSugeridasDosTrabalhos);
+document.querySelector("#ano-trabalhos").addEventListener("change", atualizarDatasSugeridasDosTrabalhos);
+document.querySelector("#atualizar-trabalhos").addEventListener("click", atualizarTrabalhosDoBimestre);
 
 /* OFICINA DE REDAÇÃO */
 
