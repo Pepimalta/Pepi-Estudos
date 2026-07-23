@@ -89,8 +89,12 @@
 
     async function enviarRedefinicaoSenha(email) {
         if (!cliente) throw new Error("Banco de dados não configurado.");
+        const origemAtual = window.location.protocol === "https:"
+            ? window.location.origin
+            : "https://pepi-estudos.vercel.app";
+        const retorno = origemAtual.replace(/\/$/, "") + "/?recuperar-senha=1";
         const resposta = await cliente.auth.resetPasswordForEmail(email, {
-            redirectTo: window.location.origin
+            redirectTo: retorno
         });
         if (resposta.error) throw resposta.error;
     }
@@ -109,6 +113,17 @@
             data: metadados
         });
         if (resposta.error) throw resposta.error;
+        sessionStorage.removeItem("malteriaRecuperacaoSenha");
+        if (window.history && window.history.replaceState) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }
+
+    function emRecuperacaoSenha() {
+        const parametros = new URLSearchParams(window.location.search);
+        return parametros.get("recuperar-senha") === "1" ||
+            sessionStorage.getItem("malteriaRecuperacaoSenha") === "1" ||
+            /type=recovery/i.test(window.location.hash);
     }
 
     async function sair() {
@@ -169,6 +184,7 @@
     if (cliente) {
         cliente.auth.onAuthStateChange(function (evento) {
             if (evento === "PASSWORD_RECOVERY") {
+                sessionStorage.setItem("malteriaRecuperacaoSenha", "1");
                 window.dispatchEvent(new CustomEvent("malteria:recuperar-senha"));
             }
         });
@@ -183,6 +199,7 @@
         perfilAtual: perfilAtual,
         tokenAcesso: tokenAcesso,
         enviarRedefinicaoSenha: enviarRedefinicaoSenha,
+        emRecuperacaoSenha: emRecuperacaoSenha,
         trocarSenhaObrigatoria: trocarSenhaObrigatoria,
         carregarEstado: carregarEstado,
         salvarEstado: salvarEstado,
