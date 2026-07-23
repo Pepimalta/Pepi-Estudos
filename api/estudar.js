@@ -113,6 +113,15 @@ export default async function handler(req, res) {
             });
         }
 
+        if (tipo === "trabalhos_bimestre") {
+            return await organizarTrabalhosDoBimestre(res, {
+                titulo,
+                dataInicio,
+                dataFinal,
+                conteudo: conteudoLimitado
+            });
+        }
+
         if (tipo === "simuladao" || tipo === "simulado") {
             return await criarSimuladao(res, {
                 materia,
@@ -162,6 +171,68 @@ export default async function handler(req, res) {
             erro: mensagem
         });
     }
+}
+
+async function organizarTrabalhosDoBimestre(res, dados) {
+    const instrucao = `
+Você é a assistente de organização escolar da Maltéria.
+
+BIMESTRE: ${dados.titulo || "não informado"}
+PERÍODO: ${dados.dataInicio || "não informado"} até ${dados.dataFinal || "não informado"}
+
+FONTES ENCONTRADAS NO GOOGLE CLASSROOM E NA AGENDA:
+${dados.conteudo}
+
+TAREFA:
+Monte uma lista completa dos trabalhos escolares existentes nas fontes. Considere
+trabalhos, projetos, seminários, apresentações, pesquisas, maquetes, cartazes,
+portfólios, produções e relatórios. Una registros repetidos que claramente tratem
+do mesmo trabalho.
+
+REGRAS OBRIGATÓRIAS:
+- Use somente informações presentes nas fontes.
+- Não transforme provas, deveres comuns ou eventos sociais em trabalhos.
+- Não invente tema, conteúdo, matéria, prazo ou instrução.
+- Quando uma informação não aparecer, escreva exatamente "Não informado".
+- Em "conteudoCobrado", diga o assunto ou as matérias envolvidas no trabalho.
+- Em "oQueFazer", resuma produto, etapas, formato, grupo e materiais pedidos.
+- Em "situacao", use "Pendente" apenas quando a fonte confirmar pendência;
+  caso contrário use "Verificar no Classroom".
+- Em "evidencia", informe se veio do Google Classroom, Google Agenda ou ambos.
+- As datas devem ser escritas no formato DD/MM/AAAA.
+- Responda somente em JSON válido, seguindo o esquema solicitado.
+`;
+
+    const schema = {
+        type: "OBJECT",
+        properties: {
+            resumo: { type: "STRING" },
+            trabalhos: {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        titulo: { type: "STRING" },
+                        materia: { type: "STRING" },
+                        tipo: { type: "STRING" },
+                        dataEntrega: { type: "STRING" },
+                        conteudoCobrado: { type: "STRING" },
+                        oQueFazer: { type: "STRING" },
+                        situacao: { type: "STRING" },
+                        evidencia: { type: "STRING" }
+                    },
+                    required: [
+                        "titulo", "materia", "tipo", "dataEntrega",
+                        "conteudoCobrado", "oQueFazer", "situacao", "evidencia"
+                    ]
+                }
+            }
+        },
+        required: ["resumo", "trabalhos"]
+    };
+
+    const resultado = await chamarGemini(instrucao, schema);
+    return res.status(200).json(resultado);
 }
 
 async function criarSimuladao(res, dados) {
@@ -416,17 +487,18 @@ REGRAS OBRIGATÓRIAS:
 - Observe notas por matéria, evolução entre períodos, padrões de erro, questões
   resolvidas e conteúdos que precisam de reforço.
 - Escolha um nível de dificuldade entre: Reforço, Básico, Intermediário ou Avançado.
-- O índice deve representar o potencial estimado de evolução com organização,
-  estudo e prática. Ele não representa aumento garantido de nota.
+- O índice deve representar somente a oportunidade estimada de evolução com
+  organização, estudo e prática. Ele nunca mede inteligência, capacidade,
+  valor pessoal ou um limite do aluno e não representa aumento garantido de nota.
 - Calcule o índice de 0 a 100 com prudência. Considere quantidade e qualidade dos
   documentos, lacunas de aprendizagem, regularidade das notas e possibilidade de
   melhora. Não escolha um número aleatório.
 - Se os documentos estiverem incompletos ou pouco legíveis, reduza a confiança da
   análise e explique isso no resumo.
-- A mensagem formal deve seguir esta ideia: "Com o uso consistente da Maltéria,
-  seu potencial estimado de evolução é de X%. A plataforma oferece organização,
-  explicações e prática; a concretização desse potencial também depende da sua
-  dedicação e rotina de estudos."
+- A mensagem formal deve explicar que X% é uma oportunidade educacional encontrada
+  nos documentos, e não uma nota sobre o aluno. A plataforma oferece organização,
+  explicações e prática; o progresso real é gradual e também depende da participação
+  do aluno, do tempo disponível e do acompanhamento escolar.
 - Crie um plano inicial de 5 dias, com sessões realistas de 20 a 45 minutos.
 - Não faça diagnóstico médico, psicológico ou de transtorno de aprendizagem.
 - Não diga que o aluno certamente melhorará uma porcentagem específica.
