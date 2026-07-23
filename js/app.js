@@ -625,6 +625,7 @@ document
     .querySelector("#form-cadastro")
     .addEventListener("submit", async function (evento) {
         evento.preventDefault();
+        document.querySelector("#erro-login").textContent = "";
 
         const nome = document
             .querySelector("#cadastro-nome")
