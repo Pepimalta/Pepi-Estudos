@@ -203,8 +203,10 @@ export default async function handler(req, res) {
         const emailAlvo = String(alvo.email || "").toLowerCase();
         const caminho = "/auth/v1/admin/users/" + encodeURIComponent(alvo.id);
 
-        if (["bloquear", "desbloquear", "excluir"].includes(corpo.acao) && emailAlvo === EMAIL_DONO) {
-            return res.status(400).json({ erro: "A conta proprietária não pode ser bloqueada ou excluída." });
+        if (["senha_temporaria", "bloquear", "desbloquear", "excluir"].includes(corpo.acao) && emailAlvo === EMAIL_DONO) {
+            return res.status(400).json({
+                erro: "A conta proprietária não pode receber senha temporária, ser bloqueada ou excluída pela Super Administração. Use a recuperação segura do Supabase."
+            });
         }
         if (corpo.acao === "senha_temporaria") {
             const senhaTemporaria = gerarSenhaTemporaria();
