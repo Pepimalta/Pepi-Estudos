@@ -139,6 +139,11 @@ let clienteClassroom = null;
 let turmasClassroom = [];
 let atividadesPorTurma = {};
 let tentativaSilenciosaClassroom = false;
+const recuperacaoSenhaAtiva = Boolean(
+    window.MalteriaBanco &&
+    window.MalteriaBanco.emRecuperacaoSenha &&
+    window.MalteriaBanco.emRecuperacaoSenha()
+);
 
 /* ABERTURA ANIMADA DA MALTÉRIA */
 
@@ -163,7 +168,11 @@ const reduzirMovimento = window.matchMedia(
     "(prefers-reduced-motion: reduce)"
 ).matches;
 
-if (!animacaoMalteria.classList.contains("escondido")) {
+if (recuperacaoSenhaAtiva) {
+    animacaoMalteria.classList.add("escondido");
+    document.body.classList.remove("intro-ativa");
+    mostrarTela(telaLogin);
+} else if (!animacaoMalteria.classList.contains("escondido")) {
     document.body.classList.add("intro-ativa");
 
     animacaoMalteria.addEventListener(
@@ -981,6 +990,21 @@ window.addEventListener("malteria:recuperar-senha", function () {
         "recuperacao"
     );
 });
+
+if (
+    window.MalteriaBanco &&
+    window.MalteriaBanco.configurado &&
+    window.MalteriaBanco.emRecuperacaoSenha &&
+    recuperacaoSenhaAtiva
+) {
+    window.setTimeout(function () {
+        abrirModalTrocaSenha(
+            "Redefina sua senha",
+            "Digite uma nova senha segura. Você não precisa da senha temporária nem da senha antiga.",
+            "recuperacao"
+        );
+    }, 300);
+}
 
 document.querySelector("#mostrar-senha-login").addEventListener("click", function () {
     const campo = document.querySelector("#login-senha");
@@ -6225,6 +6249,7 @@ const modalSenhaTemporaria =
     document.querySelector("#modal-senha-temporaria");
 const valorSenhaTemporaria =
     document.querySelector("#valor-senha-temporaria");
+let senhaTemporariaFoiCopiada = false;
 const modalCriarUsuario = document.querySelector("#modal-criar-usuario");
 const modalDadosUsuario = document.querySelector("#modal-dados-usuario");
 const conteudoDadosUsuario = document.querySelector("#conteudo-dados-usuario");
@@ -6425,9 +6450,15 @@ async function executarAcaoAdministracao(botao) {
             await window.MalteriaBanco.enviarRedefinicaoSenha(email);
             window.alert("E-mail de redefinição enviado para " + email + ".");
         } else {
+            if (acao === "senha_temporaria" && !window.confirm(
+                "Atenção: gerar uma senha temporária troca a senha da conta imediatamente. A senha antiga deixará de funcionar. Deseja continuar?"
+            )) return;
             const dados = await requisicaoAdministracao("POST", { acao: acao, usuarioId: id });
             if (acao === "senha_temporaria") {
                 valorSenhaTemporaria.textContent = dados.senhaTemporaria;
+                senhaTemporariaFoiCopiada = false;
+                document.querySelector("#copiar-senha-temporaria").textContent =
+                    "Copiar senha temporária";
                 modalSenhaTemporaria.classList.remove("escondido");
             }
             await desenharUsuariosAdministracao();
@@ -6474,13 +6505,22 @@ if (botaoAtualizarUsuariosAdministracao) {
 }
 
 document.querySelector("#fechar-senha-temporaria").addEventListener("click", function () {
+    if (valorSenhaTemporaria.textContent && !senhaTemporariaFoiCopiada) {
+        window.alert("Copie a senha temporária antes de fechar. Ela não será mostrada novamente.");
+        return;
+    }
     valorSenhaTemporaria.textContent = "";
     modalSenhaTemporaria.classList.add("escondido");
 });
 
 document.querySelector("#copiar-senha-temporaria").addEventListener("click", async function () {
-    await navigator.clipboard.writeText(valorSenhaTemporaria.textContent);
-    this.textContent = "✓ Senha copiada";
+    try {
+        await navigator.clipboard.writeText(valorSenhaTemporaria.textContent);
+        senhaTemporariaFoiCopiada = true;
+        this.textContent = "✓ Senha copiada — agora pode fechar";
+    } catch (erro) {
+        window.alert("Não consegui copiar automaticamente. Selecione a senha exibida e use Ctrl+C.");
+    }
 });
 
 document.querySelector("#criar-usuario-administracao").addEventListener("click", function () {
