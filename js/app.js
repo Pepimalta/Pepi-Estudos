@@ -902,8 +902,11 @@ document
                 }
                 return;
             } catch (erro) {
+                const detalhe = String(erro && erro.message || "").toLowerCase();
                 mostrarErroLogin(
-                    erro.message || "E-mail ou senha incorretos."
+                    detalhe.includes("invalid login credentials")
+                        ? "A senha informada não é a senha atual desta conta. Use a senha temporária mais recente ou clique em “Esqueci minha senha”."
+                        : (erro.message || "E-mail ou senha incorretos.")
                 );
                 return;
             }
@@ -1023,9 +1026,14 @@ document.querySelector("#esqueci-senha-login").addEventListener("click", async f
     this.disabled = true;
     try {
         await window.MalteriaBanco.enviarRedefinicaoSenha(email);
-        mensagem.textContent = "Enviamos um link de recuperação para " + email + ".";
+        mensagem.textContent = "Enviamos um link para " + email + ". Abra somente o e-mail mais recente e escolha sua nova senha na Maltéria.";
     } catch (erro) {
-        mensagem.textContent = erro.message || "Não foi possível enviar o link de recuperação.";
+        const detalhe = String(erro && erro.message || "").toLowerCase();
+        if (detalhe.includes("rate limit") || detalhe.includes("too many")) {
+            mensagem.textContent = "Muitos e-mails foram solicitados. Use o link mais recente que já chegou ou aguarde até 1 hora antes de pedir outro.";
+        } else {
+            mensagem.textContent = erro.message || "Não foi possível enviar o link de recuperação.";
+        }
     } finally {
         this.disabled = false;
     }
