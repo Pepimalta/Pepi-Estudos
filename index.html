@@ -526,6 +526,11 @@
                 <span class="ferramenta-texto">Redações</span>
             </button>
 
+            <button id="abrir-trabalhos-lateral" class="ferramenta-lateral" type="button">
+                <span class="ferramenta-icone">🗂️</span>
+                <span class="ferramenta-texto">Trabalhos escolares</span>
+            </button>
+
             <button id="abrir-pesquisa" class="ferramenta-lateral" type="button">
                 <span class="ferramenta-icone">＋</span>
                 <span class="ferramenta-texto">Nova pesquisa</span>
@@ -581,6 +586,7 @@
                     <button type="button" data-atalho-pagina="agenda"><span>📅</span><strong>Agenda</strong><small>Veja deveres, entregas e o que preparar.</small></button>
                     <button type="button" data-atalho-pagina="materias"><span>📚</span><strong>Matérias</strong><small>Abra suas turmas, materiais e atividades.</small></button>
                     <button type="button" data-atalho-pagina="redacoes"><span>✍️</span><strong>Redações</strong><small>Receba uma proposta e envie seu texto para correção.</small></button>
+                    <button type="button" data-atalho-pagina="trabalhos"><span>🗂️</span><strong>Trabalhos escolares</strong><small>Veja os trabalhos do bimestre e o que fazer em cada um.</small></button>
                     <button type="button" data-atalho-pagina="meta"><span>↗️</span><strong>Meta e evolução</strong><small>Acompanhe sua meta sem transformar o estudo em pressão.</small></button>
                     <button type="button" data-atalho-pagina="simulados"><span>🎯</span><strong>Simulados</strong><small>Escolha matérias, período, formato e quantidade.</small></button>
                     <button type="button" data-atalho-pagina="pesquisa"><span>🔎</span><strong>Nova pesquisa</strong><small>Tire uma dúvida usando os materiais do Classroom.</small></button>
@@ -693,6 +699,44 @@
                     <h2>Matérias</h2>
 
                     <div id="lista-materias" class="materias"></div>
+                </section>
+            </section>
+
+            <!-- PÁGINA DE TRABALHOS ESCOLARES -->
+            <section id="pagina-trabalhos" class="pagina-ferramenta pagina-trabalhos escondido">
+                <div class="cabecalho-ferramenta cabecalho-trabalhos">
+                    <span>🗂️</span>
+                    <div>
+                        <small>ORGANIZAÇÃO DO BIMESTRE</small>
+                        <h1>Trabalhos escolares</h1>
+                        <p>Reúna projetos, apresentações, pesquisas e outras entregas em uma única tabela.</p>
+                    </div>
+                </div>
+
+                <section class="caixa painel-trabalhos">
+                    <div class="filtros-trabalhos">
+                        <label for="bimestre-trabalhos">Bimestre
+                            <select id="bimestre-trabalhos">
+                                <option value="1">1º bimestre</option>
+                                <option value="2">2º bimestre</option>
+                                <option value="3">3º bimestre</option>
+                                <option value="4">4º bimestre</option>
+                            </select>
+                        </label>
+                        <label for="ano-trabalhos">Ano
+                            <input id="ano-trabalhos" type="number" min="2020" max="2100">
+                        </label>
+                        <label for="inicio-trabalhos">Início do bimestre
+                            <input id="inicio-trabalhos" type="date">
+                        </label>
+                        <label for="fim-trabalhos">Fim do bimestre
+                            <input id="fim-trabalhos" type="date">
+                        </label>
+                    </div>
+                    <p class="aviso-periodo-trabalhos">As datas são uma sugestão. Ajuste-as de acordo com o calendário da escola.</p>
+                    <button id="atualizar-trabalhos" class="botao-principal" type="button">✨ Identificar trabalhos do bimestre</button>
+                    <p id="status-trabalhos" class="status-pesquisa" aria-live="polite"></p>
+                    <section id="resultado-trabalhos" class="resultado-trabalhos escondido"></section>
                 </section>
             </section>
 
