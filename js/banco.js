@@ -68,8 +68,29 @@
         if (!cliente) return null;
         const resposta = await cliente.auth.signInWithPassword({ email: email, password: senha });
         if (resposta.error) throw resposta.error;
-        const perfil = await perfilAtual();
-        await carregarEstado();
+        const usuarioAuth = resposta.data.user;
+        let perfil;
+        try {
+            perfil = await perfilAtual();
+        } catch (erroPerfil) {
+            console.warn("Login realizado, mas o perfil não pôde ser carregado:", erroPerfil);
+            const metadados = usuarioAuth && usuarioAuth.user_metadata || {};
+            perfil = {
+                id: usuarioAuth && usuarioAuth.id,
+                nome: metadados.nome || String(usuarioAuth && usuarioAuth.email || email).split("@")[0],
+                email: usuarioAuth && usuarioAuth.email || email,
+                tipo: metadados.tipo === "Responsável" ? "Responsável" : "Aluno",
+                papel: String(usuarioAuth && usuarioAuth.email || email).toLowerCase() === "pepimalti@gmail.com"
+                    ? "superadmin"
+                    : "usuario",
+                perfilPendente: true
+            };
+        }
+        try {
+            await carregarEstado();
+        } catch (erroSincronizacao) {
+            console.warn("Login realizado, mas os dados ainda não foram sincronizados:", erroSincronizacao);
+        }
         iniciarSincronizacao();
         return Object.assign({}, perfil, {
             precisaTrocarSenha: Boolean(
