@@ -1421,6 +1421,7 @@ select:focus {
 #pagina-agenda > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
 #pagina-materias > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
 #pagina-redacoes > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
+#pagina-trabalhos > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
 #pagina-materia > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
 #pagina-pesquisa > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
 #pagina-ajuda > :not(.enfeites-visiveis-pagina):not(.arte-lateral-pagina),
@@ -5542,10 +5543,165 @@ body {
 #abrir-redacoes-lateral { order: 4; }
 #abrir-nivel-melhora { order: 5; }
 #abrir-pratica { order: 6; }
-#abrir-pesquisa { order: 7; }
-.historico-pesquisas-lateral { order: 8; }
-#abrir-administracao { order: 9; }
-#abrir-ajuda { order: 10; }
+#abrir-trabalhos-lateral { order: 7; }
+#abrir-pesquisa { order: 8; }
+.historico-pesquisas-lateral { order: 9; }
+#abrir-administracao { order: 10; }
+#abrir-ajuda { order: 11; }
+
+/* TRABALHOS ESCOLARES */
+
+.cabecalho-trabalhos {
+    background:
+        radial-gradient(circle at 84% 20%, rgba(255, 255, 255, 0.38), transparent 24%),
+        linear-gradient(125deg, #0889b2, #25bad0 48%, #5fa5ff);
+    color: #fff;
+    overflow: hidden;
+}
+
+.cabecalho-trabalhos::after {
+    content: "📋  🎨  🔬";
+    font-size: clamp(24px, 4vw, 54px);
+    opacity: 0.3;
+    animation: flutuar-ajuda 4s ease-in-out infinite alternate;
+}
+
+.painel-trabalhos {
+    border: 1px solid rgba(8, 137, 178, 0.22);
+}
+
+.filtros-trabalhos {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+    gap: 14px;
+    margin-bottom: 12px;
+}
+
+.filtros-trabalhos label {
+    display: grid;
+    gap: 7px;
+    font-weight: 700;
+}
+
+.filtros-trabalhos input,
+.filtros-trabalhos select {
+    width: 100%;
+}
+
+.aviso-periodo-trabalhos,
+.nota-trabalhos {
+    color: var(--texto-claro);
+    font-size: 0.92rem;
+}
+
+.resultado-trabalhos {
+    margin-top: 22px;
+}
+
+.resumo-trabalhos {
+    display: grid;
+    grid-template-columns: minmax(220px, 0.7fr) 1.3fr;
+    gap: 20px;
+    align-items: center;
+    padding: 18px;
+    border-radius: 20px;
+    background: linear-gradient(120deg, rgba(8, 137, 178, 0.1), rgba(95, 165, 255, 0.12));
+}
+
+.resumo-trabalhos small {
+    color: #087c9f;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+}
+
+.resumo-trabalhos h2,
+.resumo-trabalhos p {
+    margin: 4px 0;
+}
+
+.tabela-trabalhos-rolagem {
+    margin-top: 18px;
+    overflow-x: auto;
+    border: 1px solid #d9e8f5;
+    border-radius: 18px;
+}
+
+.tabela-trabalhos {
+    width: 100%;
+    min-width: 1050px;
+    border-collapse: collapse;
+    background: #fff;
+}
+
+.tabela-trabalhos th {
+    padding: 13px 14px;
+    text-align: left;
+    color: #fff;
+    background: linear-gradient(135deg, #087fa6, #5f75ff);
+}
+
+.tabela-trabalhos td {
+    padding: 14px;
+    vertical-align: top;
+    border-bottom: 1px solid #e8eef6;
+    line-height: 1.45;
+}
+
+.tabela-trabalhos tbody tr:nth-child(even) {
+    background: #f7fbff;
+}
+
+.tabela-trabalhos td:first-child strong,
+.tabela-trabalhos td:first-child small,
+.tabela-trabalhos td:last-child a {
+    display: block;
+}
+
+.tabela-trabalhos td:first-child small {
+    margin-top: 5px;
+    color: var(--texto-claro);
+}
+
+.tabela-trabalhos td:last-child a {
+    margin-top: 8px;
+    color: #4f46e5;
+    font-weight: 700;
+}
+
+.situacao-trabalho {
+    display: inline-block;
+    padding: 5px 9px;
+    border-radius: 999px;
+    background: #e8f8f4;
+    color: #087b67;
+    font-weight: 800;
+    font-size: 0.82rem;
+}
+
+.vazio-trabalhos {
+    padding: 34px 20px;
+    text-align: center;
+    border-radius: 20px;
+    background: #f7fbff;
+}
+
+.vazio-trabalhos > span {
+    font-size: 42px;
+}
+
+@media (max-width: 850px) {
+    .filtros-trabalhos,
+    .resumo-trabalhos {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .filtros-trabalhos,
+    .resumo-trabalhos {
+        grid-template-columns: 1fr;
+    }
+}
 
 .atalhos-inicio {
     display: grid;
