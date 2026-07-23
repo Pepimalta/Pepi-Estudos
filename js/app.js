@@ -906,7 +906,7 @@ document
                 const detalhe = String(erro && erro.message || "").toLowerCase();
                 mostrarErroLogin(
                     detalhe.includes("invalid login credentials")
-                        ? "A senha informada não é a senha atual desta conta. Use a senha temporária mais recente ou clique em “Esqueci minha senha”."
+                        ? "A senha informada não é a senha atual desta conta. Redefina a senha para recuperar o acesso."
                         : (erro.message || "E-mail ou senha incorretos.")
                 );
                 return;
@@ -6311,7 +6311,7 @@ function criarBotaoAdministracao(texto, acao, usuario, classe) {
     botao.dataset.usuarioChave = usuario.id || usuario.email || "";
     botao.className = "botao-admin " + (classe || "");
     if (usuario.email && normalizarEmail(usuario.email) === EMAIL_DONO_MALTERIA) {
-        if (["bloquear", "desbloquear", "excluir"].includes(acao)) botao.disabled = true;
+        if (["senha_temporaria", "bloquear", "desbloquear", "excluir"].includes(acao)) botao.disabled = true;
     }
     return botao;
 }
@@ -6362,7 +6362,7 @@ function renderizarUsuariosAdministracao(usuarios, origemBanco) {
             criarBotaoAdministracao("✉️ Enviar redefinição", "redefinir", usuario)
         );
 
-        if (origemBanco) {
+        if (origemBanco && !usuarioEhDono(usuario)) {
             acoes.append(
                 criarBotaoAdministracao("🔑 Gerar senha temporária", "senha_temporaria", usuario, "primario"),
                 criarBotaoAdministracao(
